@@ -1,6 +1,7 @@
 "use strict";
 
 const demoVariant = document.body.dataset.demo === "bomnal" ? "bomnal" : "generic";
+const demoRoot = new URL(".", document.currentScript.src);
 const storageKey = `academy-operations-demo-v2-${demoVariant}`;
 const qrLifetimeSeconds = 30;
 const qrClockSkewSeconds = 2;
@@ -61,6 +62,7 @@ const navigation = document.getElementById("navigation");
 const roleSelect = document.getElementById("role");
 const dialog = document.getElementById("dialog");
 const feedback = document.getElementById("feedback");
+const installButton = document.getElementById("install-demo");
 let role = "owner";
 let activeScreen = "website";
 let child = "jiwoo";
@@ -69,6 +71,7 @@ let cameraSession = null;
 let photoPreviewUrl = null;
 let selectedDay = "목";
 let selectedExam = "linear-fourth";
+let installPrompt = null;
 let state = readState();
 
 function freshState() {
@@ -406,14 +409,27 @@ function gradeSummary(exam) {
 }
 
 function ownerGrades() {
-  const rows = assessments.toReversed().map((exam) => {
+  const reports = assessments.toReversed().map((exam) => {
     const { result, entered, count, average } = gradeSummary(exam);
-    return `<tr><th scope="row">${exam.title}</th><td>${exam.group}</td><td>${exam.date}</td><td>${entered} / ${count}명</td>
-      <td>${average === null ? "—" : `${average} / ${exam.maximum}점`}</td><td>${badge(result.published ? "공개" : "초안", result.published ? "green" : "neutral")}</td></tr>`;
-  }).join("");
+    return {
+      title: escapeHtml(exam.title),
+      group: escapeHtml(exam.group),
+      date: escapeHtml(exam.date),
+      entryCount: `${entered} / ${count}명`,
+      classAverage: average === null ? "—" : `${average} / ${exam.maximum}점`,
+      status: badge(result.published ? "공개" : "초안", result.published ? "green" : "neutral"),
+    };
+  });
+  const rows = reports.map(({ title, group, date, entryCount, classAverage, status }) =>
+    `<tr><th scope="row">${title}</th><td>${group}</td><td>${date}</td><td>${entryCount}</td><td>${classAverage}</td><td>${status}</td></tr>`).join("");
+  const cards = reports.map(({ title, group, date, entryCount, classAverage, status }) =>
+    `<li class="grade-card"><div class="grade-card-heading"><h3>${title}</h3>${status}</div>
+      <dl><div><dt>반</dt><dd>${group}</dd></div><div><dt>시험일</dt><dd>${date}</dd></div>
+        <div><dt>입력</dt><dd>${entryCount}</dd></div><div><dt>반 평균</dt><dd>${classAverage}</dd></div></dl></li>`).join("");
   return header("성적 리포트", "학원 전체 평가의 입력률, 반 평균과 공개 상태입니다.")
     + panel("평가별 현황", `<div class="table-scroll"><table><thead><tr><th scope="col">평가</th><th scope="col">반</th><th scope="col">시험일</th>
-        <th scope="col">입력</th><th scope="col">반 평균</th><th scope="col">상태</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+        <th scope="col">입력</th><th scope="col">반 평균</th><th scope="col">상태</th></tr></thead><tbody>${rows}</tbody></table></div>
+      <ul class="grade-cards" aria-label="평가별 현황" role="list">${cards}</ul>`, "", "grade-report");
 }
 
 function teacherGrades() {
@@ -479,8 +495,10 @@ function paintScoreCharts() {
       context.fillStyle = "#62687c";
       context.fillText(String(mark), left - 7, y(mark));
     }
+    // Keep the endpoint labels inside the grid and clear of the vertical axis labels.
+    const pointInset = 18;
     const coordinates = points.map(({ percent }, index) => ({
-      x: points.length === 1 ? (left + right) / 2 : left + (right - left) * index / (points.length - 1),
+      x: points.length === 1 ? (left + right) / 2 : left + pointInset + (right - left - 2 * pointInset) * index / (points.length - 1),
       y: y(percent),
     }));
     context.beginPath();
@@ -590,6 +608,29 @@ function openDialog(title, body, confirmLabel, handler, destructive = false) {
     if (handler?.(selected) !== false) dialog.close();
   });
   dialog.showModal();
+}
+
+function showInstallGuide() {
+  if (dialog.open) return;
+  openDialog("홈 화면에 추가하는 방법", `<p>앱 스토어를 거치지 않고 이 데모를 홈 화면 아이콘으로 열 수 있습니다.</p>
+    <ol class="install-steps">
+      <li><strong>아이폰 Safari</strong>에서 <strong>공유 → 홈 화면에 추가</strong>를 선택하세요. <strong>웹 앱으로 열기</strong>가 보이면 켜고 추가하세요.</li>
+      <li><strong>안드로이드 Chrome</strong>의 메뉴 <strong>⋮</strong>에서 <strong>앱 설치</strong> 또는 <strong>홈 화면에 추가</strong>를 선택하세요.</li>
+    </ol>
+    <p class="note">카카오톡에서 보고 있다면 Safari 또는 Chrome에서 다시 열어 주세요.</p>`);
+}
+
+async function installDemo() {
+  const prompt = installPrompt;
+  installPrompt = null;
+  if (!prompt) return showInstallGuide();
+  try {
+    await prompt.prompt();
+    const choice = await prompt.userChoice;
+    if (choice.outcome === "dismissed") showInstallGuide();
+  } catch {
+    showInstallGuide();
+  }
 }
 
 function recordAttendance() {
@@ -1033,5 +1074,26 @@ document.getElementById("reset").addEventListener("click", () => {
     announce("데모 데이터를 초기화했습니다.");
   }, true);
 });
+
+const standaloneMode = window.matchMedia("(display-mode: standalone)");
+function updateInstallButton() {
+  installButton.hidden = standaloneMode.matches || navigator.standalone === true;
+}
+updateInstallButton();
+standaloneMode.addEventListener("change", updateInstallButton);
+installButton.addEventListener("click", () => { void installDemo(); });
+window.addEventListener("beforeinstallprompt", (event) => {
+  event.preventDefault();
+  installPrompt = event;
+});
+window.addEventListener("appinstalled", () => {
+  installPrompt = null;
+  installButton.hidden = true;
+});
+if (window.isSecureContext && "serviceWorker" in navigator && /^https?:$/.test(demoRoot.protocol)) {
+  navigator.serviceWorker.register(new URL("demo-worker.js", demoRoot)).catch(() => {
+    // The browser's manual home screen option remains available without a worker.
+  });
+}
 
 render();

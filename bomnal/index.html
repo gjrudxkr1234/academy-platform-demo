@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
   <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#60263b">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; connect-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="description" content="봄날수학학원 제안용 시안입니다. 공식 사이트가 아니며 실제 상담을 받지 않습니다.">
   <title>봄날수학학원 · 제안용 시안</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="192x192" href="../assets/bomnal-icon-192.png">
   <link rel="stylesheet" href="../style.css">
   <script src="../assets/qr-vendor.js" defer></script>
   <script src="../demo.js" defer></script>
@@ -26,7 +29,7 @@
     </aside>
     <div class="workspace">
       <header class="topbar">
-        <div class="school"><strong>봄날수학학원</strong></div>
+        <div class="school"><strong>봄날수학학원</strong><button id="install-demo" class="ghost install-button" type="button">홈 화면에 추가</button></div>
         <div class="top-actions">
           <label for="role" class="sr-only">체험 역할</label>
           <select id="role">

@@ -39,6 +39,7 @@ a { color: inherit; }
 .school { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .school strong { font-size: 15px; }
 .school span, .tag { padding: 3px 8px; color: #5239a8; background: #f1edfc; border-radius: 6px; font-size: 11px; font-weight: 740; white-space: nowrap; }
+.install-button { white-space: nowrap; }
 .top-actions { display: flex; gap: 7px; flex-shrink: 0; }
 select, .ghost, .secondary { color: var(--ink); border: 1px solid #dbdeec; border-radius: 8px; background: #fff; padding: 8px 11px; font-weight: 650; }
 .ghost { border-color: transparent; color: var(--muted); }
@@ -110,6 +111,7 @@ dialog h2 { margin-bottom: 14px; }
 dialog .dialog-body { display: grid; gap: 13px; }
 dialog label { display: grid; gap: 5px; font-weight: 670; }
 dialog .note { font-size: 12px; }
+.install-steps { display: grid; gap: 8px; margin: 0; padding-inline-start: 23px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 7px; margin-top: 4px; }
 .toast { position: fixed; bottom: 20px; right: 20px; z-index: 3; max-width: calc(100% - 40px); background: #29233f; color: white; border-radius: 10px; padding: 12px 16px; box-shadow: 0 6px 24px #24194030; }
 .academy-hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(230px, .8fr); gap: clamp(20px, 4vw, 44px); align-items: end; margin-bottom: 18px; padding: clamp(22px, 4vw, 48px); border-radius: 20px; border: 1px solid #e7e0fa; background: linear-gradient(110deg, #ece6fc, #f7f4fb 74%); }
@@ -144,12 +146,28 @@ dialog .note { font-size: 12px; }
 .field-inline select { max-width: 100%; }
 .settings-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 15px; }
 .settings-grid > div { padding: 12px 14px; border-radius: 9px; border: 1px solid var(--line); }
+.grade-report { container-type: inline-size; }
+.grade-cards { display: none; list-style: none; margin: 0; padding: 0; }
+.grade-card { border: 1px solid var(--line); border-radius: 11px; padding: 12px; }
+.grade-card-heading { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+.grade-card-heading h3 { min-width: 0; font-size: 15px; overflow-wrap: anywhere; }
+.grade-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 12px; margin: 10px 0 0; }
+.grade-card dt { color: var(--muted); font-size: 12px; }
+.grade-card dd { margin: 1px 0 0; font-weight: 650; overflow-wrap: anywhere; }
 .score-chart { width: 100%; min-width: 0; }
 .score-chart canvas { display: block; width: 100%; height: 200px; }
 .file-choice { display: inline-grid; align-content: center; min-height: 42px; cursor: pointer; }
 .photo-preview { display: block; width: 100%; max-height: 42dvh; object-fit: contain; border-radius: 10px; background: #f5f3fc; }
 .photo-preview[hidden] { display: none; }
 dialog input[type="number"] { width: 100%; padding: 8px 11px; color: var(--ink); border: 1px solid #dbdeec; border-radius: 8px; }
+@container (max-width: 550px) {
+  .grade-report .table-scroll { display: none; }
+  .grade-cards { display: grid; gap: 8px; }
+}
+@media (max-width: 720px), (max-width: 1024px) and (pointer: coarse) {
+  .grade-report .table-scroll { display: none; }
+  .grade-cards { display: grid; gap: 8px; }
+}
 @media (max-width: 950px) { .shell { grid-template-columns: 185px minmax(0, 1fr); } .columns { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 720px) {
   .shell { display: flex; flex-direction: column; }
@@ -163,6 +181,7 @@ dialog input[type="number"] { width: 100%; padding: 8px 11px; color: var(--ink);
   .school { gap: 3px 6px; }
   .school strong { font-size: 12px; }
   .school span { font-size: 10px; padding: 2px 4px; }
+  .topbar .install-button { min-height: 29px; padding: 3px 6px; font-size: 12px; }
   .top-actions { gap: 3px; }
   .top-actions select, .top-actions button { padding: 6px; font-size: 12px; }
   #content { padding: 18px 13px; }
