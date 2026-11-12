@@ -5,10 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <meta name="color-scheme" content="light">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta name="theme-color" content="#393067">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; connect-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="description" content="온새미 수학학원 운영 화면 체험">
   <title>온새미 수학학원 · 운영 체험</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="192x192" href="assets/demo-icon-192.png">
   <link rel="stylesheet" href="style.css">
   <script src="assets/qr-vendor.js" defer></script>
   <script src="demo.js" defer></script>
@@ -26,7 +29,7 @@
     </aside>
     <div class="workspace">
       <header class="topbar">
-        <div class="school"><strong>온새미 수학학원</strong></div>
+        <div class="school"><strong>온새미 수학학원</strong><button id="install-demo" class="ghost install-button" type="button">홈 화면에 추가</button></div>
         <div class="top-actions">
           <label for="role" class="sr-only">체험 역할</label>
           <select id="role">
