@@ -49,9 +49,9 @@ const assessments = [
   { id: "middle-one-third", title: "방정식 단원 평가", date: "11.06", group: "중1 개념반", maximum: 100 },
 ];
 
-const symbols = { home: "◈", website: "⌂", schedule: "▦", attendance: "▤", learning: "◇", grades: "▥", video: "▷", notifications: "◌", settings: "⚙" };
+const symbols = { home: "◈", website: "⌂", schedule: "▦", attendance: "▤", learning: "◇", grades: "▥", video: "▷", notifications: "◌", roster: "▧", settings: "⚙" };
 const menus = {
-  owner: [["home", "운영 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 리포트"], ["notifications", "발송 기록"], ["settings", "학원 설정"]],
+  owner: [["home", "운영 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 리포트"], ["notifications", "발송 기록"], ["roster", "학생·보호자"], ["settings", "학원 설정"]],
   teacher: [["home", "수업 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 입력"], ["video", "영상 현황"], ["notifications", "발송 기록"]],
   student: [["home", "오늘 할 일"], ["website", "학원 홈페이지"], ["schedule", "일정"], ["learning", "과제·공지"], ["video", "학습 영상"], ["grades", "내 성적"]],
   parent: [["home", "자녀 현황"], ["website", "학원 홈페이지"], ["schedule", "일정"], ["attendance", "출결 기록"], ["learning", "과제·공지"], ["grades", "성적 추이"], ["notifications", "받은 알림"]],
@@ -72,6 +72,8 @@ let photoPreviewUrl = null;
 let selectedDay = "목";
 let selectedExam = "linear-fourth";
 let installPrompt = null;
+let rosterPreview = null;
+let rosterUploadId = 0;
 let state = readState();
 
 function freshState() {
@@ -107,6 +109,7 @@ function freshState() {
       "middle-one-third": { published: true, scores: { minjun: 84, yuna: 90 } },
     },
     settings: { rank: false, lateMinutes: "0", channel: "알림톡" },
+    importedRosterRows: [],
     clock: 17 * 60 + 10,
   };
 }
@@ -115,7 +118,9 @@ function readState() {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey));
     if (saved && Array.isArray(saved.attendance) && Array.isArray(saved.notices) && Array.isArray(saved.reminders) && Array.isArray(saved.scannedQr)
-      && Array.isArray(saved.notifications) && saved.submissions && saved.progress && Number.isInteger(saved.clock)) return { ...freshState(), ...saved };
+      && Array.isArray(saved.notifications) && saved.submissions && saved.progress && Number.isInteger(saved.clock)) {
+      return { ...freshState(), ...saved, importedRosterRows: Array.isArray(saved.importedRosterRows) ? saved.importedRosterRows : [] };
+    }
   } catch {
     return freshState();
   }
@@ -239,7 +244,7 @@ function ownerHome() {
       ${overviewBar("과제 제출", roster.filter(({ id }) => ["submitted", "reviewed"].includes(state.submissions[id]?.status)).length, roster.length)}</div>`;
   });
   return `<section class="hero"><div><h1>학원 운영 현황</h1><p>11월 12일 목요일 · 학원 전체 출결, 학습 현황과 결재를 한눈에 확인합니다.</p></div>
-    <div class="actions">${button("휴가 결재 보기", "navigate", { id: "schedule", variant: "primary" })}</div></section>
+    <div class="actions">${button("엑셀로 한 번에 등록", "navigate", { id: "roster", variant: "primary" })}${button("휴가 결재 보기", "navigate", { id: "schedule" })}</div></section>
     ${metrics()}<div class="columns">
       ${panel("반별 출결·과제 통계", summaries.join(""), button("출결 상세", "navigate", { id: "attendance", variant: "text-button" }))}
       <div>${panel("휴가 승인 대기", list(pending.map(leaveRow), "승인을 기다리는 휴가가 없습니다."), badge(`${pending.length}건`, "orange"))}
@@ -540,6 +545,88 @@ function ownerSettings() {
     </dl><p class="note">변경한 설정은 이 브라우저의 체험 화면에 적용됩니다.</p>`);
 }
 
+function rosterRow(row, mode) {
+  const hasErrors = row.errors?.length;
+  const status = mode === "saved" ? badge("반영 완료", "green") : hasErrors ? badge("수정 필요", "red")
+    : state.importedRosterRows.includes(row.key) ? badge("이미 등록됨") : badge("등록 가능", "green");
+  const source = `학생 명부 ${row.line}행${row.guardianLine ? ` · 보호자 연결 ${row.guardianLine}행` : ""}`;
+  return `<li class="roster-row"><div class="roster-row-heading"><div><strong>${escapeHtml(row.key)}</strong>
+    ${mode === "preview" ? `<p class="note">${escapeHtml(source)}</p>` : ""}</div>${status}</div>
+    <dl><div><dt>초대용 보호자 이메일</dt><dd>${escapeHtml(row.guardian || "—")}</dd></div>
+    <div><dt>연령 및 법정대리인 동의</dt><dd>${escapeHtml(`${row.age} · ${row.consent}`)}</dd></div></dl>
+    ${hasErrors ? `<ul class="roster-errors">${row.errors.map((message) => `<li>${escapeHtml(message)}</li>`).join("")}</ul>` : ""}</li>`;
+}
+
+function rosterRows(rows, mode) {
+  return `<ul class="roster-rows">${rows.map((row) => rosterRow(row, mode)).join("")}</ul>`;
+}
+
+function rosterPreviewBody() {
+  if (!rosterPreview) return "";
+  if (!rosterPreview.sample) return `<p id="roster-preview-status" class="roster-message" tabindex="-1" role="status">${escapeHtml(rosterPreview.message)}</p>`;
+  const { rows } = rosterPreview.sample;
+  const invalid = rows.filter((row) => row.errors?.length).length;
+  const existing = rows.filter((row) => !row.errors?.length && state.importedRosterRows.includes(row.key)).length;
+  const ready = rows.length - invalid - existing;
+  const message = rosterPreview.message || (invalid ? "오류가 표시된 행을 확인한 뒤 정상 예시로 반영을 체험하세요."
+    : ready ? "학생과 보호자 연결, 동의 상태를 확인한 뒤 명부에 반영하세요." : "모든 행이 이미 등록되어 있습니다.");
+  return `<section class="roster-preview" aria-labelledby="roster-preview-title"><div class="roster-row-heading">
+    <h3 id="roster-preview-title" tabindex="-1">업로드 미리보기</h3><p class="note">${escapeHtml(rosterPreview.sample.name)}</p></div>
+    <div class="actions">${badge(`등록 가능 ${ready}명`, "green")}${badge(`오류 ${invalid}명`, invalid ? "red" : "neutral")}${badge(`이미 등록 ${existing}명`)}</div>
+    <p class="note" role="status">${escapeHtml(message)}</p>${rosterRows(rows, "preview")}
+    ${button("확인 후 등록", "apply-roster", { variant: "primary", disabled: !ready || Boolean(invalid) })}</section>`;
+}
+
+function ownerRoster() {
+  const { samples } = DemoRoster;
+  const registered = samples[0].rows.filter((row) => state.importedRosterRows.includes(row.key));
+  return header("학생·보호자 명부", "엑셀로 학생을 등록하고 보호자 연결과 동의 상태를 함께 확인하세요.")
+    + panel("엑셀로 한 번에 등록", `<p class="note">아래 두 가상 명부 원본으로 체험할 수 있습니다. 보호자는 초대를 수락한 뒤 자녀 포털에 접근합니다.</p>
+      <div class="actions roster-files"><label class="primary file-choice" for="roster-file">엑셀 파일 선택
+        <input class="sr-only" id="roster-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
+        ${samples.map((sample) => `<a class="secondary roster-download" href="${escapeHtml(new URL(sample.path, demoRoot).href)}" download="${escapeHtml(sample.name)}">${escapeHtml(sample.downloadLabel)}</a>`).join("")}
+      </div><div class="actions roster-examples">${samples.map((sample) => button(sample.previewLabel, "preview-roster", { id: sample.id, variant: "text-button" })).join("")}</div>
+      ${rosterPreviewBody()}`)
+    + panel("이번 체험에서 등록한 명부", registered.length ? rosterRows(registered, "saved") : '<p class="note">등록하면 학생과 보호자 초대 대기 항목이 여기에 표시됩니다.</p>', badge(`${registered.length}명`), "stack");
+}
+
+function showRosterPreview(sample, message = "") {
+  rosterPreview = { sample, message };
+  render();
+  content.querySelector("#roster-preview-title, #roster-preview-status")?.focus();
+}
+
+async function previewRosterFile(file) {
+  const request = ++rosterUploadId;
+  if (!/\.xlsx$/i.test(file.name) || file.size === 0 || file.size > 1024 * 1024) {
+    showRosterPreview(null, "1MiB 이하의 엑셀(.xlsx) 체험 파일을 선택해 주세요.");
+    return;
+  }
+  showRosterPreview(null, "체험 파일을 확인하는 중입니다.");
+  let sample;
+  try {
+    const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+    const hash = Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+    sample = DemoRoster.samples.find((example) => example.hash === hash);
+  } catch {
+    // A browser that cannot read the file still supports the direct example controls.
+  }
+  if (request !== rosterUploadId || role !== "owner" || activeScreen !== "roster") return;
+  showRosterPreview(sample, sample ? "" : "제공된 가상 명부 원본을 선택해 주세요. 정상 예시와 오류 예시를 각각 내려받을 수 있습니다.");
+}
+
+function applyRosterPreview() {
+  const sample = rosterPreview?.sample;
+  if (!sample || sample.rows.some((row) => row.errors?.length)) return;
+  const added = sample.rows.filter((row) => !state.importedRosterRows.includes(row.key));
+  if (!added.length) return;
+  state.importedRosterRows.push(...added.map((row) => row.key));
+  rosterPreview.message = `학생 ${added.length}명의 명부를 반영했습니다.`;
+  saveState();
+  content.querySelector("#roster-preview-title")?.focus();
+  announce(rosterPreview.message);
+}
+
 function studentHome() {
   const reminders = state.reminders.filter((entry) => entry.student === "jiwoo");
   const alerts = reminders.length ? panel("학습 알림", list(reminders.map((entry) => item(entry.topic, `선생님 · ${entry.time}`))), "", "stack") : "";
@@ -592,7 +679,7 @@ function render() {
     content.innerHTML = screens[activeScreen]();
   } else {
     const screens = { home: role === "owner" ? ownerHome : teacherHome, attendance: staffAttendance, learning: staffLearning,
-      grades: role === "owner" ? ownerGrades : teacherGrades, settings: ownerSettings, video: staffVideo,
+      grades: role === "owner" ? ownerGrades : teacherGrades, roster: ownerRoster, settings: ownerSettings, video: staffVideo,
       notifications: () => header("발송 기록", "출결과 연결된 알림톡·문자 발송 예시입니다.") + panel("발송 예시", notificationList(null, 30)) };
     content.innerHTML = screens[activeScreen]();
   }
@@ -1015,6 +1102,10 @@ document.addEventListener("click", (event) => {
   if (!control) return;
   const { action, id } = control.dataset;
   if (action === "navigate" && menus[role].some(([screen]) => screen === id)) {
+    if (activeScreen === "roster" && id !== "roster") {
+      rosterUploadId++;
+      rosterPreview = null;
+    }
     activeScreen = id;
     render();
     content.focus();
@@ -1030,6 +1121,13 @@ document.addEventListener("click", (event) => {
   else if (action === "edit-score" && role === "teacher") editScore(id);
   else if (action === "publish-scores" && role === "teacher") publishScores(id);
   else if (action === "edit-settings" && role === "owner") editSettings();
+  else if (action === "preview-roster" && role === "owner" && activeScreen === "roster") {
+    const sample = DemoRoster.samples.find((example) => example.id === id);
+    if (sample) {
+      rosterUploadId++;
+      showRosterPreview(sample);
+    }
+  } else if (action === "apply-roster" && role === "owner" && activeScreen === "roster") applyRosterPreview();
   else if (action === "review") reviewSubmission(id);
   else if (action === "open-notice") readNotice();
   else if (action === "watch-video") watchVideo();
@@ -1052,6 +1150,12 @@ document.addEventListener("click", (event) => {
 
 content.addEventListener("change", (event) => {
   const field = event.target;
+  if (field.id === "roster-file" && role === "owner" && activeScreen === "roster") {
+    const file = field.files?.[0];
+    field.value = "";
+    if (file) void previewRosterFile(file);
+    return;
+  }
   if (field.id !== "grade-assessment") return;
   selectedExam = field.value;
   render();
@@ -1059,6 +1163,8 @@ content.addEventListener("change", (event) => {
 });
 
 roleSelect.addEventListener("change", () => {
+  rosterUploadId++;
+  rosterPreview = null;
   role = roleSelect.value;
   activeScreen = "home";
   render();
@@ -1066,6 +1172,8 @@ roleSelect.addEventListener("change", () => {
 
 document.getElementById("reset").addEventListener("click", () => {
   openDialog("데모 초기화", "<p>이 브라우저의 변경 사항을 지우고 시작 상태로 돌아갑니다.</p>", "초기화", () => {
+    rosterUploadId++;
+    rosterPreview = null;
     state = freshState();
     child = "jiwoo";
     selectedDay = "목";
