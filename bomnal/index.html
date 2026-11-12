@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+  <meta name="color-scheme" content="light">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self'; media-src 'self' blob:; connect-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta name="description" content="봄날수학학원 제안용 시안입니다. 공식 사이트가 아니며 실제 상담을 받지 않습니다.">
+  <title>봄날수학학원 · 제안용 시안</title>
+  <link rel="stylesheet" href="../style.css">
+  <script src="../assets/qr-vendor.js" defer></script>
+  <script src="../demo.js" defer></script>
+</head>
+<body data-demo="bomnal">
+  <a class="skip" href="#content">본문으로 이동</a>
+  <div class="proposal-banner">제안용 시안 — 공식 사이트 아님</div>
+  <section class="proposal-intro" aria-labelledby="proposal-title">
+    <div>
+      <p class="proposal-label">가상 화면 예시</p>
+      <h1 id="proposal-title">봄날수학학원</h1>
+      <p>출결과 학습 현황을 교사·학생·보호자 화면에서 확인하는 구성입니다. 아래의 수업과 학생 기록은 시연용입니다.</p>
+    </div>
+    <div class="proposal-actions">
+      <a class="primary proposal-jump" href="#content">운영 화면 보기</a>
+      <button class="secondary" type="button" disabled>상담 신청 비활성화</button>
+    </div>
+  </section>
+  <div class="shell">
+    <aside class="rail" aria-label="학원 메뉴">
+      <div class="brand">
+        <span class="monogram" aria-hidden="true">봄</span>
+        <div><strong>봄날수학학원</strong><span>제안용 시안</span></div>
+      </div>
+      <nav class="navigation" id="navigation" aria-label="화면 선택"></nav>
+      <div class="rail-foot"><span class="demo-dot" aria-hidden="true"></span>합성 데이터 체험</div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <div class="school"><strong>봄날수학학원</strong><span>제안용 시안</span></div>
+        <div class="top-actions">
+          <label for="role" class="sr-only">체험 역할</label>
+          <select id="role">
+            <option value="owner">원장 체험</option>
+            <option value="teacher">선생님 체험</option>
+            <option value="student">학생 체험</option>
+            <option value="parent">보호자 체험</option>
+          </select>
+          <button id="reset" class="ghost" type="button">초기화</button>
+        </div>
+      </header>
+      <main id="content" tabindex="-1"></main>
+      <footer>제안용 시안입니다. 실제 상담이나 개인정보를 받지 않습니다. 변경사항은 이 브라우저에만 저장됩니다.</footer>
+    </div>
+  </div>
+  <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
+  <div id="feedback" class="toast" role="status" aria-live="polite" hidden></div>
+  <noscript>데모 화면을 보려면 브라우저에서 JavaScript를 켜 주세요.</noscript>
+</body>
+</html>
