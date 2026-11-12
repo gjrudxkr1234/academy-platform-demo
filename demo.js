@@ -15,13 +15,45 @@ const students = [
 const video = { title: "일차함수의 그래프 풀이", minutes: 12 };
 const assignment = { title: "일차함수 실전 문제 8–12번", due: "오늘 오후 9:00", detail: "8–12번 풀이 사진을 첨부해 주세요. 답과 함께 식을 정리한 과정이 보이면 좋아요." };
 const notice = { title: "다음 주 수업 시간 안내", detail: "다음 주 목요일 중2 심화반은 오후 4시에 시작합니다. 교재와 지난 숙제 풀이를 가져오세요." };
+const academyProfiles = {
+  generic: { name: "온새미 수학학원", intro: "수업 전 진단으로 학생의 수준을 살피고, 개념 수업부터 문제 풀이와 오답 점검까지 이어갑니다." },
+  bomnal: {
+    name: "봄날수학학원",
+    intro: "초등 고학년부터 중·고등까지 학생의 수준에 맞춰 지도합니다. 초등은 개념과 풀이 습관을 다지고, 중등은 구갈중·신릉중·신갈중의 진도와 시험 흐름에 맞춰 내신을 대비합니다.",
+    address: "경기 용인시 기흥구 구갈로 70 메가타운 3층",
+    hours: "매일 10:00–22:00",
+  },
+};
+const teachers = [
+  { name: "김서윤", role: "원장", subject: "고등 수학", detail: "내신 대비와 유형별 오답 지도" },
+  { name: "이도현", role: "담당 교사", subject: "중등 수학", detail: "개념 설명과 서술형 풀이 지도" },
+  { name: "김하람", role: "담당 교사", subject: "중등 수학", detail: "수준별 문제 풀이와 보충 수업" },
+];
+const scheduleDays = ["월", "화", "수", "목", "금", "토"];
+const classes = [
+  { id: "middle-two-thu", day: "목", dayNumber: 12, group: "중2 심화반", time: "16:00–17:30", teacher: "이도현", room: "강의실 A" },
+  { id: "middle-one-thu", day: "목", dayNumber: 12, group: "중1 개념반", time: "18:00–19:30", teacher: "김하람", room: "강의실 B" },
+  { id: "middle-two-fri", day: "금", dayNumber: 13, group: "중2 심화반", time: "17:00–18:30", teacher: "이도현", room: "강의실 A" },
+  { id: "high-one-fri", day: "금", dayNumber: 13, group: "고1 내신반", time: "19:00–20:30", teacher: "김서윤", room: "강의실 B" },
+  { id: "middle-one-sat", day: "토", dayNumber: 14, group: "중1 개념반", time: "11:00–12:30", teacher: "김하람", room: "강의실 B" },
+  { id: "middle-two-sat", day: "토", dayNumber: 14, group: "중2 심화반", time: "14:00–15:30", teacher: "이도현", room: "강의실 A" },
+];
+const assessments = [
+  { id: "linear-first", title: "일차함수 기초 평가", date: "10.23", group: "중2 심화반", maximum: 40 },
+  { id: "linear-second", title: "그래프 이해 평가", date: "10.30", group: "중2 심화반", maximum: 50 },
+  { id: "linear-third", title: "일차함수 단원 평가", date: "11.06", group: "중2 심화반", maximum: 100 },
+  { id: "linear-fourth", title: "일차함수 종합 평가", date: "11.12", group: "중2 심화반", maximum: 100 },
+  { id: "middle-one-first", title: "정수와 유리수 평가", date: "10.23", group: "중1 개념반", maximum: 40 },
+  { id: "middle-one-second", title: "문자와 식 평가", date: "10.30", group: "중1 개념반", maximum: 50 },
+  { id: "middle-one-third", title: "방정식 단원 평가", date: "11.06", group: "중1 개념반", maximum: 100 },
+];
 
-const symbols = { home: "◈", attendance: "▤", learning: "◇", video: "▷", notifications: "◌" };
+const symbols = { home: "◈", website: "⌂", schedule: "▦", attendance: "▤", learning: "◇", grades: "▥", video: "▷", notifications: "◌", settings: "⚙" };
 const menus = {
-  owner: [["home", "운영 현황"], ["attendance", "출결"], ["learning", "과제·공지"], ["notifications", "발송 기록"]],
-  teacher: [["home", "수업 현황"], ["attendance", "출결"], ["learning", "과제·공지"], ["video", "영상 현황"], ["notifications", "발송 기록"]],
-  student: [["home", "오늘 할 일"], ["learning", "과제·공지"], ["video", "학습 영상"]],
-  parent: [["home", "자녀 현황"], ["attendance", "출결 기록"], ["learning", "과제·공지"], ["notifications", "받은 알림"]],
+  owner: [["home", "운영 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 리포트"], ["notifications", "발송 기록"], ["settings", "학원 설정"]],
+  teacher: [["home", "수업 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 입력"], ["video", "영상 현황"], ["notifications", "발송 기록"]],
+  student: [["home", "오늘 할 일"], ["website", "학원 홈페이지"], ["schedule", "일정"], ["learning", "과제·공지"], ["video", "학습 영상"], ["grades", "내 성적"]],
+  parent: [["home", "자녀 현황"], ["website", "학원 홈페이지"], ["schedule", "일정"], ["attendance", "출결 기록"], ["learning", "과제·공지"], ["grades", "성적 추이"], ["notifications", "받은 알림"]],
 };
 
 const content = document.getElementById("content");
@@ -30,10 +62,13 @@ const roleSelect = document.getElementById("role");
 const dialog = document.getElementById("dialog");
 const feedback = document.getElementById("feedback");
 let role = "owner";
-let activeScreen = "home";
+let activeScreen = "website";
 let child = "jiwoo";
 let toastTimer;
 let cameraSession = null;
+let photoPreviewUrl = null;
+let selectedDay = "목";
+let selectedExam = "linear-fourth";
 let state = readState();
 
 function freshState() {
@@ -46,8 +81,8 @@ function freshState() {
       { student: "minjun", kind: "out", time: "16:32", late: false },
     ],
     submissions: {
-      seoha: { status: "submitted", attachment: "일차함수_풀이.jpg", note: "12번에 풀이를 두 가지로 적었어요." },
-      hyun: { status: "returned", attachment: "문제_풀이.jpg", note: "기울기 부호를 확인해 주세요." },
+      seoha: { status: "submitted", attachment: "일차함수 풀이 · 예시 사진", note: "12번에 풀이를 두 가지로 적었어요." },
+      hyun: { status: "returned", attachment: "문제 풀이 · 예시 사진", note: "기울기 부호를 확인해 주세요." },
     },
     notices: ["seoha", "hyun"],
     progress: { jiwoo: 40, seoha: 100, hyun: 65, siwoo: 0, minjun: 100, yuna: 15 },
@@ -58,6 +93,17 @@ function freshState() {
       { student: "hyun", channel: "알림톡", topic: "지각 등원 안내", time: "16:12" },
       { student: "jiwoo", channel: "알림톡", topic: "등원 안내", time: "15:57" },
     ],
+    leaves: [{ classId: "middle-two-fri", reason: "개인 일정", status: "pending", substitute: "" }],
+    grades: {
+      "linear-first": { published: true, scores: { jiwoo: 27, seoha: 30, hyun: 26, siwoo: 34 } },
+      "linear-second": { published: true, scores: { jiwoo: 37, seoha: 41, hyun: 34, siwoo: 42 } },
+      "linear-third": { published: true, scores: { jiwoo: 86, seoha: 89, hyun: 81, siwoo: 93 } },
+      "linear-fourth": { published: false, scores: { seoha: 88, hyun: 77, siwoo: 92 } },
+      "middle-one-first": { published: true, scores: { minjun: 25, yuna: 33 } },
+      "middle-one-second": { published: true, scores: { minjun: 38, yuna: 42 } },
+      "middle-one-third": { published: true, scores: { minjun: 84, yuna: 90 } },
+    },
+    settings: { rank: false, lateMinutes: "0", channel: "알림톡" },
     clock: 17 * 60 + 10,
   };
 }
@@ -66,7 +112,7 @@ function readState() {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey));
     if (saved && Array.isArray(saved.attendance) && Array.isArray(saved.notices) && Array.isArray(saved.reminders) && Array.isArray(saved.scannedQr)
-      && Array.isArray(saved.notifications) && saved.submissions && saved.progress && Number.isInteger(saved.clock)) return saved;
+      && Array.isArray(saved.notifications) && saved.submissions && saved.progress && Number.isInteger(saved.clock)) return { ...freshState(), ...saved };
   } catch {
     return freshState();
   }
@@ -111,6 +157,12 @@ function sessionTime() {
   return [Math.floor(state.clock / 60) % 24, state.clock % 60].map((part) => String(part).padStart(2, "0")).join(":");
 }
 
+function arrivalIsLate() {
+  const lesson = classes.find(({ day, group }) => day === "목" && group === student("jiwoo").group);
+  const [hour, minute] = lesson.time.split("–")[0].split(":").map(Number);
+  return state.clock > hour * 60 + minute + Number(state.settings.lateMinutes);
+}
+
 function badge(text, tone = "neutral") {
   return `<span class="status ${tone}">${escapeHtml(text)}</span>`;
 }
@@ -145,36 +197,69 @@ function attendanceTable(people = students) {
   }).join("")}</tbody></table></div>`;
 }
 
-function metrics() {
-  const checked = students.filter(({ id }) => latestEvent(id)).length;
-  const late = students.filter(({ id }) => state.attendance.some((entry) => entry.student === id && entry.late)).length;
-  const total = state.notifications.length;
+function roleStudents() {
+  return role === "teacher" ? students.filter(({ group }) => group === "중2 심화반") : students;
+}
+
+function metrics(people = students) {
+  const checked = people.filter(({ id }) => latestEvent(id)).length;
+  const late = people.filter(({ id }) => state.attendance.some((entry) => entry.student === id && entry.late)).length;
+  const total = state.notifications.filter((entry) => people.some(({ id }) => id === entry.student)).length;
   const cards = [
-    ["오늘 등원", `${checked}명`, `등록 ${students.length}명`, "▤"],
-    ["오늘 지각", `${late}명`, "수업 시작 기준", "◷"],
-    ["가짜 발송", `${total}건`, "알림톡·문자 기록", "◌"],
+    ["오늘 등원", `${checked}명`, `등록 ${people.length}명`, "▤"],
+    ["오늘 지각", `${late}명`, Number(state.settings.lateMinutes) ? `수업 시작 ${Number(state.settings.lateMinutes)}분 후` : "수업 시작 기준", "◷"],
+    ["발송 예시", `${total}건`, "알림톡·문자 기록", "◌"],
   ];
   return `<div class="metrics">${cards.map(([label, value, sub, icon]) => `<article class="metric"><div class="metric-top"><span>${label}</span><span class="metric-icon" aria-hidden="true">${icon}</span></div><strong>${value}</strong><small>${sub}</small></article>`).join("")}</div>`;
 }
 
 function notificationList(id, limit) {
-  const records = state.notifications.filter((entry) => !id || id === entry.student);
+  const roster = roleStudents();
+  const records = state.notifications.filter((entry) => id ? id === entry.student : roster.some(({ id: learner }) => learner === entry.student));
   return list(records.slice(0, limit).map((entry) =>
-    item(`${studentName(entry.student)} 학생 · ${entry.topic}`, `${entry.channel} · ${entry.time}`, badge("가짜 발송", "purple"))), "받은 알림 기록이 없습니다.");
+    item(`${studentName(entry.student)} 학생 · ${entry.topic}`, `${entry.channel} · ${entry.time}`, badge("발송 예시", "purple"))), "받은 알림 기록이 없습니다.");
 }
 
-function staffHome() {
-  const title = role === "owner" ? "오늘의 학원 운영" : "오늘의 수업 현황";
-  return `<section class="hero"><div><h1>${title}</h1><p>2026년 11월 12일 목요일 · 수업과 학생 현황을 확인하세요.</p></div>${staffAttendanceActions()}</section>
+function overviewBar(label, numerator, denominator) {
+  const percent = denominator ? Math.round(numerator / denominator * 100) : 0;
+  return `<div class="overview-bar"><div><span>${escapeHtml(label)}</span><strong>${numerator} / ${denominator}명</strong></div>
+    <progress class="progress" max="100" value="${percent}" aria-label="${escapeHtml(label)}"></progress></div>`;
+}
+
+function ownerHome() {
+  const pending = state.leaves.filter(({ status }) => status === "pending");
+  const scored = assessments.filter(({ id }) => state.grades[id].published).length;
+  const pendingGrades = assessments.length - scored;
+  const summaries = ["중1 개념반", "중2 심화반"].map((group) => {
+    const roster = students.filter((person) => person.group === group);
+    return `<div class="class-summary"><h3>${group}</h3>${overviewBar("오늘 등원", roster.filter(({ id }) => latestEvent(id)).length, roster.length)}
+      ${overviewBar("과제 제출", roster.filter(({ id }) => ["submitted", "reviewed"].includes(state.submissions[id]?.status)).length, roster.length)}</div>`;
+  });
+  return `<section class="hero"><div><h1>학원 운영 현황</h1><p>11월 12일 목요일 · 학원 전체 출결, 학습 현황과 결재를 한눈에 확인합니다.</p></div>
+    <div class="actions">${button("휴가 결재 보기", "navigate", { id: "schedule", variant: "primary" })}</div></section>
     ${metrics()}<div class="columns">
-      ${panel("오늘 출결", attendanceTable(), button("전체 보기", "navigate", { id: "attendance", variant: "text-button" }))}
-      <div>${panel("최근 알림", notificationList(null, 3), button("기록 보기", "navigate", { id: "notifications", variant: "text-button" }))}
-      ${panel("수업 일정", list([item("중2 심화반", "16:00–17:30 · 강의실 A", badge("진행 중", "green")), item("중1 개념반", "18:00–19:30 · 강의실 B", badge("예정"))]), "", "stack")}</div>
+      ${panel("반별 출결·과제 통계", summaries.join(""), button("출결 상세", "navigate", { id: "attendance", variant: "text-button" }))}
+      <div>${panel("휴가 승인 대기", list(pending.map(leaveRow), "승인을 기다리는 휴가가 없습니다."), badge(`${pending.length}건`, "orange"))}
+        ${panel("성적 공개 현황", list([item("공개 평가", `${scored}회`, badge("공개", "green")), item("작성 중인 평가", `${pendingGrades}회`, badge("초안"))]),
+          button("리포트 보기", "navigate", { id: "grades", variant: "text-button" }), "stack")}</div>
+    </div>`;
+}
+
+function teacherHome() {
+  const roster = roleStudents();
+  const toReview = roster.filter(({ id }) => state.submissions[id]?.status === "submitted");
+  return `<section class="hero"><div><h1>오늘의 수업 현황</h1><p>11월 12일 목요일 · 이도현 선생님 · 중2 심화반</p></div>${staffAttendanceActions()}</section>
+    ${metrics(roster)}<div class="columns">
+      ${panel("담당 반 출결", attendanceTable(roster), button("출결 보기", "navigate", { id: "attendance", variant: "text-button" }))}
+      <div>${panel("오늘 수업", list(classes.filter(({ teacher, day }) => teacher === "이도현" && day === "목").map(classRow)))}
+        ${panel("과제 검토 대기", list(toReview.map(({ id, name }) => item(name, assignment.title, button("검토", "review", { id }))), "검토할 과제가 없습니다."),
+          button("과제 보기", "navigate", { id: "learning", variant: "text-button" }), "stack")}</div>
     </div>`;
 }
 
 function attendanceHistory(id) {
-  const records = state.attendance.filter((event) => !id || event.student === id).toReversed();
+  const roster = roleStudents();
+  const records = state.attendance.filter((event) => id ? event.student === id : roster.some((learner) => learner.id === event.student)).toReversed();
   return list(records.map((event) => item(`${studentName(event.student)} 학생 · ${event.kind === "in" ? "등원" : "하원"}`, event.time, event.late ? badge("지각", "orange") : badge("기록 완료", "green"))));
 }
 
@@ -183,8 +268,9 @@ function staffAttendanceActions() {
 }
 
 function staffAttendance() {
+  const roster = roleStudents();
   return `${header("출결 관리", "등원·하원 기록과 지각을 확인합니다.", staffAttendanceActions())}
-    ${metrics()}<div class="columns">${panel("학생별 출결", attendanceTable())}${panel("출결 기록", attendanceHistory())}</div>`;
+    ${metrics(roster)}<div class="columns">${panel("학생별 출결", attendanceTable(roster))}${panel("출결 기록", attendanceHistory())}</div>`;
 }
 
 function submissionBadge(value) {
@@ -195,10 +281,11 @@ function submissionBadge(value) {
 }
 
 function staffLearning() {
-  const unread = students.filter(({ id }) => !state.notices.includes(id));
+  const roster = roleStudents();
+  const unread = roster.filter(({ id }) => !state.notices.includes(id));
   return `${header("과제·공지 관리", "미제출 학생과 공지를 확인하지 않은 학생을 확인하세요.")}
   <div class="columns">
-    ${panel(assignment.title, list(students.map(({ id, name, group }) => {
+    ${panel(assignment.title, list(roster.map(({ id, name, group }) => {
       const record = state.submissions[id];
       const control = record?.status === "submitted" ? button("검토", "review", { id, variant: "text-button" })
         : record?.status !== "reviewed" ? button("리마인드", "remind", { id: `${id}:과제 제출` }) : "";
@@ -211,7 +298,7 @@ function staffLearning() {
 
 function staffVideo() {
   return `${header("영상 시청 현황", "학생별 시청률과 미완료 학생을 확인하세요.")}
-    ${panel(video.title, list(students.map(({ id, name, group }) => {
+    ${panel(video.title, list(roleStudents().map(({ id, name, group }) => {
       const progress = Number(state.progress[id]) || 0;
       const control = progress < 90 ? button("리마인드", "remind", { id: `${id}:영상 시청` }) : "";
       return item(name, `${group} · 시청률 ${progress}%`, badge(progress >= 90 ? "시청 완료" : "미완료", progress >= 90 ? "green" : "orange") + control);
@@ -243,11 +330,203 @@ function videoCard(id, interactive) {
     ? button(label, "watch-video", { variant: "primary", disabled: progress >= 90 }) : (progress >= 90 ? badge("시청 완료", "green") : badge("시청 중", "purple")));
 }
 
+function academyWebsite() {
+  const profile = academyProfiles[demoVariant];
+  const contact = profile.address ? `<dl class="school-contact">
+      <div><dt>주소</dt><dd>${escapeHtml(profile.address)}</dd></div>
+      <div><dt>운영시간</dt><dd>${escapeHtml(profile.hours)}</dd></div>
+    </dl><p class="note">네이버 플레이스 공개 정보</p>` : `<dl class="school-contact">
+      <div><dt>운영시간 예시</dt><dd>평일 14:00–22:00 · 토요일 10:00–17:00</dd></div>
+    </dl>`;
+  const rows = classes.map(({ group, day, time, teacher }) =>
+    `<tr><th scope="row">${group}</th><td>${day}요일</td><td>${time}</td><td>${teacher} 선생님</td></tr>`).join("");
+  return `<section class="academy-hero"><div><p class="academy-eyebrow">초등 고학년 · 중등 · 고등 수학</p>
+      <h1>${escapeHtml(profile.name)}</h1><p>${escapeHtml(profile.intro)}</p>
+      <div class="actions">${button("운영 화면 보기", "navigate", { id: "home", variant: "primary" })}
+        <button class="secondary" type="button" disabled>상담 신청 비활성화</button></div>
+    </div><div class="academy-card"><h2>학원 안내</h2>${contact}</div></section>
+    <div class="website-sections">
+      ${panel("강사진", `<div class="teacher-cards">${teachers.map(({ name, role: job, subject, detail }) =>
+        `<article><span class="teacher-initial" aria-hidden="true">${name[0]}</span><div><h3>${name} ${job === "원장" ? "원장" : "선생님"}</h3>
+          <strong>${subject}</strong><p class="note">${detail}</p></div></article>`).join("")}</div>`, badge("예시", "purple"))}
+      <div class="columns">
+        ${panel("수업 시간표", `<div class="table-scroll"><table><thead><tr><th scope="col">반</th><th scope="col">요일</th>
+          <th scope="col">시간</th><th scope="col">담당</th></tr></thead><tbody>${rows}</tbody></table></div>`, badge("예시", "purple"))}
+        ${panel("공지", list([item(notice.title, "11월 12일", button("공지 보기", "website-notice", { variant: "text-button" }))]), badge("예시", "purple"))}
+      </div>
+    </div>`;
+}
+
+function classRow(lesson) {
+  const replacement = state.leaves.find((entry) => entry.classId === lesson.id && entry.status === "approved");
+  const teacher = replacement ? replacement.substitute : lesson.teacher;
+  return item(lesson.group, `${lesson.time} · ${teacher} 선생님 · ${lesson.room}`, replacement ? badge("대체 수업", "purple") : "");
+}
+
+function leaveRow(entry) {
+  const lesson = classes.find(({ id }) => id === entry.classId);
+  if (!lesson) return "";
+  const status = { pending: ["승인 대기", "orange"], approved: ["승인 완료", "green"], declined: ["반려", "red"] }[entry.status] ?? ["확인 필요", "neutral"];
+  const review = role === "owner" && entry.status === "pending"
+    ? button("휴가 검토", "review-leave", { id: entry.classId, variant: "text-button" }) : "";
+  const detail = `11월 ${lesson.dayNumber}일 ${lesson.day}요일 · ${lesson.group} · ${entry.reason}${entry.substitute ? ` · 대체 ${entry.substitute} 선생님` : ""}`;
+  return item(`${lesson.teacher} 선생님 휴가`, detail, badge(...status) + review);
+}
+
+function calendarView() {
+  const staff = role === "owner" || role === "teacher";
+  const selectedStudent = student(role === "student" ? "jiwoo" : child);
+  const visible = classes.filter((lesson) => role === "owner" || (role === "teacher" ? lesson.teacher === "이도현" : lesson.group === selectedStudent?.group));
+  const days = scheduleDays.map((day, index) => `<button class="day-button" type="button" data-action="schedule-day" data-id="${day}" aria-pressed="${day === selectedDay}">
+    <span>${day}</span><strong>${index + 9}</strong></button>`).join("");
+  const heading = header(staff ? "일정·휴가" : "수업 일정",
+    "11월 9일–14일 수업과 변경된 일정을 확인하세요.", role === "teacher" ? button("휴가 신청", "request-leave", { variant: "primary" }) : "");
+  return heading + (role === "parent" ? childPicker() : "") + `<div class="columns">
+    ${panel("11월 둘째 주", `<div class="calendar-days" aria-label="요일 선택">${days}</div>
+      <div class="calendar-agenda"><h3>${selectedDay}요일 수업</h3>${list(visible.filter(({ day }) => day === selectedDay).map(classRow), "예정된 수업이 없습니다.")}</div>`)}
+    ${staff ? panel(role === "owner" ? "교사 휴가 결재" : "내 휴가 신청",
+      list(state.leaves.filter((entry) => role === "owner" || visible.some(({ id }) => id === entry.classId)).map(leaveRow), "등록된 휴가가 없습니다."))
+      : panel("이번 주 일정", list(visible.map(classRow), "등록된 수업이 없습니다."))}
+  </div>`;
+}
+
+function rankInAssessment(exam, id) {
+  const { scores } = state.grades[exam.id];
+  const graded = Object.values(scores).filter(Number.isFinite);
+  return state.settings.rank && Number.isFinite(scores[id]) && graded.length >= 3
+    ? `${1 + graded.filter((value) => value > scores[id]).length}위` : "";
+}
+
+function gradeSummary(exam) {
+  const result = state.grades[exam.id];
+  const values = Object.values(result.scores).filter(Number.isFinite);
+  const count = students.filter(({ group }) => group === exam.group).length;
+  const average = values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length * 10) / 10 : null;
+  return { result, entered: Object.keys(result.scores).length, count, average };
+}
+
+function ownerGrades() {
+  const rows = assessments.toReversed().map((exam) => {
+    const { result, entered, count, average } = gradeSummary(exam);
+    return `<tr><th scope="row">${exam.title}</th><td>${exam.group}</td><td>${exam.date}</td><td>${entered} / ${count}명</td>
+      <td>${average === null ? "—" : `${average} / ${exam.maximum}점`}</td><td>${badge(result.published ? "공개" : "초안", result.published ? "green" : "neutral")}</td></tr>`;
+  }).join("");
+  return header("성적 리포트", "학원 전체 평가의 입력률, 반 평균과 공개 상태입니다.")
+    + panel("평가별 현황", `<div class="table-scroll"><table><thead><tr><th scope="col">평가</th><th scope="col">반</th><th scope="col">시험일</th>
+        <th scope="col">입력</th><th scope="col">반 평균</th><th scope="col">상태</th></tr></thead><tbody>${rows}</tbody></table></div>`);
+}
+
+function teacherGrades() {
+  const exams = assessments.filter(({ group }) => group === "중2 심화반").toReversed();
+  const exam = exams.find(({ id }) => id === selectedExam) ?? exams[0];
+  const { result, entered, count } = gradeSummary(exam);
+  const choices = exams.map(({ id, title }) => `<option value="${id}"${id === exam.id ? " selected" : ""}>${title}</option>`).join("");
+  const rows = roleStudents().map(({ id, name }) => {
+    const score = result.scores[id];
+    const label = score === "absent" ? "결시" : Number.isFinite(score) ? `${score} / ${exam.maximum}점` : "미입력";
+    const action = !result.published ? button(Number.isFinite(score) || score === "absent" ? "점수 수정" : "점수 입력", "edit-score", { id: `${exam.id}:${id}` }) : "";
+    return item(name, label, action);
+  });
+  const publication = result.published ? badge("공개", "green")
+    : button("성적 공개", "publish-scores", { id: exam.id, variant: "primary", disabled: entered < count });
+  return header("성적 입력", "담당 반의 평가 점수와 결시를 입력하고 보호자에게 공개합니다.")
+    + panel("평가 선택", `<label class="field-inline">평가<select id="grade-assessment">${choices}</select></label>`)
+    + panel(exam.title, `<p class="note">중2 심화반 · ${exam.date} · 만점 ${exam.maximum}점 · ${entered} / ${count}명 입력</p>${list(rows)}`, publication, "stack");
+}
+
+function publishedScores(id) {
+  return assessments.flatMap((exam) => {
+    const { result, average } = gradeSummary(exam);
+    const score = result.scores[id];
+    if (!result.published || !Object.hasOwn(result.scores, id)) return [];
+    const percent = Number.isFinite(score) ? Math.round(score / exam.maximum * 1000) / 10 : null;
+    return [{ exam, score, percent, average, rank: rankInAssessment(exam, id) }];
+  });
+}
+
+function scoreChart(id) {
+  const points = publishedScores(id).filter(({ percent }) => percent !== null);
+  if (!points.length) return '<p class="empty">공개된 성적이 없습니다.</p>';
+  const description = points.map(({ exam, percent }) => `${exam.date} ${percent}점`).join(", ");
+  return `<div class="score-chart"><canvas data-score-chart="${id}" role="img" aria-label="100점 환산 성적 추이 · ${escapeHtml(description)}">${escapeHtml(description)}</canvas></div>`;
+}
+
+function paintScoreCharts() {
+  for (const canvas of content.querySelectorAll("[data-score-chart]")) {
+    const points = publishedScores(canvas.dataset.scoreChart).filter(({ percent }) => percent !== null);
+    const width = Math.max(200, Math.floor(canvas.getBoundingClientRect().width));
+    const height = 200;
+    const scale = window.devicePixelRatio || 1;
+    canvas.width = width * scale;
+    canvas.height = height * scale;
+    const context = canvas.getContext("2d");
+    if (!context) continue;
+    context.scale(scale, scale);
+    const left = 34;
+    const right = width - 22;
+    const top = 21;
+    const bottom = height - 29;
+    const y = (value) => bottom - (bottom - top) * value / 100;
+    context.font = "12px system-ui, sans-serif";
+    context.textBaseline = "middle";
+    context.textAlign = "right";
+    for (const mark of [0, 25, 50, 75, 100]) {
+      context.beginPath();
+      context.strokeStyle = "#e6e7f0";
+      context.moveTo(left, y(mark));
+      context.lineTo(right, y(mark));
+      context.stroke();
+      context.fillStyle = "#62687c";
+      context.fillText(String(mark), left - 7, y(mark));
+    }
+    const coordinates = points.map(({ percent }, index) => ({
+      x: points.length === 1 ? (left + right) / 2 : left + (right - left) * index / (points.length - 1),
+      y: y(percent),
+    }));
+    context.beginPath();
+    coordinates.forEach((point, index) => index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y));
+    context.lineWidth = 2.5;
+    context.strokeStyle = "#583ad0";
+    context.stroke();
+    context.textAlign = "center";
+    coordinates.forEach((point, index) => {
+      context.beginPath();
+      context.fillStyle = "#583ad0";
+      context.arc(point.x, point.y, 4, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#43279e";
+      context.fillText(String(points[index].percent), point.x, Math.max(10, point.y - 12));
+      context.fillStyle = "#62687c";
+      context.fillText(points[index].exam.date, point.x, bottom + 18);
+    });
+  }
+}
+
+function learnerGrades(id, heading) {
+  const results = publishedScores(id);
+  return header(heading, `${studentName(id)} 학생의 공개된 평가와 100점 환산 추이입니다.`)
+    + (role === "parent" ? childPicker() : "")
+    + `<div class="columns">${panel("회차별 성적 추이", scoreChart(id), badge("100점 환산", "purple"))}
+      ${panel("공개 성적", list(results.toReversed().map(({ exam, score, average, rank }) =>
+        item(exam.title, `${exam.date}${average !== null && students.filter(({ group }) => group === exam.group).length >= 3 ? ` · 반 평균 ${average}점` : ""}`,
+          badge(score === "absent" ? "결시" : `${score} / ${exam.maximum}점`, "purple") + (rank ? badge(rank, "green") : ""))), "공개된 성적이 없습니다."))}</div>`;
+}
+
+function ownerSettings() {
+  return header("학원 설정", "출결 처리, 발송 채널과 성적 공개 기본값을 설정합니다.", button("설정 편집", "edit-settings", { variant: "primary" }))
+    + panel("운영 설정", `<dl class="settings-grid">
+      <div><dt>학원 이름</dt><dd>${escapeHtml(academyProfiles[demoVariant].name)}</dd></div>
+      <div><dt>지각 기준</dt><dd>${Number(state.settings.lateMinutes) ? `수업 시작 ${Number(state.settings.lateMinutes)}분 후` : "수업 시작 시각"}</dd></div>
+      <div><dt>출결 알림 채널</dt><dd>${escapeHtml(state.settings.channel)}</dd></div>
+      <div><dt>등수 공개</dt><dd>${state.settings.rank ? "켜짐" : "꺼짐"}</dd></div>
+    </dl><p class="note">변경한 설정은 이 브라우저의 체험 화면에 적용됩니다.</p>`);
+}
+
 function studentHome() {
   const reminders = state.reminders.filter((entry) => entry.student === "jiwoo");
   const alerts = reminders.length ? panel("학습 알림", list(reminders.map((entry) => item(entry.topic, `선생님 · ${entry.time}`))), "", "stack") : "";
   return `<section class="hero"><div><h1>지우 학생의 오늘 할 일</h1><p>중2 심화반 · 마감과 시청 진도를 한눈에 확인하세요.</p></div>
-    <div class="actions">${button("카메라로 QR 찍기", "camera-qr", { variant: "primary" })}${button("모의 QR 열기", "mock-qr")}</div></section>
+    <div class="actions">${button("카메라로 QR 찍기", "camera-qr", { variant: "primary" })}${button("출결 체험하기", "mock-qr")}</div></section>
     <div class="columns"><div>${panel("오늘 할 일", list(taskRows("jiwoo", true)))}${alerts}</div>${videoCard("jiwoo", true)}</div>`;
 }
 
@@ -262,9 +541,14 @@ function learnerWork(id, interactive) {
     </div>`;
 }
 
-function parentView(screen) {
-  const controls = `<div class="parent-picker" aria-label="자녀 선택">${["jiwoo", "minjun"].map((id) =>
+function childPicker() {
+  return `<div class="parent-picker" aria-label="자녀 선택">${["jiwoo", "minjun"].map((id) =>
     `<button class="secondary" type="button" data-action="child" data-id="${id}" aria-pressed="${id === child}">${studentName(id)}</button>`).join("")}</div>`;
+}
+
+function parentView(screen) {
+  const controls = childPicker();
+  if (screen === "grades") return learnerGrades(child, "성적 추이");
   if (screen === "attendance") return header("자녀 출결", "자녀별 등원·하원 기록입니다.") + controls + panel("출결 기록", attendanceHistory(child));
   if (screen === "notifications") return header("받은 알림", "등원·하원 알림을 자녀별로 확인합니다.") + controls + panel("알림 기록", notificationList(child, 20));
   if (screen === "learning") return controls + learnerWork(child, false);
@@ -273,6 +557,7 @@ function parentView(screen) {
       <div>${panel(`${studentName(child)} 학생 출결`, attendanceHistory(child))}
       ${panel("학습 상태", list(taskRows(child, false)), "", "stack")}</div>
       <div>${panel("최근 알림", notificationList(child, 3))}
+      ${panel("성적 추이", scoreChart(child), button("성적 보기", "navigate", { id: "grades", variant: "text-button" }), "stack")}
       <div class="panel stack"><div class="panel-head"><h2>학습 영상</h2>${Number(state.progress[child]) >= 90 ? badge("시청 완료", "green") : badge("시청 중", "purple")}</div>
       <p>${video.title}</p><p class="note">시청률 ${Number(state.progress[child]) || 0}%</p></div></div>
     </div>`;
@@ -280,14 +565,20 @@ function parentView(screen) {
 
 function render() {
   navigation.innerHTML = menus[role].map(([screen, label]) => `<button class="nav-button" type="button" data-action="navigate" data-id="${screen}"${screen === activeScreen ? ' aria-current="page"' : ""}><span aria-hidden="true">${symbols[screen]}</span>${label}</button>`).join("");
-  if (role === "parent") content.innerHTML = parentView(activeScreen);
+  if (activeScreen === "website") content.innerHTML = academyWebsite();
+  else if (activeScreen === "schedule") content.innerHTML = calendarView();
+  else if (role === "parent") content.innerHTML = parentView(activeScreen);
   else if (role === "student") {
-    const screens = { home: studentHome, learning: () => learnerWork("jiwoo", true), video: () => header("학습 영상", "마지막 시청 위치에서 이어볼 수 있습니다.") + videoCard("jiwoo", true) };
+    const screens = { home: studentHome, learning: () => learnerWork("jiwoo", true), grades: () => learnerGrades("jiwoo", "내 성적"),
+      video: () => header("학습 영상", "마지막 시청 위치에서 이어볼 수 있습니다.") + videoCard("jiwoo", true) };
     content.innerHTML = screens[activeScreen]();
   } else {
-    const screens = { home: staffHome, attendance: staffAttendance, learning: staffLearning, video: staffVideo, notifications: () => header("발송 기록", "실제 메시지 대신 브라우저에 남긴 발송 내역입니다.") + panel("가짜 발송 기록", notificationList(null, 30)) };
+    const screens = { home: role === "owner" ? ownerHome : teacherHome, attendance: staffAttendance, learning: staffLearning,
+      grades: role === "owner" ? ownerGrades : teacherGrades, settings: ownerSettings, video: staffVideo,
+      notifications: () => header("발송 기록", "출결과 연결된 알림톡·문자 발송 예시입니다.") + panel("발송 예시", notificationList(null, 30)) };
     content.innerHTML = screens[activeScreen]();
   }
+  paintScoreCharts();
 }
 
 function openDialog(title, body, confirmLabel, handler, destructive = false) {
@@ -295,19 +586,21 @@ function openDialog(title, body, confirmLabel, handler, destructive = false) {
     <div class="dialog-actions"><button type="button" class="secondary" data-action="close-dialog">닫기</button>
     ${confirmLabel ? `<button type="button" data-confirm class="${destructive ? "secondary danger" : "primary"}">${escapeHtml(confirmLabel)}</button>` : ""}</div></div>`;
   dialog.querySelector("[data-confirm]")?.addEventListener("click", () => {
-    const selected = new Map(Array.from(dialog.querySelectorAll("select[name]"), (control) => [control.name, control.value]));
+    const selected = new Map(Array.from(dialog.querySelectorAll('select[name], input[name]:not([type="file"])'), (control) => [control.name, control.value]));
     if (handler?.(selected) !== false) dialog.close();
   });
   dialog.showModal();
 }
 
 function recordAttendance() {
-  openDialog("수동 출결 기록", `<label>학생<select name="student">${students.map(({ id, name }) => `<option value="${id}">${name}</option>`).join("")}</select></label>
+  const roster = roleStudents();
+  openDialog("수동 출결 기록", `<label>학생<select name="student">${roster.map(({ id, name }) => `<option value="${id}">${name}</option>`).join("")}</select></label>
     <label>기록 종류<select name="kind"><option value="in">등원</option><option value="late">지각 등원</option><option value="out">하원</option></select></label>
-    <label>알림 채널<select name="channel"><option>알림톡</option><option>문자</option></select></label>`, "기록 저장", (form) => {
+    <label>알림 채널<select name="channel">${["알림톡", "문자"].map((channel) =>
+      `<option${channel === state.settings.channel ? " selected" : ""}>${channel}</option>`).join("")}</select></label>`, "기록 저장", (form) => {
     const id = form.get("student");
     const kind = form.get("kind");
-    if (!student(id) || !["in", "late", "out"].includes(kind)) return false;
+    if (!roster.some((learner) => learner.id === id) || !["in", "late", "out"].includes(kind)) return false;
     const isCheckout = kind === "out";
     const current = latestEvent(id);
     if (isCheckout ? current?.kind !== "in" : current?.kind === "in") {
@@ -319,19 +612,165 @@ function recordAttendance() {
     state.attendance.push({ student: id, kind: isCheckout ? "out" : "in", late: kind === "late", time });
     state.notifications.unshift({ student: id, channel, topic: isCheckout ? "하원 안내" : kind === "late" ? "지각 등원 안내" : "등원 안내", time });
     saveState();
-    announce("출결과 가짜 발송 기록을 저장했습니다.");
+    announce("출결과 발송 예시를 기록했습니다.");
     return true;
   });
 }
 
+function releasePhotoPreview() {
+  if (!photoPreviewUrl) return;
+  URL.revokeObjectURL(photoPreviewUrl);
+  photoPreviewUrl = null;
+  dialog.querySelector("[data-photo-preview]")?.removeAttribute("src");
+}
+
 function submitHomework() {
+  let ready = false;
   openDialog("풀이 사진 제출", `<p>${assignment.detail}</p>
-    <label>샘플 첨부<select name="attachment"><option value="일차함수_풀이.jpg">일차함수_풀이.jpg · 합성 샘플</option><option value="풀이노트.pdf">풀이노트.pdf · 합성 샘플</option></select></label>
-    <p class="note">가상 첨부 이름을 이 브라우저에 기록합니다.</p>`, "제출하기", (form) => {
-    const selected = form.get("attachment") === "풀이노트.pdf" ? "풀이노트.pdf" : "일차함수_풀이.jpg";
-    state.submissions.jiwoo = { status: "submitted", attachment: selected, note: "" };
+    <div class="actions photo-actions">
+      <label class="secondary file-choice" for="worksheet-camera">사진 찍기
+        <input class="sr-only" id="worksheet-camera" type="file" accept="image/*" capture="environment">
+      </label>
+      <label class="secondary file-choice" for="worksheet-picker">사진 선택
+        <input class="sr-only" id="worksheet-picker" type="file" accept="image/*">
+      </label>
+    </div>
+    <img class="photo-preview" data-photo-preview alt="선택한 풀이 사진 미리보기" hidden>
+    <p class="note" data-photo-status role="status" aria-live="polite">사진은 이 창에서만 보이며, 닫으면 미리보기가 지워집니다.</p>`, "제출하기", () => {
+    if (!ready) return false;
+    state.submissions.jiwoo = { status: "submitted", attachment: "풀이 사진", note: "" };
     saveState();
-    announce("과제를 제출했습니다. 선생님 화면에서 확인할 수 있습니다.");
+    announce("제출 상태를 저장했습니다. 선생님 화면에서 확인할 수 있습니다.");
+  });
+  const preview = dialog.querySelector("[data-photo-preview]");
+  const status = dialog.querySelector("[data-photo-status]");
+  const submit = dialog.querySelector("[data-confirm]");
+  submit.disabled = true;
+  for (const input of dialog.querySelectorAll('input[type="file"]')) {
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      input.value = "";
+      if (!file) return;
+      releasePhotoPreview();
+      ready = false;
+      submit.disabled = true;
+      preview.hidden = true;
+      const isPhoto = /^image\/(?:jpeg|png|webp|gif|avif|heic|heif)$/i.test(file.type)
+        || ((!file.type || file.type === "application/octet-stream") && /\.(?:jpe?g|png|webp|gif|avif|heic|heif)$/i.test(file.name));
+      if (!isPhoto || file.size > 20 * 1024 * 1024) {
+        status.textContent = "20MB 이하의 사진을 선택해 주세요.";
+        return;
+      }
+      const url = URL.createObjectURL(file);
+      photoPreviewUrl = url;
+      preview.src = url;
+      status.textContent = "사진 미리보기를 여는 중입니다.";
+      try {
+        await preview.decode();
+      } catch {
+        if (photoPreviewUrl === url) {
+          releasePhotoPreview();
+          status.textContent = "이 기기에서 미리볼 수 없는 사진입니다. JPG 또는 PNG를 선택해 주세요.";
+        }
+        return;
+      }
+      if (photoPreviewUrl !== url || !dialog.open) return;
+      preview.hidden = false;
+      ready = true;
+      submit.disabled = false;
+      status.textContent = "사진 미리보기입니다. 제출 상태만 이 브라우저에 기록합니다.";
+    });
+  }
+}
+
+function requestLeave() {
+  const options = classes.filter(({ id, teacher, day }) => teacher === "이도현" && day !== "목"
+    && !state.leaves.some((entry) => entry.classId === id && entry.status !== "declined"));
+  if (!options.length) {
+    announce("신청 가능한 수업이 없습니다.");
+    return;
+  }
+  openDialog("휴가 신청", `<label>수업<select name="class">${options.map(({ id, dayNumber, group, time }) =>
+    `<option value="${id}">11월 ${dayNumber}일 · ${group} · ${time}</option>`).join("")}</select></label>
+    <label>사유<select name="reason"><option>개인 일정</option><option>병가</option><option>연수</option></select></label>`, "신청하기", (form) => {
+    const classId = form.get("class");
+    const reason = form.get("reason");
+    if (!options.some(({ id }) => id === classId) || !["개인 일정", "병가", "연수"].includes(reason)) return false;
+    state.leaves = state.leaves.filter((entry) => entry.classId !== classId);
+    state.leaves.push({ classId, reason, status: "pending", substitute: "" });
+    saveState();
+    announce("휴가 신청을 등록했습니다.");
+  });
+}
+
+function reviewLeave(id) {
+  const entry = state.leaves.find(({ classId, status }) => classId === id && status === "pending");
+  const lesson = classes.find((record) => record.id === id);
+  if (!entry || !lesson) return;
+  const available = teachers.filter(({ name }) => name !== lesson.teacher && !classes.some((candidate) =>
+    candidate.teacher === name && candidate.day === lesson.day && candidate.time === lesson.time));
+  openDialog("휴가 승인·대체 교사 배정", `<p>${lesson.teacher} 선생님 · 11월 ${lesson.dayNumber}일 · ${lesson.group}</p>
+    <p class="note">신청 사유 ${escapeHtml(entry.reason)}</p>
+    <label>대체 교사<select name="substitute">${available.map(({ name }) => `<option value="${name}">${name} 선생님</option>`).join("")}</select></label>`,
+  "승인·배정", (form) => {
+    const substitute = form.get("substitute");
+    if (!available.some(({ name }) => name === substitute)) return false;
+    entry.status = "approved";
+    entry.substitute = substitute;
+    selectedDay = lesson.day;
+    saveState();
+    announce(`휴가를 승인하고 ${substitute} 선생님을 배정했습니다.`);
+  });
+}
+
+function editScore(value) {
+  const [examId, learner] = value.split(":");
+  const exam = assessments.find(({ id }) => id === examId && id === selectedExam);
+  const result = state.grades[examId];
+  if (!exam || !result || result.published || !roleStudents().some(({ id }) => id === learner)) return;
+  const previous = result.scores[learner];
+  openDialog(`${studentName(learner)} 학생 점수`, `<p>${exam.title} · 만점 ${exam.maximum}점</p>
+    <label>응시 상태<select name="status"><option value="graded">응시</option><option value="absent"${previous === "absent" ? " selected" : ""}>결시</option></select></label>
+    <label>점수<input name="score" type="number" min="0" max="${exam.maximum}" step="0.01" inputmode="decimal" value="${Number.isFinite(previous) ? previous : ""}"></label>
+    <p class="note" data-score-status role="status"></p>`, "점수 저장", (form) => {
+    const status = form.get("status");
+    const value = form.get("score");
+    const score = Number(value);
+    if (status !== "absent" && (!value || !Number.isFinite(score) || score < 0 || score > exam.maximum || !/^\d+(?:\.\d{1,2})?$/.test(value))) {
+      dialog.querySelector("[data-score-status]").textContent = `0점부터 ${exam.maximum}점까지 입력하세요.`;
+      return false;
+    }
+    result.scores[learner] = status === "absent" ? "absent" : score;
+    saveState();
+    announce("점수를 저장했습니다.");
+  });
+}
+
+function publishScores(id) {
+  const exam = assessments.find((entry) => entry.id === id && id === selectedExam);
+  if (!exam) return;
+  const { result, entered, count } = gradeSummary(exam);
+  if (result.published || entered !== count) return;
+  openDialog("성적 공개", `<p>${exam.title}의 성적을 학생과 보호자에게 공개합니다.</p>`, "공개하기", () => {
+    result.published = true;
+    saveState();
+    announce("성적을 공개했습니다.");
+  });
+}
+
+function editSettings() {
+  openDialog("학원 설정 편집", `<label>지각 기준<select name="lateMinutes">${["0", "5", "10", "15"].map((minutes) =>
+    `<option value="${minutes}"${state.settings.lateMinutes === minutes ? " selected" : ""}>${minutes === "0" ? "수업 시작 시각" : `수업 시작 ${minutes}분 후`}</option>`).join("")}</select></label>
+    <label>출결 알림 채널<select name="channel">${["알림톡", "문자"].map((channel) =>
+      `<option${state.settings.channel === channel ? " selected" : ""}>${channel}</option>`).join("")}</select></label>
+    <label>등수 공개<select name="rank"><option value="off"${state.settings.rank ? "" : " selected"}>꺼짐</option>
+      <option value="on"${state.settings.rank ? " selected" : ""}>켜짐</option></select></label>`, "설정 저장", (form) => {
+    const lateMinutes = form.get("lateMinutes");
+    const channel = form.get("channel");
+    if (!["0", "5", "10", "15"].includes(lateMinutes) || !["알림톡", "문자"].includes(channel)) return false;
+    state.settings = { rank: form.get("rank") === "on", lateMinutes, channel };
+    saveState();
+    announce("학원 설정을 저장했습니다.");
   });
 }
 
@@ -358,7 +797,7 @@ function readNotice() {
 
 function watchVideo() {
   const progress = Number(state.progress.jiwoo) || 0;
-  openDialog(video.title, `<div class="media-preview"><strong>▷</strong><small>합성 영상 시청 체험</small></div><p>저장된 시청률 ${progress}%</p>
+  openDialog(video.title, `<div class="media-preview"><strong>▷</strong><small>예시 영상</small></div><p>저장된 시청률 ${progress}%</p>
     <p class="note">버튼을 누르면 25% 분량의 시청을 가정해 기록합니다. 90% 이상이면 완료됩니다.</p>`, "25% 시청하고 저장", () => {
     state.progress.jiwoo = Math.min(100, progress + 25);
     saveState();
@@ -370,15 +809,16 @@ function openMockQr() {
   const expiresAt = Date.now() + qrLifetimeSeconds * 1000;
   const kind = latestEvent("jiwoo")?.kind === "in" ? "out" : "in";
   const label = kind === "in" ? "등원" : "하원";
-  openDialog(`30초 모의 ${label} QR`, `<div class="mock-qr" aria-hidden="true"></div>
+  openDialog(`30초 ${label} QR 체험`, `<div class="mock-qr" aria-hidden="true"></div>
     <p>남은 시간 <strong data-qr-time>30초</strong></p>
-    <p class="note">카메라 없이 출결 기록을 체험합니다.</p>`, `모의 ${label} 처리`, () => {
+    <p class="note">카메라 없이 출결 기록을 체험합니다.</p>`, `${label} 체험하기`, () => {
     if (Date.now() >= expiresAt) return false;
     const time = sessionTime();
-    state.attendance.push({ student: "jiwoo", kind, late: false, time });
-    state.notifications.unshift({ student: "jiwoo", channel: "알림톡", topic: `${label} 안내`, time });
+    const late = kind === "in" && arrivalIsLate();
+    state.attendance.push({ student: "jiwoo", kind, late, time });
+    state.notifications.unshift({ student: "jiwoo", channel: state.settings.channel, topic: late ? "지각 등원 안내" : `${label} 안내`, time });
     saveState();
-    announce(`모의 ${label}과 알림톡 기록을 저장했습니다.`);
+    announce(`${label} 체험을 완료했습니다. 이 브라우저에 기록했습니다.`);
   });
   const timer = window.setInterval(() => {
     const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
@@ -411,9 +851,9 @@ function renderQr(canvas, payload) {
 
 function openTeacherQr() {
   openDialog("출석 QR", `<label>QR 종류<select name="kind"><option value="in">등원</option><option value="out">하원</option></select></label>
-    <canvas class="live-qr" role="img" aria-label="모의 등원 출석 QR"></canvas>
+    <canvas class="live-qr" role="img" aria-label="등원 출석 QR"></canvas>
     <p>다음 QR로 갱신까지 <strong data-qr-time>30초</strong></p>
-    <p class="note">휴대폰에서 같은 데모의 학생 화면을 열고 ‘카메라로 QR 찍기’를 눌러 주세요. 스캔 결과는 휴대폰에만 모의 기록으로 남습니다.</p>`);
+    <p class="note">휴대폰에서 같은 데모의 학생 화면을 열고 ‘카메라로 QR 찍기’를 눌러 주세요. 스캔 결과는 휴대폰 브라우저에만 남습니다.</p>`);
 
   const kind = dialog.querySelector('select[name="kind"]');
   const canvas = dialog.querySelector("canvas");
@@ -422,7 +862,7 @@ function openTeacherQr() {
   function issueQr() {
     expiresAt = Math.floor(Date.now() / 1000) + qrLifetimeSeconds;
     const nonce = Array.from(crypto.getRandomValues(new Uint32Array(2)), (value) => value.toString(16).padStart(8, "0")).join("");
-    canvas.setAttribute("aria-label", `모의 ${kind.value === "in" ? "등원" : "하원"} 출석 QR`);
+    canvas.setAttribute("aria-label", `${kind.value === "in" ? "등원" : "하원"} 출석 QR`);
     renderQr(canvas, `academy-demo-qr:v1:${demoVariant}:${kind.value}:${expiresAt}:${nonce}`);
   }
   function tick() {
@@ -458,11 +898,12 @@ function recordScannedQr(payload) {
   if (state.scannedQr.includes(nonce)) return { message: "이 QR은 이미 이 브라우저에서 처리했습니다.", done: true };
   const label = kind === "in" ? "등원" : "하원";
   const time = sessionTime();
+  const late = kind === "in" && arrivalIsLate();
   state.scannedQr = [...state.scannedQr.slice(-49), nonce];
-  state.attendance.push({ student: "jiwoo", kind, late: false, time });
-  state.notifications.unshift({ student: "jiwoo", channel: "알림톡", topic: `${label} 안내`, time });
+  state.attendance.push({ student: "jiwoo", kind, late, time });
+  state.notifications.unshift({ student: "jiwoo", channel: state.settings.channel, topic: late ? "지각 등원 안내" : `${label} 안내`, time });
   saveState();
-  return { message: `모의 ${label} 처리했습니다. 이 브라우저에만 기록했습니다.`, done: true };
+  return { message: `${label} 체험을 완료했습니다. 이 브라우저에 기록했습니다.`, done: true };
 }
 
 async function openCameraQr() {
@@ -515,12 +956,15 @@ async function openCameraQr() {
   } catch {
     if (cameraSession !== session) return;
     stopCamera();
-    status.textContent = "카메라를 열지 못했습니다. 브라우저의 카메라 권한을 확인하거나 모의 QR 열기를 이용해 주세요.";
+    status.textContent = "카메라를 열지 못했습니다. 브라우저의 카메라 권한을 확인하거나 출결 체험하기를 이용해 주세요.";
   }
 }
 
 dialog.addEventListener("close", stopCamera);
+dialog.addEventListener("close", releasePhotoPreview);
 window.addEventListener("pagehide", stopCamera);
+window.addEventListener("pagehide", releasePhotoPreview);
+window.addEventListener("resize", paintScoreCharts);
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && cameraSession?.stream) dialog.close();
 });
@@ -533,14 +977,24 @@ document.addEventListener("click", (event) => {
     activeScreen = id;
     render();
     content.focus();
-  } else if (action === "record-attendance") recordAttendance();
-  else if (action === "submit-homework") submitHomework();
+  } else if (action === "schedule-day" && scheduleDays.includes(id)) {
+    selectedDay = id;
+    render();
+    content.querySelector('.day-button[aria-pressed="true"]')?.focus();
+  } else if (action === "record-attendance" && ["owner", "teacher"].includes(role)) recordAttendance();
+  else if (action === "submit-homework" && role === "student") submitHomework();
+  else if (action === "website-notice") openDialog(notice.title, `<p>${escapeHtml(notice.detail)}</p>`);
+  else if (action === "request-leave" && role === "teacher") requestLeave();
+  else if (action === "review-leave" && role === "owner") reviewLeave(id);
+  else if (action === "edit-score" && role === "teacher") editScore(id);
+  else if (action === "publish-scores" && role === "teacher") publishScores(id);
+  else if (action === "edit-settings" && role === "owner") editSettings();
   else if (action === "review") reviewSubmission(id);
   else if (action === "open-notice") readNotice();
   else if (action === "watch-video") watchVideo();
   else if (action === "teacher-qr" && (role === "teacher" || role === "owner")) openTeacherQr();
   else if (action === "camera-qr" && role === "student") void openCameraQr();
-  else if (action === "mock-qr") openMockQr();
+  else if (action === "mock-qr" && role === "student") openMockQr();
   else if (action === "close-dialog") dialog.close();
   else if (action === "child" && ["jiwoo", "minjun"].includes(id)) {
     child = id;
@@ -555,6 +1009,14 @@ document.addEventListener("click", (event) => {
   }
 });
 
+content.addEventListener("change", (event) => {
+  const field = event.target;
+  if (field.id !== "grade-assessment") return;
+  selectedExam = field.value;
+  render();
+  content.querySelector("#grade-assessment")?.focus();
+});
+
 roleSelect.addEventListener("change", () => {
   role = roleSelect.value;
   activeScreen = "home";
@@ -562,9 +1024,11 @@ roleSelect.addEventListener("change", () => {
 });
 
 document.getElementById("reset").addEventListener("click", () => {
-  openDialog("데모 초기화", "<p>이 브라우저의 합성 변경사항을 지우고 시작 상태로 돌아갑니다.</p>", "초기화", () => {
+  openDialog("데모 초기화", "<p>이 브라우저의 변경 사항을 지우고 시작 상태로 돌아갑니다.</p>", "초기화", () => {
     state = freshState();
     child = "jiwoo";
+    selectedDay = "목";
+    selectedExam = "linear-fourth";
     saveState();
     announce("데모 데이터를 초기화했습니다.");
   }, true);

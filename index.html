@@ -5,28 +5,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <meta name="color-scheme" content="light">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self'; media-src 'self' blob:; connect-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' blob:; media-src 'self' blob:; connect-src 'none'; object-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="referrer" content="no-referrer">
-  <meta name="description" content="합성 데이터로 체험하는 학원 운영 플랫폼 데모">
-  <title>온새미 수학학원 · 가상 운영 데모</title>
+  <meta name="description" content="온새미 수학학원 운영 화면 체험">
+  <title>온새미 수학학원 · 운영 체험</title>
   <link rel="stylesheet" href="style.css">
   <script src="assets/qr-vendor.js" defer></script>
   <script src="demo.js" defer></script>
 </head>
 <body data-demo="generic">
   <a class="skip" href="#content">본문으로 이동</a>
+  <div class="proposal-banner general-banner">가상 학원 운영 체험</div>
   <div class="shell">
     <aside class="rail" aria-label="학원 메뉴">
       <div class="brand">
         <span class="monogram" aria-hidden="true">온</span>
-        <div><strong>온새미</strong><span>학원 운영 데모</span></div>
+        <div><strong>온새미</strong><span>수학학원</span></div>
       </div>
       <nav class="navigation" id="navigation" aria-label="화면 선택"></nav>
-      <div class="rail-foot"><span class="demo-dot" aria-hidden="true"></span>합성 데이터 체험</div>
     </aside>
     <div class="workspace">
       <header class="topbar">
-        <div class="school"><strong>온새미 수학학원</strong><span>가상 학원</span></div>
+        <div class="school"><strong>온새미 수학학원</strong></div>
         <div class="top-actions">
           <label for="role" class="sr-only">체험 역할</label>
           <select id="role">
@@ -39,7 +39,7 @@
         </div>
       </header>
       <main id="content" tabindex="-1"></main>
-      <footer>학원과 학생 이름, 수업과 출석 기록은 모두 가상입니다. 변경사항은 이 브라우저에만 저장됩니다.</footer>
+      <footer>변경 사항은 이 브라우저에만 저장됩니다.</footer>
     </div>
   </div>
   <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
