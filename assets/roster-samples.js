@@ -4,31 +4,50 @@ const DemoRoster = { samples: [
     "id": "valid",
     "name": "demo-roster-valid.xlsx",
     "path": "assets/demo-roster-valid.xlsx",
-    "hash": "ba9ae51b3b9b7da49369a73c969653096b671d0d5b6a626629a1eb245094a424",
+    "hash": "da3c79e147cf342d706de46bf5563196ccc6870de3887f28de4f2f896afc7017",
     "downloadLabel": "정상 예시 받기",
     "previewLabel": "정상 예시 바로 체험",
     "rows": [
       {
         "key": "demo-learner-01",
+        "name": "이새봄",
+        "grade": "중2",
+        "classes": [
+          "중2 심화반"
+        ],
         "age": "만 14세 미만",
         "consent": "확인 완료",
-        "guardian": "guardian-demo1@example.com",
+        "phone": "010-0000-0001",
+        "email": "guardian-demo1@example.com",
         "line": 2,
         "guardianLine": 2
       },
       {
         "key": "demo-learner-02",
+        "name": "이한결",
+        "grade": "중1",
+        "classes": [
+          "중1 개념반"
+        ],
         "age": "만 14세 미만",
         "consent": "미확인",
-        "guardian": "guardian-demo1@example.com",
+        "phone": "010-0000-0001",
+        "email": "guardian-demo1@example.com",
         "line": 3,
         "guardianLine": 3
       },
       {
         "key": "demo-learner-03",
+        "name": "최누리",
+        "grade": "고1",
+        "classes": [
+          "고1 내신반"
+        ],
         "age": "만 14세 이상",
         "consent": "해당 없음",
-        "line": 4
+        "phone": "010-0000-0002",
+        "line": 4,
+        "guardianLine": 4
       }
     ]
   },
@@ -36,35 +55,50 @@ const DemoRoster = { samples: [
     "id": "errors",
     "name": "demo-roster-errors.xlsx",
     "path": "assets/demo-roster-errors.xlsx",
-    "hash": "62a4602cd4222748f4caa9f9e69ac9e3cc88725a2290c447b2481f9efcacf1f3",
+    "hash": "049f4e9d4a0b8686956583a1ff707eb374ae2b4557b9c98330c5e881818b00d3",
     "downloadLabel": "오류 예시 받기",
     "previewLabel": "오류 예시 바로 체험",
     "rows": [
       {
         "key": "demo-learner-01",
+        "name": "이새봄",
+        "grade": "중2",
+        "classes": [
+          "중2 심화반"
+        ],
         "age": "만 14세 미만",
         "consent": "확인 완료",
-        "guardian": "guardian-demo1@example.com",
+        "phone": "010-0000-0001",
+        "email": "guardian-demo1@example.com",
         "line": 2,
         "guardianLine": 2
       },
       {
         "key": "demo-learner-04",
+        "name": "윤하늘",
+        "grade": "중2",
+        "classes": [
+          "중2 응용반"
+        ],
         "age": "만 14세 미만",
-        "consent": "확인 완료",
+        "consent": "미확인",
         "errors": [
-          "학생 명부 3행 · 동의 확인일, 동의서 버전, 보관 참조번호가 필요합니다."
+          "학생 명부 3행 · ‘중2 응용반’ 반을 찾을 수 없습니다."
         ],
         "line": 3
       },
       {
         "key": "demo-learner-05",
+        "name": "정이든",
+        "grade": "고1",
+        "classes": [
+          "고1 내신반"
+        ],
         "age": "만 14세 이상",
         "consent": "해당 없음",
-        "guardian": "guardian-demo2",
+        "email": "guardian-demo2@example.com",
         "errors": [
-          "보호자 연결 3행 · 이메일 형식을 확인하세요.",
-          "보호자 연결 3행 · 연결을 확인한 뒤 ‘확인 완료’를 입력하세요."
+          "보호자 연결 3행 · 보호자 휴대폰 번호를 입력하세요."
         ],
         "line": 4,
         "guardianLine": 3

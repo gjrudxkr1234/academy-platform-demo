@@ -1,7 +1,8 @@
 "use strict";
 
 const demoVariant = document.body.dataset.demo === "bomnal" ? "bomnal" : "generic";
-const demoRoot = new URL(".", document.currentScript.src);
+const demoScriptUrl = new URL(document.currentScript.src);
+const demoRoot = new URL(".", demoScriptUrl);
 const storageKey = `academy-operations-demo-v2-${demoVariant}`;
 const qrLifetimeSeconds = 30;
 const qrClockSkewSeconds = 2;
@@ -110,6 +111,7 @@ function freshState() {
     },
     settings: { rank: false, lateMinutes: "0", channel: "알림톡" },
     importedRosterRows: [],
+    sentRosterInvites: [],
     clock: 17 * 60 + 10,
   };
 }
@@ -119,7 +121,11 @@ function readState() {
     const saved = JSON.parse(localStorage.getItem(storageKey));
     if (saved && Array.isArray(saved.attendance) && Array.isArray(saved.notices) && Array.isArray(saved.reminders) && Array.isArray(saved.scannedQr)
       && Array.isArray(saved.notifications) && saved.submissions && saved.progress && Number.isInteger(saved.clock)) {
-      return { ...freshState(), ...saved, importedRosterRows: Array.isArray(saved.importedRosterRows) ? saved.importedRosterRows : [] };
+      return {
+        ...freshState(), ...saved,
+        importedRosterRows: Array.isArray(saved.importedRosterRows) ? saved.importedRosterRows : [],
+        sentRosterInvites: Array.isArray(saved.sentRosterInvites) ? saved.sentRosterInvites : [],
+      };
     }
   } catch {
     return freshState();
@@ -550,9 +556,11 @@ function rosterRow(row, mode) {
   const status = mode === "saved" ? badge("반영 완료", "green") : hasErrors ? badge("수정 필요", "red")
     : state.importedRosterRows.includes(row.key) ? badge("이미 등록됨") : badge("등록 가능", "green");
   const source = `학생 명부 ${row.line}행${row.guardianLine ? ` · 보호자 연결 ${row.guardianLine}행` : ""}`;
-  return `<li class="roster-row"><div class="roster-row-heading"><div><strong>${escapeHtml(row.key)}</strong>
+  return `<li class="roster-row"><div class="roster-row-heading"><div><strong>${escapeHtml(row.name)}</strong>
+    <p class="roster-class">${escapeHtml([row.grade, ...row.classes].join(" · "))}</p>
     ${mode === "preview" ? `<p class="note">${escapeHtml(source)}</p>` : ""}</div>${status}</div>
-    <dl><div><dt>초대용 보호자 이메일</dt><dd>${escapeHtml(row.guardian || "—")}</dd></div>
+    <dl><div><dt>보호자 휴대폰 번호</dt><dd>${escapeHtml(row.phone || "—")}${mode === "saved" && row.phone && state.sentRosterInvites.includes(row.key) ? ` ${badge("모의 발송 완료", "green")}` : ""}</dd></div>
+    ${row.email ? `<div><dt>초대용 보호자 이메일</dt><dd>${escapeHtml(row.email)}</dd></div>` : ""}
     <div><dt>연령 및 법정대리인 동의</dt><dd>${escapeHtml(`${row.age} · ${row.consent}`)}</dd></div></dl>
     ${hasErrors ? `<ul class="roster-errors">${row.errors.map((message) => `<li>${escapeHtml(message)}</li>`).join("")}</ul>` : ""}</li>`;
 }
@@ -569,7 +577,7 @@ function rosterPreviewBody() {
   const existing = rows.filter((row) => !row.errors?.length && state.importedRosterRows.includes(row.key)).length;
   const ready = rows.length - invalid - existing;
   const message = rosterPreview.message || (invalid ? "오류가 표시된 행을 확인한 뒤 정상 예시로 반영을 체험하세요."
-    : ready ? "학생과 보호자 연결, 동의 상태를 확인한 뒤 명부에 반영하세요." : "모든 행이 이미 등록되어 있습니다.");
+    : ready ? "학생 이름, 학년, 반과 보호자 연락처를 확인한 뒤 등록하세요." : "모든 행이 이미 등록되어 있습니다.");
   return `<section class="roster-preview" aria-labelledby="roster-preview-title"><div class="roster-row-heading">
     <h3 id="roster-preview-title" tabindex="-1">업로드 미리보기</h3><p class="note">${escapeHtml(rosterPreview.sample.name)}</p></div>
     <div class="actions">${badge(`등록 가능 ${ready}명`, "green")}${badge(`오류 ${invalid}명`, invalid ? "red" : "neutral")}${badge(`이미 등록 ${existing}명`)}</div>
@@ -577,17 +585,25 @@ function rosterPreviewBody() {
     ${button("확인 후 등록", "apply-roster", { variant: "primary", disabled: !ready || Boolean(invalid) })}</section>`;
 }
 
+function registeredRoster() {
+  return DemoRoster.samples[0].rows.filter((row) => state.importedRosterRows.includes(row.key));
+}
+
 function ownerRoster() {
   const { samples } = DemoRoster;
-  const registered = samples[0].rows.filter((row) => state.importedRosterRows.includes(row.key));
-  return header("학생·보호자 명부", "엑셀로 학생을 등록하고 보호자 연결과 동의 상태를 함께 확인하세요.")
+  const registered = registeredRoster();
+  const pending = registered.some((row) => row.phone && !state.sentRosterInvites.includes(row.key));
+  return header("학생·보호자 명부", "엑셀로 학생을 반에 배정하고 보호자 연락처와 동의 상태를 함께 등록하세요.")
     + panel("엑셀로 한 번에 등록", `<p class="note">아래 두 가상 명부 원본으로 체험할 수 있습니다. 보호자는 초대를 수락한 뒤 자녀 포털에 접근합니다.</p>
       <div class="actions roster-files"><label class="primary file-choice" for="roster-file">엑셀 파일 선택
         <input class="sr-only" id="roster-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
-        ${samples.map((sample) => `<a class="secondary roster-download" href="${escapeHtml(new URL(sample.path, demoRoot).href)}" download="${escapeHtml(sample.name)}">${escapeHtml(sample.downloadLabel)}</a>`).join("")}
+        ${samples.map((sample) => `<a class="secondary roster-download" href="${escapeHtml(new URL(`${sample.path}${demoScriptUrl.search}`, demoRoot).href)}" download="${escapeHtml(sample.name)}">${escapeHtml(sample.downloadLabel)}</a>`).join("")}
       </div><div class="actions roster-examples">${samples.map((sample) => button(sample.previewLabel, "preview-roster", { id: sample.id, variant: "text-button" })).join("")}</div>
       ${rosterPreviewBody()}`)
-    + panel("이번 체험에서 등록한 명부", registered.length ? rosterRows(registered, "saved") : '<p class="note">등록하면 학생과 보호자 초대 대기 항목이 여기에 표시됩니다.</p>', badge(`${registered.length}명`), "stack");
+    + panel("이번 체험에서 등록한 명부", registered.length ? rosterRows(registered, "saved")
+      + `<div class="actions roster-invite-actions">${button("보호자 초대 모의 발송", "send-roster-invites", { variant: "primary", disabled: !pending })}
+        ${button("초대 안내문 일괄 출력", "print-roster-invites")}</div>`
+      : '<p class="note">등록하면 학생과 보호자 초대 대기 항목이 여기에 표시됩니다.</p>', badge(`${registered.length}명`), "stack");
 }
 
 function showRosterPreview(sample, message = "") {
@@ -625,6 +641,49 @@ function applyRosterPreview() {
   saveState();
   content.querySelector("#roster-preview-title")?.focus();
   announce(rosterPreview.message);
+}
+
+function sendRosterInvites() {
+  const pending = registeredRoster().filter((row) => row.phone && !state.sentRosterInvites.includes(row.key));
+  if (!pending.length) return;
+  openDialog("보호자 초대 모의 발송", `<p>등록된 보호자 휴대폰 번호로 초대 ${pending.length}건을 발송하는 흐름입니다.</p>
+    <p class="note">가상 번호만 사용하며 발송 결과를 이 브라우저에 기록합니다.</p>`, "모의 발송", () => {
+    state.sentRosterInvites.push(...pending.map((row) => row.key));
+    saveState();
+    announce(`보호자 초대 ${pending.length}건의 모의 발송을 완료했습니다.`);
+  });
+}
+
+function demoInviteCode(row, kind) {
+  return `DEMO-${kind === "student" ? "S" : "G"}-${row.key.slice(-2)}`;
+}
+
+function printRosterInvites() {
+  const rows = registeredRoster();
+  if (!rows.length) return;
+  const slips = rows.flatMap((row) => row.phone ? [{ row, kind: "student" }, { row, kind: "guardian" }] : [{ row, kind: "student" }]);
+  openDialog("초대 안내문 일괄 출력", `<p class="note">가상 학생·보호자에게 개별 전달할 양식입니다. 초대 기본 유효기간은 발급일부터 7일입니다.</p>
+    <div class="roster-slips">${slips.map(({ row, kind }) => {
+      const label = kind === "student" ? "학생" : "보호자";
+      return `<article class="roster-slip"><div><h3>${escapeHtml(row.name)} · ${label}용</h3>
+        <p>${escapeHtml([row.grade, ...row.classes].join(" · "))}</p><p>초대 코드 <strong>${demoInviteCode(row, kind)}</strong></p>
+        <p class="note">시연용 · 가상 계정</p></div><canvas role="img" aria-label="${label}용 초대 QR"></canvas></article>`;
+    }).join("")}</div>`, "인쇄", () => { window.print(); return false; });
+  dialog.dataset.rosterPrint = "true";
+  dialog.addEventListener("close", () => { delete dialog.dataset.rosterPrint; }, { once: true });
+  for (const [index, canvas] of Array.from(dialog.querySelectorAll("canvas")).entries()) {
+    const { row, kind } = slips[index];
+    const url = new URL(demoVariant === "bomnal" ? "bomnal/" : "./", demoRoot);
+    url.hash = new URLSearchParams({ invite: demoInviteCode(row, kind) });
+    renderQr(canvas, url.href);
+  }
+}
+
+function showDemoInvite() {
+  const code = new URLSearchParams(window.location.hash.slice(1)).get("invite");
+  if (!code || !/^DEMO-[SG]-0[1-3]$/.test(code) || dialog.open) return;
+  openDialog("초대 QR 체험", `<p>가상 안내문의 초대 코드 <strong>${escapeHtml(code)}</strong>를 확인했습니다.</p>
+    <p class="note">시연에서는 초대 QR로 안내 화면이 열리는 흐름을 보여드립니다.</p>`);
 }
 
 function studentHome() {
@@ -1128,6 +1187,8 @@ document.addEventListener("click", (event) => {
       showRosterPreview(sample);
     }
   } else if (action === "apply-roster" && role === "owner" && activeScreen === "roster") applyRosterPreview();
+  else if (action === "send-roster-invites" && role === "owner" && activeScreen === "roster") sendRosterInvites();
+  else if (action === "print-roster-invites" && role === "owner" && activeScreen === "roster") printRosterInvites();
   else if (action === "review") reviewSubmission(id);
   else if (action === "open-notice") readNotice();
   else if (action === "watch-video") watchVideo();
@@ -1205,3 +1266,5 @@ if (window.isSecureContext && "serviceWorker" in navigator && /^https?:$/.test(d
 }
 
 render();
+showDemoInvite();
+window.addEventListener("hashchange", showDemoInvite);
