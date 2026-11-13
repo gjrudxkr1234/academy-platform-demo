@@ -692,7 +692,7 @@ function studentHome() {
   const reminders = state.reminders.filter((entry) => entry.student === "jiwoo");
   const alerts = reminders.length ? panel("학습 알림", list(reminders.map((entry) => item(entry.topic, `선생님 · ${entry.time}`))), "", "stack") : "";
   return `<section class="hero"><div><h1>지우 학생의 오늘 할 일</h1><p>중2 심화반 · 마감과 시청 진도를 한눈에 확인하세요.</p></div>
-    <div class="actions">${button("카메라로 QR 찍기", "camera-qr", { variant: "primary" })}${button("출결 체험하기", "mock-qr")}</div></section>
+    <div class="actions">${button("카메라로 QR 찍기", "camera-qr", { variant: "primary" })}${button("출결 체험하기", "mock-qr")}${button("내 학교 일정", "navigate", { id: "school-schedule" })}</div></section>
     <div class="columns"><div>${panel("오늘 할 일", list(taskRows("jiwoo", true)))}${alerts}</div>${videoCard("jiwoo", true)}</div>`;
 }
 

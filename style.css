@@ -242,9 +242,9 @@ dialog input[type="number"] { width: 100%; padding: 8px 11px; color: var(--ink);
 .school-event-footer .actions button { min-height: 36px; }
 .school-checklist { display: flex; flex-wrap: wrap; gap: 4px 12px; min-width: 0; padding: 0; border: 0; margin: 7px 0 0; }
 .school-checklist legend { padding: 0; color: var(--muted); font-size: 12px; }
-.school-checklist label, .school-summary-toggle, dialog .school-evidence-control { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; cursor: pointer; }
-.school-checklist input, .school-summary-toggle input, .school-evidence-control input { width: 16px; height: 16px; margin: 0; accent-color: var(--purple); }
-.school-summary-toggle { margin-bottom: 6px; font-weight: 700; }
+.school-checklist label, .school-summary-toggle { display: inline-flex; align-items: center; gap: 7px; min-height: 36px; cursor: pointer; }
+.school-checklist input, .school-summary-toggle input { width: 16px; height: 16px; margin: 0; accent-color: var(--purple); }
+.school-summary-toggle { font-weight: 700; }
+.school-summary-settings { margin-bottom: 8px; }
 .school-date-input { width: 100%; min-width: 0; min-height: 40px; padding: 7px 10px; color: var(--ink); border: 1px solid #dbdeec; border-radius: 8px; }
 .school-demo-error { color: #9b3050; font-weight: 700; }
-.school-evidence-paper { display: grid; gap: 8px; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: #f7f7fc; }
