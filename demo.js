@@ -50,13 +50,14 @@ const assessments = [
   { id: "middle-one-third", title: "방정식 단원 평가", date: "11.06", group: "중1 개념반", maximum: 100 },
 ];
 
-const symbols = { home: "◈", website: "⌂", schedule: "▦", attendance: "▤", learning: "◇", grades: "▥", video: "▷", notifications: "◌", roster: "▧", settings: "⚙" };
+const symbols = { home: "◈", website: "⌂", schedule: "▦", attendance: "▤", learning: "◇", grades: "▥", video: "▷", notifications: "◌", roster: "▧", settings: "⚙", "school-schedule": "▣" };
 const menus = {
   owner: [["home", "운영 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 리포트"], ["notifications", "발송 기록"], ["roster", "학생·보호자"], ["settings", "학원 설정"]],
   teacher: [["home", "수업 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 입력"], ["video", "영상 현황"], ["notifications", "발송 기록"]],
   student: [["home", "오늘 할 일"], ["website", "학원 홈페이지"], ["schedule", "일정"], ["learning", "과제·공지"], ["video", "학습 영상"], ["grades", "내 성적"]],
   parent: [["home", "자녀 현황"], ["website", "학원 홈페이지"], ["schedule", "일정"], ["attendance", "출결 기록"], ["learning", "과제·공지"], ["grades", "성적 추이"], ["notifications", "받은 알림"]],
 };
+for (const menu of Object.values(menus)) menu.splice(3, 0, ["school-schedule", "내신 일정"]);
 
 const content = document.getElementById("content");
 const navigation = document.getElementById("navigation");
@@ -65,7 +66,7 @@ const dialog = document.getElementById("dialog");
 const feedback = document.getElementById("feedback");
 const installButton = document.getElementById("install-demo");
 let role = "owner";
-let activeScreen = "website";
+let activeScreen = window.location.hash === "#school-schedule" ? "school-schedule" : "website";
 let child = "jiwoo";
 let toastTimer;
 let cameraSession = null;
@@ -357,6 +358,7 @@ function academyWebsite() {
   return `<section class="academy-hero"><div><p class="academy-eyebrow">초등 고학년 · 중등 · 고등 수학</p>
       <h1>${escapeHtml(profile.name)}</h1><p>${escapeHtml(profile.intro)}</p>
       <div class="actions">${button("운영 화면 보기", "navigate", { id: "home", variant: "primary" })}
+        ${button("내신 일정 체험", "navigate", { id: "school-schedule" })}
         <button class="secondary" type="button" disabled>상담 신청 비활성화</button></div>
     </div><div class="academy-card"><h2>학원 안내</h2>${contact}</div></section>
     <div class="website-sections">
@@ -731,6 +733,7 @@ function render() {
   navigation.innerHTML = menus[role].map(([screen, label]) => `<button class="nav-button" type="button" data-action="navigate" data-id="${screen}"${screen === activeScreen ? ' aria-current="page"' : ""}><span aria-hidden="true">${symbols[screen]}</span>${label}</button>`).join("");
   if (activeScreen === "website") content.innerHTML = academyWebsite();
   else if (activeScreen === "schedule") content.innerHTML = calendarView();
+  else if (activeScreen === "school-schedule") content.innerHTML = DemoSchoolAssessments.view();
   else if (role === "parent") content.innerHTML = parentView(activeScreen);
   else if (role === "student") {
     const screens = { home: studentHome, learning: () => learnerWork("jiwoo", true), grades: () => learnerGrades("jiwoo", "내 성적"),
@@ -1172,7 +1175,8 @@ document.addEventListener("click", (event) => {
     selectedDay = id;
     render();
     content.querySelector('.day-button[aria-pressed="true"]')?.focus();
-  } else if (action === "record-attendance" && ["owner", "teacher"].includes(role)) recordAttendance();
+  } else if (activeScreen === "school-schedule" && action.startsWith("school-demo-")) DemoSchoolAssessments.handle(action, id);
+  else if (action === "record-attendance" && ["owner", "teacher"].includes(role)) recordAttendance();
   else if (action === "submit-homework" && role === "student") submitHomework();
   else if (action === "website-notice") openDialog(notice.title, `<p>${escapeHtml(notice.detail)}</p>`);
   else if (action === "request-leave" && role === "teacher") requestLeave();
@@ -1227,7 +1231,7 @@ roleSelect.addEventListener("change", () => {
   rosterUploadId++;
   rosterPreview = null;
   role = roleSelect.value;
-  activeScreen = "home";
+  if (activeScreen !== "school-schedule") activeScreen = "home";
   render();
 });
 
@@ -1239,6 +1243,7 @@ document.getElementById("reset").addEventListener("click", () => {
     child = "jiwoo";
     selectedDay = "목";
     selectedExam = "linear-fourth";
+    DemoSchoolAssessments.reset();
     saveState();
     announce("데모 데이터를 초기화했습니다.");
   }, true);
