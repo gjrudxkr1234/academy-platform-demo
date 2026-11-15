@@ -1,5 +1,5 @@
 "use strict";
-const VERSION = "a5a77b42da392e5b";
+const VERSION = "64637e267494ceeb";
 const FILES = ["icons/owner-180.png", "icons/owner-192.png", "icons/owner-512.png", "icons/parent-180.png", "icons/parent-192.png", "icons/parent-512.png", "icons/student-180.png", "icons/student-192.png", "icons/student-512.png", "icons/teacher-180.png", "icons/teacher-192.png", "icons/teacher-512.png", "index.html", "owner/index.html", "owner/manifest.webmanifest", "owner/role.js", "parent/index.html", "parent/manifest.webmanifest", "parent/role.js", "pwa.css", "pwa.js", "shared/assets/demo-icon-192.png", "shared/assets/demo-icon-512.png", "shared/assets/demo-roster-errors.xlsx", "shared/assets/demo-roster-valid.xlsx", "shared/assets/licenses.txt", "shared/assets/qr-vendor.js", "shared/assets/roster-samples.js", "shared/assets/school-assessments.js", "shared/demo.js", "shared/role-ui.css", "shared/role-ui.js", "shared/style.css", "student/index.html", "student/manifest.webmanifest", "student/role.js", "teacher/index.html", "teacher/manifest.webmanifest", "teacher/role.js", "asset-manifest.json", "./", "owner/", "teacher/", "student/", "parent/"];
 const ROOT = new URL(".", self.location.href);
 const PREFIX = `academy-iphone-demo:${ROOT.pathname}:`;
