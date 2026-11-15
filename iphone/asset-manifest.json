@@ -1,7 +1,7 @@
 {
   "synthetic_only": true,
   "network_required_after_preparation": false,
-  "version": "a5a77b42da392e5b",
+  "version": "64637e267494ceeb",
   "assets": [
     {
       "path": "icons/owner-180.png",
@@ -75,8 +75,8 @@
     },
     {
       "path": "owner/manifest.webmanifest",
-      "bytes": 590,
-      "sha256": "f5aaee3f3777035f6a2042f208318b5d36cc74a71e63b52b6d9af4e89ab672a8"
+      "bytes": 624,
+      "sha256": "1aad823679cf01db579adec3e35c299c06d77a615da2842b414947c0ebc5ae0b"
     },
     {
       "path": "owner/role.js",
@@ -90,8 +90,8 @@
     },
     {
       "path": "parent/manifest.webmanifest",
-      "bytes": 598,
-      "sha256": "11375e88606b0a5bb92537d15aa8017b0958be4b775fdb5f6c4952b403b22eec"
+      "bytes": 633,
+      "sha256": "e5ff39b87c3c15b9e5c1eaa5f3a753f388d066392c5fc8f956bf9521a77e262b"
     },
     {
       "path": "parent/role.js",
@@ -175,8 +175,8 @@
     },
     {
       "path": "student/manifest.webmanifest",
-      "bytes": 594,
-      "sha256": "ca27ac5175329969c6ee28da682c9739f6a30c37e0e8e2f724dd907a9748fc85"
+      "bytes": 630,
+      "sha256": "7a5e738c5b233ee2e552bf66059eeaf23a56b0926830dadb992e7a3e827a5c3a"
     },
     {
       "path": "student/role.js",
@@ -190,8 +190,8 @@
     },
     {
       "path": "teacher/manifest.webmanifest",
-      "bytes": 600,
-      "sha256": "7cbf5c5dfdd0177e22adbcd80609d23761b194ed22135ce6817ac0896853eeee"
+      "bytes": 636,
+      "sha256": "45ff1f3ed22df1f8d68dd6ff9d7966e079b3a0ddb2c00e04481ef759daf69ffb"
     },
     {
       "path": "teacher/role.js",
