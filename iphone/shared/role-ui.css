@@ -1,0 +1,49 @@
+.role-app-ui { --ink:#171717; --muted:#475569; --purple:#1e40af; --purple-dark:#1e3a8a; --line:#cbd5e1; --role-accent:#1e40af; color:#171717; background:#f8fafc; }
+.role-app-ui[data-app-role="teacher"] { --role-accent:#0f766e; }
+.role-app-ui[data-app-role="student"] { --role-accent:#6d28d9; }
+.role-app-ui[data-app-role="parent"] { --role-accent:#9d174d; }
+.role-app-ui .shell { display:block; }
+.role-app-ui .rail { display:none; }
+.role-app-ui .proposal-banner { position:static; font-size:12px; background:#334155; padding:6px 16px; }
+.role-app-ui #content { max-width:960px; padding-bottom:110px; }
+.role-app-ui :is(button,select,input:not([type="checkbox"]):not([type="radio"]),summary,.file-choice) { min-height:48px; }
+.role-app-ui :is(button,select,summary) { min-width:48px; }
+.role-app-ui label:has(input:is([type="checkbox"],[type="radio"])) { min-height:48px; display:flex; align-items:center; gap:8px; }
+.role-app-ui .primary { min-height:56px; padding:14px 22px; font-size:16px; font-weight:750; border-radius:12px; background:#1e40af; color:#fff; }
+.role-app-ui .primary:hover { background:#1e3a8a; }
+.role-app-ui .secondary { background:#fff; color:#171717; border-color:#737373; padding:12px 16px; border-radius:12px; }
+.role-app-ui :is(.text-button,.ghost) { color:#334155; background:transparent; }
+.role-app-ui .subtitle,.role-app-ui .note { font-size:14px; line-height:1.65; }
+.role-app-ui .page-title { font-size:28px; line-height:1.25; }
+.role-app-ui .panel h2 { font-size:20px; }
+.role-app-ui .toast { bottom:92px; }
+.role-app-ui .topbar { padding:12px 20px; }
+.role-app-ui .top-actions #role { display:none; }
+.role-app-ui .demo-role-heading { margin-bottom:28px; }
+.role-app-ui .demo-role-eyebrow { font-size:14px; font-weight:750; color:var(--role-accent); }
+.role-app-ui .demo-role-heading h1 { margin-top:12px; font-size:clamp(28px,5vw,40px); font-weight:800; line-height:1.25; letter-spacing:-.045em; }
+.role-app-ui .demo-role-heading > p:last-child { margin-top:12px; font-size:16px; line-height:1.65; color:#475569; }
+.demo-role-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.demo-role-card { display:flex; min-height:148px; flex-direction:column; align-items:flex-start; padding:20px 16px; text-align:left; border:1px solid #cbd5e1; border-radius:16px; background:#fff; color:#171717; }
+.demo-role-card:hover { border-color:var(--role-accent); }
+.demo-role-icon { margin-bottom:12px; color:var(--role-accent); }
+.demo-role-card strong { font-size:17px; line-height:1.4; }
+.demo-role-card small { margin-top:8px; font-size:13px; line-height:1.5; color:#475569; word-break:keep-all; }
+.demo-role-more { grid-column:1/-1; border-block:1px solid #e2e8f0; margin-top:4px; }
+.demo-role-more summary { display:flex; justify-content:space-between; align-items:center; min-height:56px; list-style:none; cursor:pointer; padding:8px 4px; font-size:15px; color:#334155; font-weight:650; }
+.demo-role-more summary::-webkit-details-marker { display:none; }
+.demo-role-more[open] summary span { transform:rotate(45deg); }
+.demo-role-more > button { display:flex; width:100%; justify-content:space-between; align-items:center; padding:12px; text-align:left; }
+.demo-role-summary { color:#475569; margin:20px 0; line-height:1.65; }
+.demo-action-dock { position:fixed; z-index:5; inset:auto 0 0; background:#fff; border-top:1px solid #e2e8f0; padding:12px 20px max(12px,env(safe-area-inset-bottom)); }
+.demo-action-dock .primary { width:100%; max-width:920px; margin:auto; display:flex; gap:12px; justify-content:center; align-items:center; }
+.role-app-ui:has(dialog[open]) .demo-action-dock { visibility:hidden; }
+.role-app-ui .demo-back-home { margin:0 0 16px; padding-left:0; }
+@media(min-width:640px) {
+  .role-app-ui #content { padding-bottom:24px; }
+  .demo-action-dock { position:static; padding:24px 0 0; border:0; background:transparent; }
+  .demo-action-dock .primary { width:auto; max-width:none; margin:0; display:inline-flex; }
+  .demo-role-grid { gap:16px; }
+  .demo-role-card { padding:24px; }
+}
+@media print { .demo-action-dock { display:none; } }

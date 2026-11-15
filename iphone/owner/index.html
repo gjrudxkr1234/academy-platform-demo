@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#1e40af">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; object-src 'none'; form-action 'none'; base-uri 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="온새미 수학학원 운영 화면 체험">
+  <title>원장 · 학원 운영 플랫폼 데모</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" sizes="180x180" href="../icons/owner-180.png">
+  <link rel="stylesheet" href="../shared/style.css">
+
+  <script src="role.js" defer></script>
+  <script src="../pwa.js" defer></script>
+  <script src="../shared/assets/qr-vendor.js" defer></script>
+  <script src="../shared/assets/roster-samples.js" defer></script>
+  <script src="../shared/assets/school-assessments.js" defer></script>
+  <script src="../shared/role-ui.js" defer></script>
+  <link rel="stylesheet" href="../shared/role-ui.css">
+  <script src="../shared/demo.js" defer></script>
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="원장 데모">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="../pwa.css">
+</head>
+<body data-demo="generic">
+  <a class="skip" href="#content">본문으로 이동</a>
+  <div class="proposal-banner general-banner">원장 데모 · 가상 자료 · 실제 전송 없음</div>
+  <section class="iphone-status" aria-label="데모 준비 상태"><p id="offline-status" role="status">오프라인 사용 준비 중…</p><div><a href="../">다른 역할</a><button id="iphone-install" type="button">설치 방법</button></div></section>
+  <div class="shell">
+    <aside class="rail" aria-label="학원 메뉴">
+      <div class="brand">
+        <span class="monogram" aria-hidden="true">온</span>
+        <div><strong>온새미</strong><span>수학학원</span></div>
+      </div>
+      <nav class="navigation" id="navigation" aria-label="화면 선택"></nav>
+    </aside>
+    <div class="workspace">
+      <header class="topbar">
+        <div class="school"><strong>온새미 수학학원</strong><button id="install-demo" class="ghost install-button" type="button">홈 화면에 추가</button></div>
+        <div class="top-actions">
+          <label for="role" class="sr-only">체험 역할</label>
+          <select id="role">
+            <option value="owner">원장 체험</option>
+            <option value="teacher">선생님 체험</option>
+            <option value="student">학생 체험</option>
+            <option value="parent">보호자 체험</option>
+          </select>
+          <button id="reset" class="ghost" type="button">초기화</button>
+        </div>
+      </header>
+      <main id="content" tabindex="-1"></main>
+      <footer>변경 사항은 이 브라우저에만 저장됩니다.</footer>
+    </div>
+  </div>
+  <dialog id="dialog" aria-labelledby="dialog-title"></dialog>
+  <div id="feedback" class="toast" role="status" aria-live="polite" hidden></div>
+  <noscript>데모 화면을 보려면 브라우저에서 JavaScript를 켜 주세요.</noscript>
+<button class="demo-notification" id="demo-notification" type="button" hidden><strong>가상 등원 알림</strong><span>눌러서 알림 화면 보기 · 실제 푸시 아님</span></button>
+<dialog id="iphone-help" aria-labelledby="iphone-help-title"><h2 id="iphone-help-title">아이폰 홈 화면에 추가</h2><ol><li>이 페이지를 Safari에서 엽니다.</li><li>공유 메뉴 → 홈 화면에 추가를 누릅니다.</li><li>웹 앱으로 열기가 보이면 켜고 추가합니다.</li><li>추가한 아이콘을 인터넷이 연결된 상태에서 한 번 열어 ‘오프라인 준비 완료’를 확인합니다.</li></ol><p>이후에는 인터넷 없이도 체험할 수 있어요. 저장 공간 정리로 데이터가 지워지면 온라인에서 다시 열어 주세요.</p><p>등원 알림은 앱 안에서만 표시됩니다. 사진·카메라 영상은 외부로 전송하지 않습니다.</p><button id="iphone-help-close" type="button">확인</button></dialog>
+</body>
+</html>
