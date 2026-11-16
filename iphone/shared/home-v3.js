@@ -53,12 +53,12 @@
     if (role === "parent") {
       const { name, attendance } = opts;
       const learner = name.replace(/ 보호자님$/, "").replace(/^[가-힣]([가-힣]{2})$/, "$1");
-      if (attendance?.kind === "out") return `${text(learner)}는 ${mark(attendance.time)}에 하원했어요`;
+      if (attendance?.kind === "out") return `${text(learner)}는 ${mark(attendance.time)}에<br>하원했어요`;
       if (attendance?.kind === "in") return `${text(learner)}는 ${mark(attendance.time)}에 등원했어요`;
       return `${text(learner)}의 오늘 등원 기록을 기다리고 있어요`;
     }
     if (role === "teacher") return opts.todayLessonCount || opts.reviewCount
-      ? `오늘 수업 ${mark(`${opts.todayLessonCount ?? 0}개`)}, 검사할 과제 ${mark(`${opts.reviewCount ?? 0}건`)}이에요`
+      ? `오늘 수업 ${mark(`${opts.todayLessonCount ?? 0}개`)}, <br>검사할 과제 ${mark(`${opts.reviewCount ?? 0}건`)}이에요`
       : "오늘 남은 수업과 검사할 과제가 없어요";
     return opts.presentCount || opts.appointmentCount
       ? `오늘 출석 ${mark(`${opts.presentCount ?? 0}/${opts.rosterCount ?? 0}명`)}, 상담이 ${mark(`${opts.appointmentCount ?? 0}건`)} 있어요`
@@ -112,17 +112,23 @@
     const initial = `<section class="demo-v3-section demo-v3-intro">
       ${button(`${academyMark(profile.name)}<span>${text(profile.name)} · ${text(opts.context)}</span>${icon("arrow")}`,
         homeAction("academy"), "demo-v3-academy-link")}
-      ${role === "parent" ? controls : ""}<h1>${summary(role, opts)}</h1>${banner}</section>`;
+      <h1>${summary(role, opts)}</h1>${role === "parent" ? controls : banner}</section>`;
     const homework = role === "student" ? "오늘 할 일" : "오늘";
-    const classToday = opts.calendar?.lessons?.filter(lesson => lesson.day === "월"
-      && opts.calendar.teacherGroups.includes(lesson.groupKey ?? lesson.group)) ?? [];
-    const lessonList = `<ul class="demo-v3-list demo-v3-lessons">${classToday.length ? classToday.map(item =>
-      `<li>${button(`<span><strong>${text(item.group)}</strong><small>${text(item.room || "수업 일정")}</small></span><time>${text(item.time)}</time>`, navigate("schedule"), "demo-v3-row")}</li>`).join("") :
-      "<li class='demo-v3-empty'>오늘 예정된 수업이 없어요.</li>"}</ul>`;
+    const classToday = opts.teachingToday ?? [];
+    const lessonList = `<ul class="ops-lesson-list">${classToday.length ? classToday.map(({time,group,room,teacher,substitute,studentCount}) =>
+      `<li><time>${text(time.slice(0,5))}</time><span><strong>${text(group)}${substitute ? " (대타)" : ""}</strong>
+      <small>${text(room)} · ${substitute ? `${text(teacher)} 선생님 휴가` : `${studentCount}명`}</small></span>
+      ${button("출석",navigate("attendance"),"ops-pill")}</li>`).join("") : "<li class='demo-v3-empty'>오늘 예정된 수업이 없어요.</li>"}</ul>`;
+    const hasArrival = role === "parent" && opts.attendance;
+    const todayRows = hasArrival ? `<ul class="ops-lesson-list"><li><time>${text(opts.attendance.time)}</time>
+      <span><strong>${opts.attendance.kind === "out" ? "하원" : "등원"}</strong>${opts.arrival ? `<small>등원 ${text(opts.arrival)}</small>` : ""}</span></li></ul>`
+      : rowList(rows.slice(0, 3));
     const today = role === "owner" ? heading("today", "오늘 운영", rosterMetrics(rows), more("전체", navigate("home-overview"))) : role === "teacher"
-      ? heading("today", "오늘 수업", lessonList, more("전체", navigate("schedule"))) +
+      ? heading("today", "오늘 수업", lessonList, more("시간표", navigate("schedule"))) +
         heading("review", "검사 대기", rowList(rows.slice(1, 2)), more("전체", navigate("learning")))
-      : heading("today", homework, rowList(rows.slice(0, 3)), more("전체", navigate("home-overview")));
+      : heading("today", homework, todayRows, more("전체", navigate("home-overview")));
+    const homeCard = role === "teacher" ? window.DemoStaffOperations.teacherHome()
+      : role === "parent" ? window.DemoTuition.home(opts.currentChild) : "";
     const guide = !profile.sections || profile.sections.some(section => ["hours", "contact"].includes(section))
       ? contactSection({ ...profile, hours: !profile.sections || profile.sections.includes("hours") ? profile.hours : "",
         address: !profile.sections || profile.sections.includes("contact") ? profile.address : "",
@@ -133,7 +139,7 @@
       ? `<section class="demo-v3-section" aria-labelledby="demo-website-title"><h2 id="demo-website-title">학원 홈페이지</h2>
         ${more(profile.ready ? "홈페이지 편집" : "홈페이지 만들기", 'data-action="homepage-edit"')}
         ${!profile.phone ? more("연락처 등록", 'data-action="homepage-edit" data-id="contact"') : ""}</section>` : "";
-    return `<div class="demo-role-home demo-v3-home" data-role-home="${role}">${initial}${today}${calendar}
+    return `<div class="demo-role-home demo-v3-home" data-role-home="${role}">${initial}${homeCard}${today}${role === "parent" && banner ? `<section class="demo-v3-section">${banner}</section>` : ""}${calendar}
       ${learner && (!profile.sections || profile.sections.includes("staff")) ? staffSection(staffProfiles) : ""}
       ${!learner || !profile.sections || profile.sections.includes("notices") ? noticeSection(role, notices) : ""}${tail}</div>`;
   }
@@ -162,9 +168,10 @@
       ${academy.phone ? button(`${icon("phone")}전화`, 'data-action="demo-contact" data-id="phone"') : ""}</div>
       <nav class="demo-v3-shortcuts" aria-label="역할 바로가기">${optionsFor[role].map(([label, symbol, attrs]) => shortcut(label, symbol, attrs)).join("")}</nav>
       ${group("학원", [[homeAction("academy"), "학원 소개"], [navigate("schedule"), "수업 시간표"], ...(role === "parent" ? [[navigate("tuition"), "학원비"], [homeAction("calendar"), "일정"]] : []), [homeAction("staff"), "강사진"], [navigate("video"), "학습 영상"]])}
-      ${role === "owner" ? group("운영", [[navigate("students"), "학생·반"], [navigate("tuition"), "수납 관리"], [navigate("settings"), "설정"]])
-        : role === "teacher" && window.DemoHomeBanners.canManage(role)
-          ? group("운영", [['data-v3-banner-action="manage"', "배너 편집"]]) : ""}
+      ${role === "owner" ? group("운영", [[navigate("students"), "학생·반"], [navigate("tuition"), "수납 관리"], [navigate("staff-pay"), "근무·급여"], [navigate("staff-leave"), "강사 휴가·대타"], [navigate("timetable"), "수업 시간표 관리"], [navigate("notifications"), "공지·발송"], [navigate("learning"), "과제 검사"], [navigate("grades"), "성적 리포트"], [navigate("settings"), "학원 설정"]])
+        : role === "teacher" ? group("선생님", [[profile, "내 강사 카드"], ['data-action="homepage-edit"', "홈페이지 편집"], [navigate("my-work"), "내 근무·휴가"],
+          [navigate("school-schedule"), "내신 일정"], [navigate("notifications"), "발송 기록"],
+          ...(window.DemoHomeBanners.canManage(role) ? [['data-v3-banner-action="manage"', "배너 편집"]] : [])]) : ""}
       <section class="demo-v3-drawer-group"><h3>설정</h3><label class="demo-v3-theme-switch">
         <span>시스템 설정 따라가기</span><input type="checkbox" role="switch" data-v3-system${window.GradientAppearance.preference() === "system" ? " checked" : ""}></label></section>
       ${group("", [[homeAction("notifications"), "알림 설정"], showInfo, [homeAction("logout"), "로그아웃"]])}`;

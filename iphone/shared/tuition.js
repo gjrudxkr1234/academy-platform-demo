@@ -7,7 +7,7 @@
   const children = new Set(["jiwoo", "minjun"]);
   const methods = {
     card: "카드", toss: "토스페이", naver: "네이버페이", kakao: "카카오페이", transfer: "계좌이체",
-    virtual: "가상계좌", cash: "현금", academy_bank: "학원 통장 이체", terminal: "카드단말기",
+    virtual: "가상계좌", payssam: "결제선생 가상 결제", cash: "현금", academy_bank: "학원 통장 이체", terminal: "카드단말기",
   };
   const online = ["card", "toss", "naver", "kakao", "transfer", "virtual"];
   const offline = ["cash", "academy_bank", "terminal"];
@@ -111,10 +111,18 @@
         <span>${stateBadge(invoice)}<strong>${won(sum(invoice.lines))}</strong></span></button></li>`).join("")}</ul>`;
   }
 
+  function metrics(data = read()) {
+    const unsettled = data.invoices.filter((invoice) => balance(invoice) > 0);
+    return {
+      unpaid: new Set(unsettled.map((invoice) => invoice.learner)).size,
+      outstanding: unsettled.reduce((total, invoice) => total + balance(invoice), 0),
+    };
+  }
+
   function ownerSummary(data) {
     const issued = data.invoices.reduce((total, invoice) => total + sum(invoice.lines), 0);
     const net = data.invoices.reduce((total, invoice) => total + amountPaid(invoice) - amountRefunded(invoice), 0);
-    const outstanding = data.invoices.reduce((total, invoice) => total + balance(invoice), 0);
+    const { outstanding } = metrics(data);
     return `<dl class="tuition-summary">
       <div><dt>수납액</dt><dd>${won(net)}</dd></div>
       <div><dt>미수납</dt><dd>${won(outstanding)}</dd></div>
@@ -122,16 +130,39 @@
     </dl>`;
   }
 
+  function parentAction(invoice, css = "") {
+    const [label, command] = invoice.payment ? ["영수증 보기", "receipt"] : invoice.pending
+      ? ["가상계좌 입금 체험", "deposit"] : ["결제하기", invoice.payssamSent ? "payssam-pay" : "pay"];
+    if (!css) return action(label, command, invoice.id, "primary");
+    const wallet = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 9V6H6a2 2 0 0 0 0 4h14v10H6a2 2 0 0 1-2-2V8m16 6h-4"/></svg>';
+    return `<button type="button" class="${css}" data-tuition-action="${command}" data-tuition-id="${text(invoice.id)}">${wallet}${label}</button>`;
+  }
+
+  function home(child) {
+    const invoice = children.has(child) ? read().invoices.find((entry) => entry.learner === child && entry.month === date.slice(0, 7)) : undefined;
+    if (!invoice) return "";
+    const details = invoice.lines.map(({ type, amount }) => `${categories[type]} ${wholeWon.format(amount)}`).join(" · ");
+    const month = Number(invoice.month.slice(5));
+    const arrow = '<span aria-hidden="true">›</span>';
+    return `<section class="demo-v3-section ops-tuition-home" aria-labelledby="ops-home-tuition">
+      <header class="demo-v3-section-heading"><h2 id="ops-home-tuition">학원비</h2>
+      <button type="button" class="ops-pill" data-tuition-action="home-history">내역${arrow}</button></header>
+      <div class="ops-tuition-box"><small>${month}월 학원비 · ${invoice.payment ? "납부 완료" : `납부 기한 ${readableDate(invoice.due)}`}</small>
+      <strong>${won(sum(invoice.lines))}</strong><small>${text(details)}</small>
+      ${invoice.payssamSent && !invoice.payment ? '<small>결제선생 가상 청구서 도착</small>' : ""}</div>
+      ${parentAction(invoice, "ops-button ops-primary")}</section>`;
+  }
+
   function details(invoice, context) {
     const isOwner = context.role === "owner";
     const total = sum(invoice.lines);
     const offlineCash = ["cash", "academy_bank"].includes(invoice.payment?.method) && total >= 100000;
     const actions = context.role === "parent"
-      ? invoice.payment ? action("영수증 보기", "receipt", invoice.id, "primary")
-        : invoice.pending ? action("가상계좌 입금 체험", "deposit", invoice.id, "primary") : action("결제하기", "pay", invoice.id, "primary")
+      ? parentAction(invoice)
       : invoice.payment ? `${action("영수증 보기", "receipt", invoice.id)}
           ${amountRefunded(invoice) < amountPaid(invoice) ? action("환불 계산", "refund", invoice.id, "outline") : ""}`
-        : `${action("수동 수납 기록", "offline", invoice.id, "outline")}${action("미납 알림", "remind", invoice.id)}`;
+        : `${action("수동 수납 기록", "offline", invoice.id, "outline")}${action("미납 알림", "remind", invoice.id)}${read().connectionMode === "payssam" && !invoice.payssamSent && !invoice.pending
+          ? action("결제선생 가상 청구서 발송", "payssam-send", invoice.id, "primary") : ""}`;
     return `<div class="tuition-actions">${action("청구서 목록", "list")}</div>
       <section class="tuition-card" data-tuition-detail="${text(invoice.id)}">
         <header class="tuition-card-heading"><div><span>${text(name(context, invoice))}</span><h2>${monthTitle(invoice.month)}</h2>
@@ -139,6 +170,7 @@
         <dl class="tuition-amounts">${invoice.lines.map((line) => `<div><dt>${categories[line.type]}</dt><dd>${won(line.amount)}</dd></div>`).join("")}
           <div class="tuition-total"><dt>청구 금액</dt><dd>${won(total)}</dd></div>
           ${amountRefunded(invoice) ? `<div><dt>누적 환불</dt><dd>${won(amountRefunded(invoice))}</dd></div>` : ""}</dl>
+        ${invoice.payssamSent ? '<p class="tuition-note">결제선생 가상 청구서 · 이 기기에서만 공유</p>' : ""}
         ${invoice.pending ? '<p class="tuition-note">입금 대기 중이에요. 체험용으로 실제 계좌번호는 발급하지 않아요.</p>' : ""}
         ${isOwner && offlineCash ? `<p class="tuition-note">10만 원 이상인 거래를 현금·이체로 수납하면 현금영수증을 발급해야 해요. 고객 정보를 모를 때의 가상 자진발급 기한 ${readableDate(nextDay(invoice.payment.date, 5))}.</p>` : ""}
         <div class="tuition-actions">${actions}</div></section>`;
@@ -248,13 +280,17 @@
     const states = { draft: "신청 전", review: "심사 중", ready: "사용 중" };
     context.openSheet("결제 연결 준비 중",
       '<p>학원이 PG와 직접 가맹 계약을 맺고 학원 계좌로 정산받는 방식이에요.</p><p>준비 서류는 사업자등록증, 학원 등록·신고 서류, 정산계좌 사본 등에 해당해요. PG 단계에 맞춰 실제 제출 목록을 확인해요.</p>' +
+      choice("결제 연결 방식", "connection-mode", [["unconnected","PG 연결 준비"],["payssam","이미 결제선생을 써요"]], read().connectionMode ?? "unconnected") +
       choice("가상 신청 상태", "stage", Object.entries(states), read().connection) +
+      '<p class="tuition-note">결제선생은 학원이 카드 가맹점이며 카드사가 학원에 직접 정산하는 방식입니다. 청구서 발송과 결제는 가상으로 체험할 수 있어요.</p>' +
       '<p class="tuition-note">신청 상태 예시만 확인해요. 계약이나 정산계좌 입력을 요청하지 않아요.</p>',
     (form) => {
       const next = form.get("stage");
-      if (!Object.hasOwn(states, next)) return "가상 신청 상태를 선택해 주세요.";
+      const mode = form.get("connection-mode");
+      if (!["unconnected", "payssam"].includes(mode) || !Object.hasOwn(states, next)) return "가상 신청 상태를 선택해 주세요.";
       const current = read();
       current.connection = next;
+      current.connectionMode = mode;
       save(current, context);
     }, opener, { confirmLabel: "가상 상태 저장" });
   }
@@ -348,6 +384,10 @@
     if (command === "create" && isOwner) return createInvoice(button, context);
     if (command === "settings" && isOwner) return settings(button, context);
     if (command === "connect" && isOwner) return connect(button, context);
+    if (command === "home-history" && !isOwner) {
+      selectedParent = undefined;
+      return context.navigate("tuition");
+    }
     if (command === "list") {
       if (isOwner) selectedOwner = undefined;
       else selectedParent = undefined;
@@ -359,6 +399,22 @@
       if (isOwner) selectedOwner = invoice.id;
       else selectedParent = invoice.id;
       return context.rerender();
+    }
+    if (command === "payssam-send" && isOwner && data.connectionMode === "payssam" && !invoice.payment && !invoice.pending && !invoice.payssamSent) {
+      invoice.payssamSent = true;
+      invoice.notes.push("결제선생 가상 청구서가 도착했어요");
+      return save(data, context, "결제선생 가상 청구서를 이 기기에 남겼어요.");
+    }
+    if (command === "payssam-pay" && !isOwner && invoice.payssamSent && !invoice.payment && !invoice.pending) {
+      return context.openSheet("결제선생 가상 결제", `<p>청구 금액 <strong>${won(sum(invoice.lines))}</strong></p>
+        <p class="tuition-note">실제 결제나 외부 전송 없이 이 기기에서만 완납을 기록해요.</p>`, () => {
+        const current = read();
+        const latest = matching(current, context).find(({ id }) => id === invoice.id);
+        if (!latest?.payssamSent || latest.pending || latest.payment) return "이미 처리했거나 청구서를 다시 확인해야 해요.";
+        const error = settle(current, latest, "payssam", context);
+        if (!error) result(context, "결제선생 가상 결제 완료", "원장의 가상 수납 장부에서도 완납을 확인할 수 있어요.");
+        return error;
+      }, button, { confirmLabel:"가상 결제 완료", successMessage:false });
     }
     if (command === "pay" && !isOwner && !invoice.payment && !invoice.pending) return payment(invoice, button, context);
     if (command === "offline" && isOwner && !invoice.payment) return payment(invoice, button, context, true);
@@ -384,5 +440,5 @@
     }
   }
 
-  window.DemoTuition = Object.freeze({ render, notices, handle, reset, ownsStorage: (key) => key === storageKey });
+  window.DemoTuition = Object.freeze({ render, home, metrics, notices, handle, reset, ownsStorage: (key) => key === storageKey });
 })();

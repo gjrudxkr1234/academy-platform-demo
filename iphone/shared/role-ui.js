@@ -4,12 +4,12 @@
   const roles = {
     owner: {
       name: "원장", title: "오늘의 학원 운영", context: "학원 전체 · 11월 16일 월요일",
-      tabs: [["home", "홈", "home", ["home-overview"]], ["students", "학생/반", "people", ["roster", "grades"]],
-        ["attendance", "출결/일정", "qr", ["schedule", "school-schedule", "academy-calendar"]], ["settings", "운영", "settings", ["website", "learning", "notifications", "tuition"]]],
+      tabs: [["home", "홈", "home", ["home-overview"]], ["students", "학생·반", "people", ["roster", "grades"]],
+        ["attendance", "출결", "qr", ["schedule", "school-schedule", "academy-calendar"]], ["operations", "운영", "operations", ["settings", "website", "learning", "notifications", "tuition", "staff-pay", "staff-leave", "timetable"]]],
     },
     teacher: {
       name: "선생님", title: "오늘의 수업 관리", context: "이도현 선생님 · 중2 심화반",
-      tabs: [["home", "홈", "home", ["home-overview"]], ["attendance", "출결", "qr", ["schedule", "academy-calendar"]], ["learning", "과제 검사", "book", ["video"]],
+      tabs: [["home", "홈", "home", ["home-overview", "my-work"]], ["attendance", "출결", "qr", ["schedule", "academy-calendar"]], ["learning", "과제 검사", "book", ["video"]],
         ["students", "학생", "people", ["grades", "school-schedule", "notifications", "website"]]],
     },
     student: {
@@ -24,6 +24,7 @@
     },
   };
   const paths = {
+    operations: '<rect x="4" y="4" width="16" height="16" rx="1"/><path d="M12 4v16M4 12h16"/>',
     home: '<path d="m3 10 9-7 9 7v10H3zM9 20v-6h6v6"/>',
     qr: '<path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/><rect x="7" y="7" width="3" height="3"/><rect x="14" y="7" width="3" height="3"/><rect x="7" y="14" width="3" height="3"/><path d="M14 14h3v3h-3z"/>',
     book: '<path d="M12 5c-3-2-6-2-9-1v15c3-1 6-1 9 1 3-2 6-2 9-1V4c-3-1-6-1-9 1Zm0 0v15"/>',
