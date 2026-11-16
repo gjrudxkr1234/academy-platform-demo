@@ -83,6 +83,7 @@ let toastTimer;
 let cameraSession = null;
 let photoPreviewUrl = null;
 let selectedDay = "목";
+let homepageDay;
 let selectedExam = "linear-fourth";
 let selectedLearner = null;
 let consultationPeriod = "all";
@@ -578,6 +579,12 @@ function scoreChart(id, period = "all", compare = false) {
 }
 
 function paintScoreCharts() {
+  const colors = getComputedStyle(document.body);
+  const themeColor = (token, fallback) => colors.getPropertyValue(token).trim() || fallback;
+  const gridColor = themeColor("--line", "#e6e7f0");
+  const labelColor = themeColor("--muted", "#62687c");
+  const scoreColor = themeColor("--purple", "#583ad0");
+  const averageColor = themeColor("--chart-average", "#0f625a");
   for (const canvas of content.querySelectorAll("[data-score-chart]")) {
     const points = scorePeriod(canvas.dataset.scoreChart, canvas.dataset.period).filter(({ percent }) => percent !== null);
     const width = Math.max(200, Math.floor(canvas.getBoundingClientRect().width));
@@ -598,11 +605,11 @@ function paintScoreCharts() {
     context.textAlign = "right";
     for (const mark of [0, 25, 50, 75, 100]) {
       context.beginPath();
-      context.strokeStyle = "#e6e7f0";
+      context.strokeStyle = gridColor;
       context.moveTo(left, y(mark));
       context.lineTo(right, y(mark));
       context.stroke();
-      context.fillStyle = "#62687c";
+      context.fillStyle = labelColor;
       context.fillText(String(mark), left - 7, y(mark));
     }
     // Keep the endpoint labels inside the grid and clear of the vertical axis labels.
@@ -615,7 +622,7 @@ function paintScoreCharts() {
       context.beginPath();
       context.setLineDash([5, 4]);
       context.lineWidth = 2;
-      context.strokeStyle = "#0f625a";
+      context.strokeStyle = averageColor;
       let previous = false;
       points.forEach((point, index) => {
         const average = chartAverage(point);
@@ -635,17 +642,17 @@ function paintScoreCharts() {
     context.beginPath();
     coordinates.forEach((point, index) => index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y));
     context.lineWidth = 2.5;
-    context.strokeStyle = "#583ad0";
+    context.strokeStyle = scoreColor;
     context.stroke();
     context.textAlign = "center";
     coordinates.forEach((point, index) => {
       context.beginPath();
-      context.fillStyle = "#583ad0";
+      context.fillStyle = scoreColor;
       context.arc(point.x, point.y, 4, 0, Math.PI * 2);
       context.fill();
-      context.fillStyle = "#43279e";
+      context.fillStyle = scoreColor;
       context.fillText(String(points[index].percent), point.x, Math.max(10, point.y - 12));
-      context.fillStyle = "#62687c";
+      context.fillStyle = labelColor;
       context.fillText(points[index].exam.date, point.x, bottom + 18);
     });
   }
@@ -968,8 +975,12 @@ function roleHomeOptions() {
       rows: allRows.slice(0, 3) },
   };
   const staffProfiles = demoSite?.visibleStaff() ?? state.siteSections?.staff ?? teachers;
-  return { ...context[role], lessons, profile, notices: homeNotices(), staff: staffProfiles.map(({ name }) => name).join(" · "),
-    staffProfiles, timetable: demoSite?.calendar(true) ?? state.siteSections?.timetable ?? classes, selectedGroup: learner?.group,
+  const rows = context[role].rows.map((row) => {
+    const countdown = row.screen === "school-schedule" ? row.value.match(/ · (D[+-](?:\d+|day))$/i)?.[1] : "";
+    return countdown ? { ...row, value: row.value.slice(0, -(countdown.length + 3)), countdown } : row;
+  });
+  return { ...context[role], rows, lessons, profile, brandName: document.title.split(" ")[0], notices: homeNotices(), staff: staffProfiles.map(({ name }) => name).join(" · "),
+    staffProfiles, ownStaff: demoSite?.ownStaff(), timetable: demoSite?.calendar(true) ?? state.siteSections?.timetable ?? classes, selectedGroup: learner?.group, homepageDay,
     controls: role === "parent" ? childPicker() : "" };
 }
 
@@ -1664,6 +1675,7 @@ dialog.addEventListener("close", releasePhotoPreview);
 window.addEventListener("pagehide", stopCamera);
 window.addEventListener("pagehide", releasePhotoPreview);
 window.addEventListener("resize", paintScoreCharts);
+window.addEventListener("gradient:appearance-change", paintScoreCharts);
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && cameraSession?.stream) dialog.close();
 });
@@ -1688,6 +1700,13 @@ document.addEventListener("click", (event) => {
       content.focus({ preventScroll: true });
       window.scrollTo(0, 0);
     } else content.focus();
+  } else if (action === "homepage-day" && ["home", "website"].includes(activeScreen) && ["student", "parent"].includes(role) && [...scheduleDays, "일"].includes(id)) {
+    const scrollTarget = control.dataset.scrollTarget;
+    homepageDay = id;
+    render();
+    const active = content.querySelector('.demo-polished-days button[aria-pressed="true"]');
+    active?.focus({ preventScroll: true });
+    if (scrollTarget) document.getElementById(scrollTarget)?.scrollIntoView({ block: "center" });
   } else if (action === "schedule-day" && (scheduleDays.includes(id) || (demoSite && id === "일"))) {
     selectedDay = id;
     render();
@@ -1719,7 +1738,13 @@ document.addEventListener("click", (event) => {
     }
   }
   else if (demoSite && ["owner", "teacher"].includes(role) && action === "homepage-edit") editDemoHomepage(id);
-  else if (demoSite && activeScreen === "website" && action.startsWith("site-")) void demoSite.handle(control);
+  else if (demoSite && (activeScreen === "website" && action.startsWith("site-") || ["site-own-card", "site-staff-detail", "site-staff-all"].includes(action))) void demoSite.handle(control);
+  else if (action === "demo-appearance" && window.GradientAppearance) {
+    const choices = [["system", "시스템 따라가기"], ["light", "밝게"], ["dark", "어둡게"]];
+    const mode = window.GradientAppearance.preference();
+    openDemoSheet("화면 모드", choices.map(([value, label]) => `<label><input type="radio" name="appearance" value="${value}"${mode === value ? " checked" : ""}>${label}</label>`).join(""),
+      (form) => { window.GradientAppearance.set(form.get("appearance")); return ""; }, control);
+  }
   else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && activeScreen === "settings" && action === "setting-field") editDemoSetting(id, control);
   else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && activeScreen === "settings" && action === "setting-switch" && id === "rank") {
     const error = patchDemoField("settings", id, !state.settings.rank);
@@ -1816,6 +1841,7 @@ window.academyDemoRequestReset = (afterReset) => {
     state = freshState();
     child = "jiwoo";
     selectedDay = "목";
+    homepageDay = undefined;
     selectedExam = "linear-fourth";
     selectedLearner = null;
     consultationPeriod = "all";
