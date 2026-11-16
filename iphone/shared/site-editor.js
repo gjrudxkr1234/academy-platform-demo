@@ -332,8 +332,9 @@ window.AcademyDemoSite = (() => {
       });
     }
 
-    function cropControls(existing, landscape = false) {
-      return `<fieldset class="demo-site-crop"><legend>${landscape ? "대표 사진" : "강사 사진"}</legend>
+    function cropControls(existing, ratio = 1, label = "강사 사진") {
+      const landscape = ratio > 1;
+      return `<fieldset class="demo-site-crop"><legend>${escaped(label)}</legend>
         <div class="demo-site-files">
           <label>카메라 촬영<input type="file" accept="image/*" capture="environment" data-site-photo></label>
           <label>앨범에서 선택<input type="file" accept="image/*" data-site-photo></label>
@@ -341,7 +342,7 @@ window.AcademyDemoSite = (() => {
         <p class="note">사진은 이 기기에만 저장돼요.</p>
         <output data-site-photo-message role="status"></output>
         <div data-site-photo-preview${existing ? "" : " hidden"}>${existing ? `<img class="demo-crop-preview${landscape ? " is-landscape" : ""}" src="${escaped(photoUrl(existing))}" alt="현재 사진">` : ""}
-          <canvas class="demo-crop-preview${landscape ? " is-landscape" : ""}" width="240" height="${landscape ? 135 : 240}" aria-label="잘린 사진 미리보기" hidden></canvas></div>
+          <canvas class="demo-crop-preview${landscape ? " is-landscape" : ""}" width="240" height="${Math.round(240 / ratio)}" aria-label="잘린 사진 미리보기" hidden></canvas></div>
         <div data-site-crop-controls hidden>${landscape ? "가로형" : "정사각형"} 자르기
           <label>확대<input type="range" min="100" max="300" value="100" data-site-crop="zoom"></label>
           <label>가로 위치<input type="range" min="0" max="100" value="50" data-site-crop="x"></label>
@@ -350,7 +351,7 @@ window.AcademyDemoSite = (() => {
       </fieldset>`;
     }
 
-    function cropPicker(landscape) {
+    function cropPicker(ratio = 1) {
       const fields = dialog.querySelector(".demo-site-crop");
       const preview = fields.querySelector("[data-site-photo-preview]");
       const canvas = fields.querySelector("canvas");
@@ -366,7 +367,6 @@ window.AcademyDemoSite = (() => {
 
       function draw(target) {
         const [zoom, x, y] = sliders.map((slider) => Number(slider.value) / 100);
-        const ratio = landscape ? 16 / 9 : 1;
         const width = Math.min(bitmap.width, bitmap.height * ratio) / zoom;
         const height = width / ratio;
         const context = target.getContext("2d", { alpha: false });
@@ -421,11 +421,11 @@ window.AcademyDemoSite = (() => {
         if (pending || invalid) return { error: pending ? "사진 처리가 끝나면 저장해 주세요." : "사진을 다시 선택하거나 제거해 주세요." };
         if (!bitmap) return { change };
         const output = document.createElement("canvas");
-        const width = Math.min(800, bitmap.width, Math.floor(bitmap.height * (landscape ? 16 / 9 : 1)));
+        const width = Math.min(800, bitmap.width, Math.floor(bitmap.height * ratio));
         let size = Math.max(1, width);
         for (const quality of [0.9, 0.76, 0.6, 0.45, 0.38, 0.3]) {
           output.width = size;
-          output.height = landscape ? Math.max(1, Math.round(size * 9 / 16)) : size;
+          output.height = Math.max(1, Math.round(size / ratio));
           draw(output);
           const photo = await new Promise((resolve) => output.toBlob(resolve, "image/jpeg", quality));
           if (photo && photo.type === "image/jpeg" && photo.size <= maxBytes) {
@@ -805,7 +805,7 @@ window.AcademyDemoSite = (() => {
       if (id === "intro") {
         const intro = state.intro;
         let pendingPhoto;
-        openSheet("학원 소개", cropControls(intro.photo, true)
+        openSheet("학원 소개", cropControls(intro.photo, 16 / 9, "대표 사진")
           + `<label class="demo-site-check"><input type="checkbox" name="photo-consent">대표 사진 사용 동의를 받았어요.</label>`
           + field("short", "한 줄 소개", intro.short, 160) + area("long", "긴 소개", intro.long, 1200)
           + `<fieldset><legend>대상 학년·과목 태그</legend>${rowFieldset(intro.tags, "tag", "태그")}</fieldset>`, async (form) => {
@@ -818,7 +818,7 @@ window.AcademyDemoSite = (() => {
           return write("intro", "intro", (latest, role) => role === "owner" ? { short, long, tags,
             photo: crop.change === "replace" ? crop.photo : crop.change === "remove" ? null : latest.intro.photo } : "수정 권한이 없어요.");
         }, opener);
-        pendingPhoto = cropPicker(true);
+        pendingPhoto = cropPicker(16 / 9);
         configureRows();
       } else if (id === "hours") {
         const operatingHours = weeklyHours(state.hours);
@@ -918,7 +918,8 @@ window.AcademyDemoSite = (() => {
         longIntro: state.intro.long, tags: state.intro.tags, cover: photoUrl(state.intro.photo), sections: state.sections.filter(({ visible }) => visible).map(({ id }) => id) };
     }
 
-    return Object.freeze({ calendar, visibleStaff, ownStaff, homepage, notices: () => state.notices, editor, startSection, handle, reset, prependNotice });
+    return Object.freeze({ calendar, visibleStaff, ownStaff, homepage, notices: () => state.notices, editor, startSection, handle, reset, prependNotice,
+      bannerCropFields: photo => cropControls(photo, 2, "배너 사진 · 2:1 자르기"), bannerCropPicker: () => cropPicker(2) });
   }
 
   return Object.freeze({ create });
