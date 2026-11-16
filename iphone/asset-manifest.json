@@ -1,7 +1,7 @@
 {
   "synthetic_only": true,
   "network_required_after_preparation": false,
-  "version": "336e63350d63a35b",
+  "version": "21ebec9c77a0a8eb",
   "assets": [
     {
       "path": "icons/owner-180.png",
@@ -65,13 +65,13 @@
     },
     {
       "path": "index.html",
-      "bytes": 2777,
-      "sha256": "5325f060622cf24d771d40be89ac18b517e801993bed3d60fe5d0278ee613347"
+      "bytes": 2776,
+      "sha256": "e5f4aa0c3a4ded06f750d9ce9b935cffc4c863c87ebc25ee11e0274d3fa249b8"
     },
     {
       "path": "owner/index.html",
-      "bytes": 7278,
-      "sha256": "ce849284e5ddb2136c38043b1d8d5fd47e09c7adde11a8d931dd07f4730b63fe"
+      "bytes": 7386,
+      "sha256": "12dca413af7785ff8c532ac9a560f6d808b7c58e7bcefd3c8c36307a7b9099c8"
     },
     {
       "path": "owner/manifest.webmanifest",
@@ -85,8 +85,8 @@
     },
     {
       "path": "parent/index.html",
-      "bytes": 7285,
-      "sha256": "eca7c05d632b67da713db1fbe126b06266efac030337ad14a7ee90004eda4c9b"
+      "bytes": 7393,
+      "sha256": "2c3f58e804938daa4d4d419dbb87bda2ff4b39bf4edb33ac97a5922196e668e6"
     },
     {
       "path": "parent/manifest.webmanifest",
@@ -205,8 +205,8 @@
     },
     {
       "path": "shared/demo.js",
-      "bytes": 117203,
-      "sha256": "e29971adb6eeaea522cb0486c1e7a2edd3e5f1f5329d2100df72025ae3dd5ea4"
+      "bytes": 118301,
+      "sha256": "10a50d3497f6be8aaf7002a378c1be3ed120eac25d1180421067655789ca387e"
     },
     {
       "path": "shared/home-v3-banners.js",
@@ -230,8 +230,8 @@
     },
     {
       "path": "shared/home-v3.js",
-      "bytes": 19019,
-      "sha256": "8d772ad52de10683f2c588d28cfb465c5ee5df6d6e8deff22f889b21bbefa777"
+      "bytes": 19095,
+      "sha256": "972254ec39884445e5ef66b00370fa2d379acc197b8e5b59493e2419807575f1"
     },
     {
       "path": "shared/photo-ui.css",
@@ -245,8 +245,8 @@
     },
     {
       "path": "shared/role-ui.js",
-      "bytes": 25846,
-      "sha256": "a74c887ea4763e8330952fbf124dc52c75c2b5a95e362e09128383eaebb3e05b"
+      "bytes": 25868,
+      "sha256": "f4c5fc532847fd1e85851eda98501b4d55118a452b2ef8aa6f39f90014a0ceba"
     },
     {
       "path": "shared/site-editor.js",
@@ -259,9 +259,19 @@
       "sha256": "20e578b228fe78796510b6eb9dce1e8b975608a4143600b5deddedd1d76d6112"
     },
     {
+      "path": "shared/tuition.css",
+      "bytes": 4539,
+      "sha256": "9c48ac4de7aff0acf99cca61566bd11398323374e220a2ea51ba05e7021ff734"
+    },
+    {
+      "path": "shared/tuition.js",
+      "bytes": 24546,
+      "sha256": "ea0b317b2004bb9aef9ad0d8036d169409791a6f2127a19ab09b33a845f6fc69"
+    },
+    {
       "path": "student/index.html",
-      "bytes": 7280,
-      "sha256": "d0b62ecdc0bd3fcfcc6b194e15ac728c817805af824f97cfaec8d68011343e53"
+      "bytes": 7388,
+      "sha256": "c846a7ad736b3dd902e7c68ee18caca8aee3edabada30528bf3f658f20508199"
     },
     {
       "path": "student/manifest.webmanifest",
@@ -275,8 +285,8 @@
     },
     {
       "path": "teacher/index.html",
-      "bytes": 7286,
-      "sha256": "5593ca617c983ac17fea6ce6e53607503378056ce34832bc32039419a325d5c0"
+      "bytes": 7394,
+      "sha256": "b75f5a6c7265f9b715270e1747abbf00ce4ffc14cbfe9d1afd924371153cb28a"
     },
     {
       "path": "teacher/manifest.webmanifest",

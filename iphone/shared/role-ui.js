@@ -5,7 +5,7 @@
     owner: {
       name: "원장", title: "오늘의 학원 운영", context: "학원 전체 · 11월 16일 월요일",
       tabs: [["home", "홈", "home", ["home-overview"]], ["students", "학생/반", "people", ["roster", "grades"]],
-        ["attendance", "출결/일정", "qr", ["schedule", "school-schedule", "academy-calendar"]], ["settings", "운영", "settings", ["website", "learning", "notifications"]]],
+        ["attendance", "출결/일정", "qr", ["schedule", "school-schedule", "academy-calendar"]], ["settings", "운영", "settings", ["website", "learning", "notifications", "tuition"]]],
     },
     teacher: {
       name: "선생님", title: "오늘의 수업 관리", context: "이도현 선생님 · 중2 심화반",
@@ -20,7 +20,7 @@
     parent: {
       name: "학부모", title: "우리 아이의 하루", context: "연결된 자녀의 학습과 출결",
       tabs: [["home", "홈", "home", ["home-overview"]], ["attendance", "출결", "qr", []], ["learning", "과제/성적", "chart", ["grades"]],
-        ["news", "소식", "bell", ["notifications", "schedule", "school-schedule", "academy-calendar"]]],
+        ["news", "소식", "bell", ["notifications", "schedule", "school-schedule", "academy-calendar", "tuition"]]],
     },
   };
   const paths = {

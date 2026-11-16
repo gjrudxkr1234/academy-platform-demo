@@ -1,0 +1,192 @@
+.tuition-view {
+  display: grid;
+  gap: 16px;
+  width: min(100%, 54rem);
+  margin-inline: auto;
+}
+
+.tuition-heading {
+  padding: 21px 2px 2px;
+}
+
+.tuition-heading h1 {
+  margin: 7px 0 4px;
+  font-size: clamp(26px, 5vw, 36px);
+  line-height: 1.22;
+  letter-spacing: -.04em;
+}
+
+.tuition-heading p,
+.tuition-card-heading p,
+.tuition-invoice small,
+.tuition-note,
+.tuition-empty,
+.tuition-notices small {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tuition-demo,
+.tuition-status {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 22px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: var(--link-tint);
+  color: var(--link-active);
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.tuition-status-success { color: var(--success); background: var(--success-tint); }
+.tuition-status-due { color: var(--accent-text); background: var(--accent-tint); }
+
+.tuition-summary,
+.tuition-card {
+  min-width: 0;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel);
+}
+
+.tuition-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr .7fr;
+}
+
+.tuition-summary div {
+  padding: 11px 9px;
+  border-inline-start: 1px solid var(--line);
+}
+
+.tuition-summary div:first-child { border-inline-start: 0; }
+.tuition-summary dt { margin-bottom: 3px; color: var(--muted); font-size: 12px; }
+.tuition-summary dd { margin: 0; font-size: 15px; font-weight: 750; overflow-wrap: anywhere; }
+
+.tuition-card { overflow: hidden; }
+
+.tuition-card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px;
+}
+
+.tuition-card-heading > div { min-width: 0; }
+.tuition-card-heading h2 { margin: 0; font-size: 17px; }
+.tuition-card-heading p { margin: 3px 0 0; }
+.tuition-card-heading div > span { display: block; margin-bottom: 4px; color: var(--muted); font-size: 12px; }
+
+.tuition-list,
+.tuition-notices { list-style: none; margin: 0; padding: 0; }
+.tuition-list li { border-top: 1px solid var(--line); }
+
+.role-app-ui .tuition-invoice {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  width: 100%;
+  min-height: 63px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 0;
+  gap: 8px;
+  background: transparent;
+  color: var(--ink);
+  text-align: start;
+}
+
+.role-app-ui .tuition-invoice:hover { background: var(--soft); }
+.tuition-invoice > span { display: grid; gap: 2px; min-width: 0; font-size: 14px; overflow-wrap: anywhere; }
+.tuition-invoice > span:last-child { justify-items: end; text-align: end; }
+
+.tuition-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.tuition-card .tuition-actions { padding: 10px 14px 14px; }
+
+.role-app-ui .tuition-button {
+  min-height: 44px;
+  padding-inline: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  white-space: normal;
+}
+
+.role-app-ui .tuition-button-quiet:hover { background: var(--soft); }
+.role-app-ui .tuition-button-primary { background: var(--action); border-color: var(--action); color: var(--inverse); }
+.role-app-ui .tuition-button-outline { border-color: var(--control-line); }
+.tuition-view button:focus-visible { outline: 2px solid var(--link); outline-offset: -3px; }
+
+.tuition-amounts {
+  padding: 0 14px;
+  margin: 0;
+}
+
+.tuition-amounts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding-block: 9px;
+  border-top: 1px solid var(--line);
+}
+
+.tuition-amounts dt { color: var(--muted); }
+.tuition-amounts dd { margin: 0; font-weight: 650; }
+.tuition-total dt, .tuition-total dd { color: var(--ink); font-weight: 750; }
+.tuition-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: var(--soft);
+}
+.tuition-card > .tuition-note, .tuition-card > .tuition-empty { margin: 8px 14px; }
+
+.tuition-live-total {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  margin: 5px 0;
+  padding-block: 10px;
+  border-block: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.tuition-field-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.demo-sheet .tuition-field-pair label {
+  min-width: 0;
+  margin: 0;
+}
+
+.demo-sheet .tuition-field-pair input {
+  min-width: 0;
+  padding-inline: 7px;
+  border: 1px solid var(--control-line);
+  border-radius: 8px;
+}
+
+.tuition-notices li {
+  display: grid;
+  gap: 1px;
+  padding-block: 8px;
+  border-top: 1px solid var(--line);
+}
