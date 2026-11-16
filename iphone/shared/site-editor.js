@@ -16,10 +16,36 @@ window.AcademyDemoSite = (() => {
     `<option value="${escaped(value)}"${value === selected ? " selected" : ""}>${escaped(label)}</option>`;
   const checked = (value) => value ? " checked" : "";
   const pencil = '<svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><path d="m4 16 12-12 4 4L8 20H4zM14 6l4 4"/></svg>';
+  const camera = '<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M3 7h4l2-3h6l2 3h4v13H3z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+  const album = '<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="m3 16 5-5 4 4 3-3 6 6"/><circle cx="15" cy="8" r="1"/></svg>';
+  const trash = '<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 6h16M7 6l1 15h8l1-15M9 6V3h6v3m-4 4v7m2-7v7"/></svg>';
+  const illustrations = Object.fromEntries(["demo-owner", "demo-teacher", "demo-teacher-2"].map((account, index) => [
+    account, new URL(`assets/brand/portrait-${index}.svg`, document.currentScript.src).href,
+  ]));
+  const demoCredentials = {
+    "demo-owner": ["고등 수학 지도 10년", "수학교육 전공"],
+    "demo-teacher": ["중등 수학·서술형 지도 7년", "수학교육 전공"],
+    "demo-teacher-2": ["중등 수학 보충 수업 5년", "수학 전공"],
+  };
   const timeFormat = /^([01][0-9]|2[0-3]):[0-5][0-9]$/;
   const printableHours = (hours) => typeof hours === "string" ? hours : weekdays
     .filter((day) => hours[day])
     .map((day) => `${day} ${hours[day].start}–${hours[day].end}`).join(" · ");
+
+  function weeklyHours(hours) {
+    if (typeof hours !== "string") {
+      return Object.fromEntries(weekdays.map((day) => [day, hours[day] ?? null]));
+    }
+    const entries = Object.fromEntries(weekdays.map((day) => [day, null]));
+    for (const part of hours.split("·")) {
+      const match = /^\s*(매일|평일|[월화수목금토일])(?:요일)?\s+(\d\d:\d\d)[–-](\d\d:\d\d)\s*$/.exec(part);
+      if (!match) continue;
+      const [, label, start, end] = match;
+      const days = label === "매일" ? weekdays : label === "평일" ? weekdays.slice(0, 5) : [label];
+      for (const day of days) entries[day] = { start, end };
+    }
+    return entries;
+  }
 
   function initialSite(profile, staff, lessons, notices, legacy) {
     const accounts = staff.map(({ name, role }, index) => ({ id: ["demo-owner", "demo-teacher", "demo-teacher-2"][index], name, role }));
@@ -37,7 +63,8 @@ window.AcademyDemoSite = (() => {
     return {
       accounts,
       staff: savedCards.map((card, index) => ({ id: `staff-${index}`, account: accountFor(card.name), name: card.name,
-        title: card.role === "원장" ? "원장" : "선생님", subject: card.subject, grade: "", detail: card.detail, credentials: [], visible: true, photo: null })),
+        title: card.role === "원장" ? "원장" : "선생님", subject: card.subject, grade: "", detail: card.detail,
+        credentials: demoCredentials[accountFor(card.name)] ?? [], visible: true, photo: null })),
       classes: [...byGroup.values()],
       sections: Object.keys(sectionLabels).map((id) => ({ id, visible: true })),
       intro: { short: legacy?.intro ?? profile.intro, long: "", tags: ["중등", "고등", "수학"], photo: null },
@@ -157,14 +184,29 @@ window.AcademyDemoSite = (() => {
       return urls.get(photo);
     }
 
+    function presentStaff(card) {
+      return {
+        id: card.id, name: card.name, title: card.title, subject: card.subject, grade: card.grade,
+        detail: card.detail, credentials: card.credentials, photoUrl: photoUrl(card.photo),
+        illustrationUrl: card.illustration === false ? "" : illustrations[card.account] ?? "",
+      };
+    }
+
     function portrait(card) {
-      const url = photoUrl(card.photo);
-      return url ? `<img class="demo-site-photo" src="${escaped(url)}" alt="${escaped(card.name)} 강사 사진" width="44" height="44">`
+      const { photoUrl: photo, illustrationUrl } = presentStaff(card);
+      const url = photo || illustrationUrl;
+      return url ? `<img class="demo-site-photo" src="${escaped(url)}" alt="${escaped(card.name)} ${photo ? "강사 사진" : "일러스트"}" width="44" height="44">`
         : `<span class="demo-site-initial" aria-hidden="true">${escaped(Array.from(card.name)[0] || "·")}</span>`;
     }
 
     function visibleStaff() {
-      return state.staff.filter(({ visible }) => visible).map((card) => ({ ...card, photoUrl: photoUrl(card.photo) }));
+      return state.staff.filter(({ visible }) => visible).map(presentStaff);
+    }
+
+    function ownStaff() {
+      const role = currentRole();
+      const card = state.staff.find(({ account }) => account === actor[role]);
+      return card ? presentStaff(card) : null;
     }
 
     function teacherName(id) {
@@ -214,7 +256,10 @@ window.AcademyDemoSite = (() => {
         const controls = currentRole() === "owner" ? chevronActions("staff", card.id, index, state.staff.length) : "";
         const edit = permitted("staff", card, currentRole())
           ? action("편집", "site-staff-edit", card.id, `aria-label="${escaped(card.name)} 편집"`) : "";
-        return `<li>${portrait(card)}<div><strong>${escaped(card.name)}</strong><p>${escaped([card.title, card.subject, card.grade].filter(Boolean).join(" · "))}</p>
+        const photo = currentRole() === "owner"
+          ? `<button class="demo-staff-photo-edit" type="button" data-action="site-staff-photo" data-id="${escaped(card.id)}" aria-label="${escaped(card.name)} 사진 바꾸기">${portrait(card)}</button>`
+          : portrait(card);
+        return `<li>${photo}<div><strong>${escaped(card.name)}</strong><p>${escaped([card.title, card.subject, card.grade].filter(Boolean).join(" · "))}</p>
           ${!card.visible ? "<small>홈페이지 숨김</small>" : ""}</div><div class="demo-site-editor-actions">${edit}${controls}</div></li>`;
       }).join("");
     }
@@ -392,19 +437,276 @@ window.AcademyDemoSite = (() => {
       };
     }
 
-    function startStaff(id, opener) {
+    function staffPhotoControls(card) {
+      const { photoUrl: photo, illustrationUrl } = presentStaff(card);
+      const current = photo || illustrationUrl;
+      return `<div class="demo-staff-avatar-control">
+        <button class="demo-staff-avatar-trigger" type="button" data-site-photo-open>
+          <span class="demo-staff-avatar">
+            <span data-site-photo-initial${current ? " hidden" : ""} aria-hidden="true">${escaped(Array.from(card.name)[0] || "·")}</span>
+            ${current ? `<img src="${escaped(current)}" alt="">` : ""}
+            <canvas width="240" height="240" hidden></canvas>
+            <span class="demo-staff-camera">${camera}</span>
+          </span>
+          <span>사진 바꾸기</span>
+        </button>
+        <output role="status" data-site-photo-message></output>
+      </div>`;
+    }
+
+    async function loadPhoto(file) {
+      if (!file.type.startsWith("image/") || file.type === "image/svg+xml" || file.size > 25 * 1024 * 1024) throw new Error("파일");
+      if (typeof createImageBitmap === "function") {
+        try {
+          return await createImageBitmap(file, { imageOrientation: "from-image" });
+        } catch { /* iOS file decoders can support more formats than createImageBitmap. */ }
+      }
+      const url = URL.createObjectURL(file);
+      try {
+        const image = new Image();
+        image.src = url;
+        await image.decode();
+        return image;
+      } finally { URL.revokeObjectURL(url); }
+    }
+
+    function configureStaffPhoto() {
+      const inputFields = `<input type="file" accept="image/*" capture="user" data-site-photo="camera" hidden>
+        <input type="file" accept="image/*" data-site-photo="album" hidden>`;
+      const source = document.createElement("dialog");
+      source.id = "demo-photo-source";
+      source.setAttribute("aria-label", "사진 바꾸기");
+      source.innerHTML = `<div class="demo-photo-source-actions">
+        <button type="button" data-site-pick="camera">${camera} 사진 찍기</button>
+        <button type="button" data-site-pick="album">${album} 앨범에서 선택</button>
+        <button type="button" data-site-remove-photo>${trash} 사진 삭제</button>
+        <p data-site-photo-error role="alert" hidden></p>
+      </div><button class="demo-photo-source-cancel" type="button" data-site-photo-close>취소</button>${inputFields}`;
+      const crop = document.createElement("dialog");
+      crop.id = "demo-photo-crop";
+      crop.setAttribute("aria-labelledby", "demo-photo-crop-title");
+      crop.innerHTML = `<header class="demo-photo-crop-header"><button type="button" data-site-photo-close>취소</button>
+        <h2 id="demo-photo-crop-title">사진 자르기</h2><button type="button" data-site-crop-complete>완료</button></header>
+        <div class="demo-photo-crop-body">
+          <div class="demo-photo-crop-stage"><div class="demo-photo-frame" tabindex="0" role="group" aria-label="잘라낼 영역. 방향키로 이동">
+            <canvas width="240" height="240"></canvas><span class="demo-photo-frame-corners" aria-hidden="true"></span>
+          </div></div>
+          <p class="demo-photo-crop-help">끌어서 위치를 맞추고, 두 손가락으로 확대해요</p>
+          <label class="demo-photo-zoom"><span aria-hidden="true">−</span><input type="range" min="100" max="300" value="100" data-site-crop="zoom" aria-label="확대"><span aria-hidden="true">+</span></label>
+          <div class="demo-photo-crop-actions"><button type="button" data-site-pick="album">${album} 다시 선택</button>
+            <button type="button" data-site-pick="camera">${camera} 다시 찍기</button></div>
+          <p data-site-photo-error role="alert" hidden></p>
+        </div>${inputFields}`;
+      document.body.append(source, crop);
+      const trigger = dialog.querySelector("[data-site-photo-open]");
+      const status = dialog.querySelector("[data-site-photo-message]");
+      const preview = trigger.querySelector("canvas");
+      const initials = trigger.querySelector("[data-site-photo-initial]");
+      const originalPhoto = trigger.querySelector("img");
+      const frame = crop.querySelector(".demo-photo-frame");
+      const canvas = frame.querySelector("canvas");
+      const range = crop.querySelector('[data-site-crop="zoom"]');
+      const finish = crop.querySelector("[data-site-crop-complete]");
+      const removal = source.querySelector("[data-site-remove-photo]");
+      const pointers = new Map();
+      let image;
+      let photo;
+      let change;
+      let zoom = 1;
+      let centerX = .5;
+      let centerY = .5;
+      let ticket = 0;
+
+      const canRemove = () => change === "replace" || change !== "remove" && Boolean(originalPhoto);
+      const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+      function constrain() {
+        const side = Math.min(image.width, image.height) / zoom;
+        const horizontal = side / (2 * image.width);
+        const vertical = side / (2 * image.height);
+        centerX = clamp(centerX, horizontal, 1 - horizontal);
+        centerY = clamp(centerY, vertical, 1 - vertical);
+        return side;
+      }
+      function paint(target) {
+        const side = constrain();
+        const context = target.getContext("2d", { alpha: false });
+        context.fillStyle = "white";
+        context.fillRect(0, 0, target.width, target.height);
+        context.drawImage(image, image.width * centerX - side / 2, image.height * centerY - side / 2, side, side, 0, 0, target.width, target.height);
+      }
+      function move(dx, dy) {
+        const side = constrain();
+        const width = frame.getBoundingClientRect().width;
+        centerX -= (dx * side) / (width * image.width);
+        centerY -= (dy * side) / (width * image.height);
+        paint(canvas);
+      }
+      function setZoom(value, anchorX = .5, anchorY = .5) {
+        const side = constrain();
+        zoom = clamp(value, 1, 3);
+        const delta = side - Math.min(image.width, image.height) / zoom;
+        centerX += (anchorX - .5) * delta / image.width;
+        centerY += (anchorY - .5) * delta / image.height;
+        range.value = String(Math.round(100 * zoom));
+        range.style.setProperty("--crop-progress", `${50 * (zoom - 1)}%`);
+        paint(canvas);
+      }
+      function position(event) {
+        return { x: event.clientX, y: event.clientY };
+      }
+      function geometry([a, b]) {
+        return b ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, distance: Math.hypot(a.x - b.x, a.y - b.y) } : a;
+      }
+      frame.addEventListener("pointerdown", (event) => {
+        if (!image || pointers.size >= 2) return;
+        frame.setPointerCapture(event.pointerId);
+        pointers.set(event.pointerId, position(event));
+      });
+      frame.addEventListener("pointermove", (event) => {
+        if (!image || !pointers.has(event.pointerId)) return;
+        const before = geometry([...pointers.values()]);
+        pointers.set(event.pointerId, position(event));
+        const after = geometry([...pointers.values()]);
+        if (before.distance > 0 && after.distance > 0) {
+          const rect = frame.getBoundingClientRect();
+          setZoom(zoom * after.distance / before.distance, (before.x - rect.left) / rect.width, (before.y - rect.top) / rect.height);
+        }
+        move(after.x - before.x, after.y - before.y);
+      });
+      for (const name of ["pointerup", "pointercancel", "lostpointercapture"]) {
+        frame.addEventListener(name, ({ pointerId }) => pointers.delete(pointerId));
+      }
+      frame.addEventListener("keydown", (event) => {
+        const steps = { ArrowLeft: [12, 0], ArrowRight: [-12, 0], ArrowUp: [0, 12], ArrowDown: [0, -12] };
+        if (!image || !steps[event.key]) return;
+        event.preventDefault();
+        move(...steps[event.key]);
+      });
+      range.addEventListener("input", () => { if (image) setZoom(Number(range.value) / 100); });
+
+      function showMessage(container, message) {
+        const element = container.querySelector("[data-site-photo-error]");
+        element.hidden = !message;
+        element.textContent = message;
+      }
+      for (const panel of [source, crop]) {
+        panel.querySelector("[data-site-photo-close]").addEventListener("click", () => panel.close());
+        for (const choice of panel.querySelectorAll("[data-site-pick]")) choice.addEventListener("click", () => {
+          panel.querySelector(`[data-site-photo="${choice.dataset.sitePick}"]`).click();
+        });
+        for (const input of panel.querySelectorAll("[data-site-photo]")) input.addEventListener("change", async () => {
+          const file = input.files?.[0];
+          if (!file) return;
+          input.value = "";
+          const attempt = ++ticket;
+          finish.disabled = true;
+          showMessage(panel, "사진을 준비하고 있어요.");
+          try {
+            const decoded = await loadPhoto(file);
+            if (attempt !== ticket || !panel.open) { decoded.close?.(); return; }
+            if (decoded.width * decoded.height > 40_000_000) { decoded.close?.(); throw new Error("크기"); }
+            image?.close?.();
+            image = decoded;
+            zoom = 1;
+            centerX = centerY = .5;
+            range.value = "100";
+            range.style.removeProperty("--crop-progress");
+            paint(canvas);
+            showMessage(panel, "");
+            if (!crop.open) {
+              // Opening the crop first keeps focus and cancellation inside the edit flow.
+              crop.showModal();
+              source.close();
+            }
+          } catch {
+            if (attempt === ticket) showMessage(panel, "사진을 열 수 없어요. 25MB 이하의 이미지 파일을 다시 선택해 주세요.");
+          } finally {
+            if (attempt === ticket) finish.disabled = false;
+          }
+        });
+      }
+      source.addEventListener("close", () => { if (!crop.open) trigger.focus(); });
+      crop.addEventListener("close", () => {
+        ticket++;
+        pointers.clear();
+        image?.close?.();
+        image = undefined;
+        finish.disabled = false;
+        trigger.focus();
+      });
+      removal.addEventListener("click", () => {
+        photo = undefined;
+        change = "remove";
+        preview.hidden = true;
+        if (originalPhoto) originalPhoto.hidden = true;
+        initials.hidden = false;
+        status.textContent = "저장하면 사진을 삭제해요.";
+        source.close();
+      });
+      const openSource = () => {
+        removal.hidden = !canRemove();
+        showMessage(source, "");
+        if (!source.open) source.showModal();
+      };
+      trigger.addEventListener("click", openSource);
+      finish.addEventListener("click", async () => {
+        if (!image) return;
+        const attempt = ++ticket;
+        finish.disabled = true;
+        const output = document.createElement("canvas");
+        try {
+          let size = Math.max(1, Math.min(800, image.width, image.height));
+          for (const quality of [.9, .76, .6, .45, .38, .3]) {
+            output.width = output.height = size;
+            paint(output);
+            const blob = await new Promise((resolve) => output.toBlob(resolve, "image/jpeg", quality));
+            if (attempt !== ticket) return;
+            if (blob?.type === "image/jpeg" && blob.size <= maxBytes) {
+              const bytes = await blob.arrayBuffer();
+              if (attempt !== ticket) return;
+              photo = { type: blob.type, bytes };
+              change = "replace";
+              preview.hidden = false;
+              if (originalPhoto) originalPhoto.hidden = true;
+              initials.hidden = true;
+              const context = preview.getContext("2d");
+              context.drawImage(output, 0, 0, preview.width, preview.height);
+              status.textContent = "사진을 바꿨어요. 저장하면 강사 카드에 반영돼요.";
+              crop.close();
+              return;
+            }
+            size = Math.max(1, Math.floor(size * .85));
+          }
+          showMessage(crop, "사진을 300KB 이하로 줄이지 못했어요. 다른 사진을 골라 주세요.");
+        } catch {
+          if (attempt === ticket) showMessage(crop, "사진을 준비하지 못했어요. 다시 시도해 주세요.");
+        } finally { finish.disabled = false; }
+      });
+      dialog.addEventListener("close", () => {
+        ticket++;
+        image?.close?.();
+        image = undefined;
+        source.remove();
+        crop.remove();
+      }, { once: true });
+      return { pendingPhoto: () => ({ change, photo }), openSource };
+    }
+
+    function startStaff(id, opener, photoOnly = false) {
       const current = state.staff.find((entry) => entry.id === id);
       const role = currentRole();
       if (!permitted("staff", current, role) || (!current && id)) return;
       const card = current ?? { id: crypto.randomUUID(), account: "", name: "", title: "선생님", subject: "", grade: "", detail: "", credentials: [], visible: true, photo: null };
       const custom = !["원장", "선생님"].includes(card.title) ? card.title : "";
       let pendingPhoto;
-      openSheet(current ? `${card.name} 강사 편집` : "강사 추가", cropControls(card.photo)
+      const title = current ? role === "teacher" ? "내 강사 카드" : `${card.name} 강사 편집` : "강사 추가";
+      openSheet(title, staffPhotoControls(card)
         + (role === "owner" ? `<label class="demo-site-check"><input type="checkbox" name="photo-consent">다른 사람의 사진은 본인 동의를 받았어요.</label>` : "")
         + field("name", "이름", card.name, 50)
+        + field("subject", "담당 과목", card.subject, 50)
         + `<label>직함<select name="title">${["원장", "선생님", "직접 입력"].map((title) => option(title, title, custom ? "직접 입력" : card.title)).join("")}</select></label>`
-        + field("custom-title", "직함 직접 입력", custom, 40)
-        + field("subject", "담당 과목", card.subject, 50) + field("grade", "담당 학년", card.grade, 50)
+        + `<div data-site-custom-title${custom ? "" : " hidden"}>${field("custom-title", "직함 직접 입력", custom, 40)}</div>`
+        + field("grade", "담당 학년", card.grade, 50)
         + field("detail", "한 줄 소개", card.detail, 160)
         + `<fieldset><legend>경력·학력</legend>${rowFieldset(card.credentials, "credential", "경력·학력")}</fieldset>`
         + (role === "owner" ? `<label>연결된 선생님 계정<select name="account">${option("", "연결 안 함", card.account)}
@@ -427,12 +729,19 @@ window.AcademyDemoSite = (() => {
           if (account && (!latest.accounts.some((item) => item.id === account)
             || latest.staff.some((item) => item.id !== card.id && item.account === account))) return "이미 다른 카드에 연결된 계정이에요.";
           if (cropped.change === "replace" && account !== actor[savingRole] && !form.has("photo-consent")) return "사진 속 본인의 동의를 확인해 주세요.";
-          const next = { ...live, ...changes, id: card.id, account, photo: cropped.change === "replace" ? cropped.photo : cropped.change === "remove" ? null : live?.photo ?? null };
+          const next = { ...live, ...changes, id: card.id, account,
+            illustration: cropped.change ? false : live?.illustration,
+            photo: cropped.change === "replace" ? cropped.photo : cropped.change === "remove" ? null : live?.photo ?? null };
           return live ? latest.staff.map((entry) => entry.id === card.id ? next : entry) : [...latest.staff, next];
         });
       }, opener);
-      pendingPhoto = cropPicker(false);
+      const picker = configureStaffPhoto();
+      pendingPhoto = picker.pendingPhoto;
       configureRows();
+      const titleInput = dialog.querySelector('select[name="title"]');
+      const customTitle = dialog.querySelector("[data-site-custom-title]");
+      titleInput.addEventListener("change", () => { customTitle.hidden = titleInput.value !== "직접 입력"; });
+      if (photoOnly) picker.openSource();
     }
 
     function startClass(id, opener) {
@@ -512,9 +821,9 @@ window.AcademyDemoSite = (() => {
         pendingPhoto = cropPicker(true);
         configureRows();
       } else if (id === "hours") {
-        const legacyHours = typeof state.hours === "string";
+        const operatingHours = weeklyHours(state.hours);
         const fields = weekdays.map((day, index) => {
-          const current = legacyHours ? (index <= 4 ? { start: "14:00", end: "22:00" } : index === 5 ? { start: "10:00", end: "17:00" } : null) : state.hours[day];
+          const current = operatingHours[day];
           return `<fieldset><legend>${day}요일</legend><div class="demo-site-time">${field(`start-${index}`, "시작", current?.start, 5, "time")}
             ${field(`end-${index}`, "종료", current?.end, 5, "time")}</div></fieldset>`;
         }).join("");
@@ -557,9 +866,27 @@ window.AcademyDemoSite = (() => {
       if (list) list.innerHTML = sectionPicker();
     }
 
+    function staffDetail(card) {
+      return `<div class="demo-staff-detail">${portrait(card)}<div>
+        <p><strong>${escaped([card.name, card.title].filter(Boolean).join(" "))}</strong></p>
+        <p>${escaped([card.subject, card.grade].filter(Boolean).join(" · "))}</p>
+        ${card.detail ? `<p>${escaped(card.detail)}</p>` : ""}
+        ${card.credentials.length ? `<h3>경력·학력</h3><ul>${card.credentials.map((entry) => `<li>${escaped(entry)}</li>`).join("")}</ul>` : ""}
+      </div></div>`;
+    }
+
     async function handle(control) {
       const { action: command, id, group, direction } = control.dataset;
       if (command === "site-staff-edit") startStaff(id, control);
+      else if (command === "site-staff-photo" && currentRole() === "owner") startStaff(id, control, true);
+      else if (command === "site-own-card" && currentRole() === "teacher") {
+        const own = ownStaff();
+        if (own) startStaff(own.id, control);
+      } else if (["site-staff-detail", "site-staff-all"].includes(command) && state.sections.some((section) => section.id === "staff" && section.visible)) {
+        const published = state.staff.filter(({ visible }) => visible);
+        const cards = command === "site-staff-all" ? published : published.filter((card) => card.id === id);
+        if (cards.length) openSheet(command === "site-staff-all" ? "강사진" : `${cards[0].name} 선생님 소개`, cards.map(staffDetail).join(""), () => "", control, { closeOnly: true });
+      }
       else if (command === "site-class-edit") startClass(id, control);
       else if (command === "site-section") startSection(id, control);
       else if (command === "site-layout" && currentRole() === "owner") {
@@ -587,11 +914,11 @@ window.AcademyDemoSite = (() => {
     }
 
     function homepage() {
-      return { ...state.contact, hours: printableHours(state.hours), intro: state.intro.short,
+      return { ...state.contact, hours: printableHours(state.hours), weeklyHours: weeklyHours(state.hours), intro: state.intro.short,
         longIntro: state.intro.long, tags: state.intro.tags, cover: photoUrl(state.intro.photo), sections: state.sections.filter(({ visible }) => visible).map(({ id }) => id) };
     }
 
-    return Object.freeze({ calendar, visibleStaff, homepage, notices: () => state.notices, editor, startSection, handle, reset, prependNotice });
+    return Object.freeze({ calendar, visibleStaff, ownStaff, homepage, notices: () => state.notices, editor, startSection, handle, reset, prependNotice });
   }
 
   return Object.freeze({ create });

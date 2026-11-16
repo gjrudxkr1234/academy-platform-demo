@@ -1,7 +1,7 @@
 {
   "synthetic_only": true,
   "network_required_after_preparation": false,
-  "version": "07200ef963525493",
+  "version": "50a81709a60c2f12",
   "assets": [
     {
       "path": "icons/owner-180.png",
@@ -65,13 +65,13 @@
     },
     {
       "path": "index.html",
-      "bytes": 2305,
-      "sha256": "55a1931049ef1f0716d918bb80a0681eb422e2381d8430b01be64a4cedda9170"
+      "bytes": 2683,
+      "sha256": "6d2187afb750ead4c3f37c9e64d82b123bacdef25cce8584df6cae99e09c3607"
     },
     {
       "path": "owner/index.html",
-      "bytes": 5146,
-      "sha256": "fbce03e377507c8819be3440af5e9a294fffe5545dc51db12570ea1561f6850a"
+      "bytes": 5598,
+      "sha256": "9e27ce6303cc1e5a9307ff149b8e0adaceeb751c6291351b2e139734563319d2"
     },
     {
       "path": "owner/manifest.webmanifest",
@@ -85,8 +85,8 @@
     },
     {
       "path": "parent/index.html",
-      "bytes": 5153,
-      "sha256": "23b70aacd4b0cc978c16896f36638eed33553b07ecd661b268cef4426999cf5c"
+      "bytes": 5605,
+      "sha256": "469029d7d23ee87120afd8451d4c6f3825b1e7aea097c91e2a06d39038d33635"
     },
     {
       "path": "parent/manifest.webmanifest",
@@ -100,13 +100,23 @@
     },
     {
       "path": "pwa.css",
-      "bytes": 2654,
-      "sha256": "e340801f73d306f7498a6c697a00a2263a143722532dfb0b70a807ee8f77f499"
+      "bytes": 2710,
+      "sha256": "8a344eccf8583c89c8425e40c89da8c16dd9282e0cb1503eb99af7b8ca4586a6"
     },
     {
       "path": "pwa.js",
       "bytes": 3158,
       "sha256": "1a25fa85f15197d20a71c72347415286f34fea1778536f6869bd393a49783e8a"
+    },
+    {
+      "path": "shared/appearance.css",
+      "bytes": 6438,
+      "sha256": "ffcaa04cc2530fb4b5f29e88baf867cf48defb556e317cea539e0eda4211f373"
+    },
+    {
+      "path": "shared/appearance.js",
+      "bytes": 1719,
+      "sha256": "4aa29c210e779ea520d89ff21f66fecaa7dcfdd3f3147003daca06c22c42ba39"
     },
     {
       "path": "shared/assets/brand/gradient-logo-white.svg",
@@ -122,6 +132,21 @@
       "path": "shared/assets/brand/gradient-symbol-white.svg",
       "bytes": 232,
       "sha256": "02f560949f020bb7905065876796bc84b898098a91e7a33e875c692d7d416d1b"
+    },
+    {
+      "path": "shared/assets/brand/portrait-0.svg",
+      "bytes": 397,
+      "sha256": "42db28eb27dbc989ba05c5545bcca9a8e79d30c18372de03b4f46d6319e7e038"
+    },
+    {
+      "path": "shared/assets/brand/portrait-1.svg",
+      "bytes": 421,
+      "sha256": "4b13349c278e168ffe5f61c070f2d98fe272072409a5e5eb8193d7fec2dd92a3"
+    },
+    {
+      "path": "shared/assets/brand/portrait-2.svg",
+      "bytes": 396,
+      "sha256": "f2a2cde796e0393991d80828b39204cce11819e292d16e07f7ec452a0dae443d"
     },
     {
       "path": "shared/assets/demo-icon-192.png",
@@ -142,6 +167,21 @@
       "path": "shared/assets/demo-roster-valid.xlsx",
       "bytes": 5093,
       "sha256": "da3c79e147cf342d706de46bf5563196ccc6870de3887f28de4f2f896afc7017"
+    },
+    {
+      "path": "shared/assets/fonts/inter-400-latin.woff2",
+      "bytes": 17008,
+      "sha256": "119bbcaf34b2b37e9bbfdf6dbf83bb6a9f52963da6d1e43135d58781d31aba69"
+    },
+    {
+      "path": "shared/assets/fonts/inter-700-latin.woff2",
+      "bytes": 17480,
+      "sha256": "aa539b3228e9298e5f0e534e3d54f2c1687372f928f4c8608c09529b29e8bcdf"
+    },
+    {
+      "path": "shared/assets/fonts/inter-OFL.txt",
+      "bytes": 4377,
+      "sha256": "5b9321a4298cfeb6b34354164a1c3afc3db114569984c502b9b35d988fd58c57"
     },
     {
       "path": "shared/assets/licenses.txt",
@@ -165,23 +205,28 @@
     },
     {
       "path": "shared/demo.js",
-      "bytes": 112244,
-      "sha256": "db6c66ca29c1df630fd717d7b6a5a6b8a7e73195bfae2806587fb020a480a945"
+      "bytes": 114208,
+      "sha256": "09ce73d27613bad3f0699016b0a9c07ef7c076d4e326accf92c15c997744154a"
+    },
+    {
+      "path": "shared/photo-ui.css",
+      "bytes": 8186,
+      "sha256": "7d90dfdb344e9eef35a411b150c00cb1f6a7d1187b85be6c260fcb3d21ef1d5b"
     },
     {
       "path": "shared/role-ui.css",
-      "bytes": 19939,
-      "sha256": "181aa1e00309df54dc20e2fd3f366edd04a35a48e82846fa459d123bdfeff7c5"
+      "bytes": 29114,
+      "sha256": "3fda8ece5398845cb7b1d0e296832a705c0fa21d2adc71a7b0b4977c4c97c8f6"
     },
     {
       "path": "shared/role-ui.js",
-      "bytes": 16526,
-      "sha256": "4814e7dc9defa767c55d695a96cd20fdbb6d5a1de02dad3ffe6a932ff8cd316a"
+      "bytes": 25766,
+      "sha256": "c616047364ca541e9a10ff62fd89f23a48b32b5dfea2ccf1959a2f97cf52fc35"
     },
     {
       "path": "shared/site-editor.js",
-      "bytes": 37767,
-      "sha256": "8b60c0e3b3d5384faeaf7eacbf03a44f17e026cd790e6e07b8fe33ab2f7287a8"
+      "bytes": 55067,
+      "sha256": "bd5af247f7edb90ba08070328c391b4cc827f35f8af54d7e27af036d8c5d944d"
     },
     {
       "path": "shared/style.css",
@@ -190,8 +235,8 @@
     },
     {
       "path": "student/index.html",
-      "bytes": 5148,
-      "sha256": "ac9a6653cc5a15bbe20fea70c7437254d094936d83859b99e302812e7d465e16"
+      "bytes": 5600,
+      "sha256": "94c6dd4031a2f0b3a628e716870d5e98c2d3295d54f503318c6f6c348964b54e"
     },
     {
       "path": "student/manifest.webmanifest",
@@ -205,8 +250,8 @@
     },
     {
       "path": "teacher/index.html",
-      "bytes": 5154,
-      "sha256": "c38959f1cb856aa503678c5e9f5f987a632fed37f04f1b54cccac86f0b4cba6f"
+      "bytes": 5606,
+      "sha256": "c151073c9bea6c264ffd053ed5fd7bde0f5f6f916d8250dd7b9717d2fae2ce7c"
     },
     {
       "path": "teacher/manifest.webmanifest",
