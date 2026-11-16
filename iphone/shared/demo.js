@@ -90,6 +90,34 @@ let installPrompt = null;
 let rosterPreview = null;
 let rosterUploadId = 0;
 let state = readState();
+const demoSite = window.AcademyRoleUi?.enabled(demoAppRole) ? window.AcademyDemoSite?.create({
+  profile: { ...demoContact, ...academyProfiles[demoVariant] },
+  staff: teachers,
+  lessons: classes,
+  notices: [initialDemoNotice, secondDemoNotice],
+  legacy: localHomepageImport(),
+  currentRole: () => role,
+  openSheet: openDemoSheet,
+  dialog,
+  refresh: render,
+  announce,
+}) : null;
+
+function localHomepageImport() {
+  try {
+    const ownerKey = storageKey.replace(/academy-iphone-demo-v1-(?:owner|teacher|student|parent)$/, "academy-iphone-demo-v1-owner");
+    const stored = JSON.parse(localStorage.getItem(ownerKey));
+    return stored ? { intro: stored.homepageIntro, notices: [stored.homeNotice, initialDemoNotice, secondDemoNotice].filter(Boolean), ...stored.siteSections } : {};
+  } catch { return {}; }
+}
+
+function scheduledClasses() {
+  return demoSite ? demoSite.calendar() : classes;
+}
+
+function teacherLesson(lesson) {
+  return demoSite ? lesson.teacherId === "demo-teacher" : lesson.teacher === "이도현";
+}
 
 function freshState() {
   return {
@@ -197,7 +225,8 @@ function sessionTime() {
 }
 
 function arrivalIsLate() {
-  const lesson = classes.find(({ day, group }) => day === "목" && group === student("jiwoo").group);
+  const lesson = scheduledClasses().find(({ day, group, groupKey }) => day === "목" && (groupKey ?? group) === student("jiwoo").group);
+  if (!lesson) return false;
   const [hour, minute] = lesson.time.split("–")[0].split(":").map(Number);
   return state.clock > hour * 60 + minute + Number(state.settings.lateMinutes);
 }
@@ -290,7 +319,7 @@ function teacherHome() {
   return `<section class="hero"><div><h1>오늘의 수업 현황</h1><p>11월 12일 목요일 · 이도현 선생님 · 중2 심화반</p></div>${staffAttendanceActions()}</section>
     ${metrics(roster)}<div class="columns">
       ${panel("담당 반 출결", attendanceTable(roster), button("출결 보기", "navigate", { id: "attendance", variant: "text-button" }))}
-      <div>${panel("오늘 수업", list(classes.filter(({ teacher, day }) => teacher === "이도현" && day === "목").map(classRow)))}
+      <div>${panel("오늘 수업", list(scheduledClasses().filter((lesson) => teacherLesson(lesson) && lesson.day === "목").map(classRow)))}
         ${panel("과제 검토 대기", list(toReview.map(({ id, name }) => item(name, assignment.title, button("검토", "review", { id }))), "검토할 과제가 없습니다."),
           button("과제 보기", "navigate", { id: "learning", variant: "text-button" }), "stack")}</div>
     </div>`;
@@ -379,24 +408,26 @@ function videoCard(id, interactive) {
 function demoWebsiteProfile() {
   const profile = academyProfiles[demoVariant];
   if (!window.AcademyRoleUi?.enabled(role)) return profile;
-  const intro = state.siteSections?.intro ?? state.homepageIntro ?? profile.intro;
+  const homepage = demoSite?.homepage();
+  const intro = homepage?.intro ?? state.siteSections?.intro ?? state.homepageIntro ?? profile.intro;
   return {
     ...demoContact, ...profile,
-    ...state.siteSections?.contact,
+    ...state.siteSections?.contact, ...homepage,
     name: state.settings.academyName || profile.name,
-    hours: state.siteSections?.hours ?? profile.hours ?? demoContact.hours,
+    hours: homepage?.hours ?? state.siteSections?.hours ?? profile.hours ?? demoContact.hours,
     intro: intro || "수업 시간표와 학원 소식을 한곳에서 확인하세요.",
     ready: Boolean(intro),
   };
 }
 
 function homeNotices() {
-  return state.siteSections?.notices ?? [state.homeNotice, initialDemoNotice, secondDemoNotice].filter(Boolean);
+  return demoSite?.notices() ?? state.siteSections?.notices ?? [state.homeNotice, initialDemoNotice, secondDemoNotice].filter(Boolean);
 }
 
 function academyWebsite() {
   const roleUi = window.AcademyRoleUi?.enabled(role) ? window.AcademyRoleUi : null;
-  if (roleUi && role === "owner") return ownerWebsite(roleUi);
+  if (roleUi && demoSite && ["owner", "teacher"].includes(role)) return demoSite.editor(roleUi, demoWebsiteProfile().name);
+  if (roleUi && demoSite) return roleUi.home(role, roleHomeOptions());
   const profile = demoWebsiteProfile();
   const contact = profile.address ? `<dl class="school-contact">
       <div><dt>주소</dt><dd>${escapeHtml(profile.address)}</dd></div>
@@ -431,7 +462,7 @@ function classRow(lesson) {
 }
 
 function leaveRow(entry) {
-  const lesson = classes.find(({ id }) => id === entry.classId);
+  const lesson = scheduledClasses().find(({ id }) => id === entry.classId);
   if (!lesson) return "";
   const status = { pending: ["승인 대기", "orange"], approved: ["승인 완료", "green"], declined: ["반려", "red"] }[entry.status] ?? ["확인 필요", "neutral"];
   const review = role === "owner" && entry.status === "pending"
@@ -443,11 +474,11 @@ function leaveRow(entry) {
 function calendarView() {
   const staff = role === "owner" || role === "teacher";
   const selectedStudent = student(role === "student" ? "jiwoo" : child);
-  const visible = classes.filter((lesson) => role === "owner" || (role === "teacher" ? lesson.teacher === "이도현" : lesson.group === selectedStudent?.group));
-  const days = scheduleDays.map((day, index) => `<button class="day-button" type="button" data-action="schedule-day" data-id="${day}" aria-pressed="${day === selectedDay}">
+  const visible = scheduledClasses().filter((lesson) => role === "owner" || (role === "teacher" ? teacherLesson(lesson) : (lesson.groupKey ?? lesson.group) === selectedStudent?.group));
+  const days = (demoSite ? [...scheduleDays, "일"] : scheduleDays).map((day, index) => `<button class="day-button" type="button" data-action="schedule-day" data-id="${day}" aria-pressed="${day === selectedDay}">
     <span>${day}</span><strong>${index + 9}</strong></button>`).join("");
   const heading = header(staff ? "일정·휴가" : "수업 일정",
-    "11월 9일–14일 수업과 변경된 일정을 확인하세요.", role === "teacher" ? button("휴가 신청", "request-leave", { variant: "primary" }) : "");
+    demoSite ? "11월 9일–15일 수업과 변경된 일정을 확인하세요." : "11월 9일–14일 수업과 변경된 일정을 확인하세요.", role === "teacher" ? button("휴가 신청", "request-leave", { variant: "primary" }) : "");
   return heading + (role === "parent" ? childPicker() : "") + `<div class="columns">
     ${panel("11월 둘째 주", `<div class="calendar-days" aria-label="요일 선택">${days}</div>
       <div class="calendar-agenda"><h3>${selectedDay}요일 수업</h3>${list(visible.filter(({ day }) => day === selectedDay).map(classRow), "예정된 수업이 없습니다.")}</div>`)}
@@ -895,7 +926,7 @@ function roleHomeRows() {
     ];
   }
   const pendingByGroup = teachers.flatMap(({ name }) => {
-    const groups = new Set(classes.filter(({ teacher }) => teacher === name).map(({ group }) => group));
+    const groups = new Set(scheduledClasses().filter(({ teacher }) => teacher === name).map(({ group, groupKey }) => groupKey ?? group));
     const count = pending.filter(({ group }) => groups.has(group)).length;
     return groups.size ? [`${name} ${count}건`] : [];
   });
@@ -913,12 +944,12 @@ function roleHomeOptions() {
   const allRows = roleHomeRows();
   const learner = student(role === "student" ? "jiwoo" : child);
   const profile = demoWebsiteProfile();
-  const lessons = classes.filter(({ teacher, group }) => role === "teacher" ? teacher === "이도현" : group === learner?.group).slice(0, 2);
+  const lessons = scheduledClasses().filter((lesson) => role === "teacher" ? teacherLesson(lesson) : (lesson.groupKey ?? lesson.group) === learner?.group).slice(0, 2);
   const upload = { label: "과제 제출", action: "submit-homework", id: assignment.id, symbol: "book" };
   const attendance = { label: "출석 체크", id: "attendance", symbol: "qr" };
   const review = { label: "과제 검사", id: "learning", symbol: "book" };
   const context = {
-    owner: { context: "원장", name: "김서윤 원장님", summary: `오늘 수업 ${new Set(classes.map(({ group }) => group)).size}개 반 · 학생 ${students.length}명`,
+    owner: { context: "원장", name: "김서윤 원장님", summary: `오늘 수업 ${new Set(scheduledClasses().map(({ group }) => group)).size}개 반 · 학생 ${students.length}명`,
       actions: [{ label: profile.ready ? "홈페이지 편집" : "홈페이지 만들기", action: "homepage-edit", symbol: "edit" },
         { label: "공지 쓰기", action: "home-notice-write", symbol: "notice" }], rows: allRows.slice(0, 4).map((row, index) => {
           if (index === 1) return { ...row, label: "검사 대기", value: row.value.replace("전체 ", ""), attention: false };
@@ -936,51 +967,52 @@ function roleHomeOptions() {
       actions: [{ label: "출결 보기", id: "attendance", symbol: "qr" }, { label: "상담 신청", action: "demo-consultation", symbol: "calendar" }],
       rows: allRows.slice(0, 3) },
   };
-  const staffProfiles = state.siteSections?.staff ?? teachers;
+  const staffProfiles = demoSite?.visibleStaff() ?? state.siteSections?.staff ?? teachers;
   return { ...context[role], lessons, profile, notices: homeNotices(), staff: staffProfiles.map(({ name }) => name).join(" · "),
-    staffProfiles, timetable: state.siteSections?.timetable ?? classes, selectedGroup: learner?.group,
+    staffProfiles, timetable: demoSite?.calendar(true) ?? state.siteSections?.timetable ?? classes, selectedGroup: learner?.group,
     controls: role === "parent" ? childPicker() : "" };
-}
-
-function ownerWebsite(ui) {
-  const profile = demoWebsiteProfile();
-  const section = (id, title, body) => `<section class="demo-home-section" aria-labelledby="site-${id}">
-    <header class="demo-home-section-heading demo-edit-heading"><h2 id="site-${id}">${title}</h2>
-      <button type="button" class="demo-home-link" data-action="site-section" data-id="${id}" aria-label="${title} 편집">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m4 16 12-12 4 4L8 20H4zM14 6l4 4"/></svg>편집
-      </button></header>${body}</section>`;
-  return header("홈페이지 편집", profile.name)
-    + section("intro", "학원 소개", `<p class="demo-home-website">${escapeHtml(profile.intro)}</p>`)
-    + section("staff", "강사진", ui.staffList(state.siteSections?.staff ?? teachers))
-    + section("timetable", "수업 시간표", ui.scheduleList(state.siteSections?.timetable ?? classes))
-    + section("notices", "공지", `<ul class="demo-home-list">${homeNotices().map(({ title, detail }) => `<li class="demo-home-website"><div><strong>${escapeHtml(title)}</strong><p>${escapeHtml(detail)}</p></div></li>`).join("") || '<li class="note">게시한 공지가 없어요.</li>'}</ul>`)
-    + section("hours", "운영시간", `<p class="demo-home-website">${escapeHtml(profile.hours || "운영시간을 입력해 주세요.")}</p>`)
-    + section("contact", "연락처", ui.contactList({ address: profile.address, phone: profile.phone }));
 }
 
 function editDemoHomepage(section) {
   activeScreen = "website";
   render();
-  if (section === "contact") editDemoSiteSection(section);
+  if (section === "contact") demoSite?.startSection(section);
   else {
     content.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   }
 }
 
-function openDemoSheet(title, fields, save, opener) {
+function openDemoSheet(title, fields, save, opener, options = {}) {
   if (dialog.open) return;
   const action = opener?.dataset.action;
   const id = opener?.dataset.id;
+  let saving = false;
   dialog.classList.add("demo-sheet");
-  dialog.innerHTML = `<h2 id="dialog-title">${title}</h2><form class="dialog-body" novalidate>
+  dialog.innerHTML = `<h2 id="dialog-title">${escapeHtml(title)}</h2><form class="dialog-body" novalidate>
     <div class="demo-sheet-fields">${fields}</div><p role="alert" hidden></p>
-    <div class="dialog-actions"><button type="button" class="secondary" data-action="close-dialog">취소</button>
-      <button type="submit" class="primary" data-confirm>저장</button></div></form>`;
-  dialog.querySelector("form").addEventListener("submit", (event) => {
+    <div class="dialog-actions"><button type="button" class="secondary" data-action="close-dialog">${options.closeOnly ? "닫기" : "취소"}</button>
+      ${options.closeOnly ? "" : `<button type="submit" class="primary" data-confirm>${options.confirmLabel || "저장"}</button>`}</div></form>`;
+  const form = dialog.querySelector("form");
+  const cancelWhileSaving = (event) => { if (saving) event.preventDefault(); };
+  dialog.addEventListener("cancel", cancelWhileSaving);
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
-    const error = save(new FormData(event.currentTarget));
-    const alert = dialog.querySelector("[role=alert]");
+    if (options.closeOnly || saving) return;
+    const payload = new FormData(form);
+    const controls = [...form.elements].filter((element) => !element.disabled);
+    const confirm = form.querySelector("[data-confirm]");
+    saving = true;
+    for (const control of controls) control.disabled = true;
+    confirm.textContent = "저장 중…";
+    const alert = form.querySelector("[role=alert]");
+    alert.hidden = true;
+    let error;
+    try { error = await save(payload); }
+    catch { error = "저장하지 못했어요. 기존 값을 유지했습니다. 다시 시도해 주세요."; }
+    saving = false;
+    for (const control of controls) control.disabled = false;
+    confirm.textContent = options.confirmLabel || "저장";
     if (error) {
       alert.textContent = error;
       alert.hidden = false;
@@ -990,6 +1022,7 @@ function openDemoSheet(title, fields, save, opener) {
     announce("저장했어요");
   });
   dialog.addEventListener("close", () => {
+    dialog.removeEventListener("cancel", cancelWhileSaving);
     dialog.classList.remove("demo-sheet");
     if (action) content.querySelector(`[data-action="${CSS.escape(action)}"][data-id="${CSS.escape(id || "")}"]`)?.focus();
   }, { once: true });
@@ -1058,55 +1091,16 @@ function editDemoSetting(key, opener) {
   }
 }
 
-function editDemoSiteSection(section, opener) {
-  const profile = demoWebsiteProfile();
-  const sections = state.siteSections ?? {};
-  const patch = (value) => patchDemoField("siteSections", section, value);
-  if (section === "intro" || section === "hours") {
-    const key = section;
-    const title = key === "intro" ? "학원 소개" : "운영시간";
-    const value = key === "intro" ? sections.intro ?? state.homepageIntro ?? academyProfiles[demoVariant].intro : profile.hours;
-    const maximum = key === "intro" ? 160 : 100;
-    openDemoSheet(title, demoField(title, key, value, maximum), (form) => {
-      const updated = formText(form, key);
-      return updated.length <= maximum ? patch(updated) : `${maximum}자까지 입력해 주세요.`;
-    }, opener);
-  } else if (section === "contact") {
-    openDemoSheet("연락처", demoField("주소", "address", profile.address, 100) + demoField("전화", "phone", profile.phone, 25),
-      (form) => {
-        const address = formText(form, "address"), phone = formText(form, "phone");
-        if (address.length > 100 || (phone && !/^[0-9() +\-]{6,25}$/.test(phone))) return "주소와 전화번호 형식을 확인해 주세요.";
-        return patch({ address, phone });
-      }, opener);
-  } else if (["staff", "timetable", "notices"].includes(section)) {
-    const settings = {
-      staff: ["강사진", sections.staff ?? teachers, [["name", "이름", 35], ["subject", "과목", 35], ["detail", "소개", 100]]],
-      timetable: ["수업 시간표", sections.timetable ?? classes, [["group", "반 이름", 35], ["day", "요일", 1], ["time", "수업 시간", 35], ["teacher", "담당 선생님", 35]]],
-      notices: ["공지", homeNotices(), [["title", "제목", 50], ["detail", "내용", 160]]],
-    };
-    const [title, rows, fields] = settings[section];
-    const shown = rows.length < 12 ? [...rows, {}] : rows;
-    const body = shown.map((row, index) => `<fieldset><legend>${index < rows.length ? `${title} ${index + 1}` : "새 항목"} </legend>
-      ${fields.map(([key, label, maximum]) => key === "day"
-        ? `<label>${label}<select name="${key}${index}">${[...scheduleDays, "일"].map((day) => demoOption(day, `${day}요일`, row.day)).join("")}</select></label>`
-        : demoField(label, `${key}${index}`, row[key], maximum)).join("")}</fieldset>`).join("");
-    openDemoSheet(title, `<p class="note">${fields[0][1]}을 비우면 목록에서 빠집니다.</p>${body}`, (form) => {
-      const updated = [];
-      for (const [index, row] of shown.entries()) {
-        const values = fields.map(([key, , maximum]) => [key, formText(form, `${key}${index}`), maximum]);
-        if (!values[0][1]) continue;
-        if (values.some(([, value, maximum]) => value.length > maximum)
-          || (section === "timetable" && (!values[2][1] || ![...scheduleDays, "일"].includes(values[1][1])))) return "입력 길이와 수업 시간을 확인해 주세요.";
-        const fieldsPatch = Object.fromEntries(values.map(([key, value]) => [key, value]));
-        const noticeDefaults = section === "notices" && !row.id ? { id: `site-${Date.now()}-${index}`, date: "11월 16일" } : {};
-        updated.push({ ...row, ...noticeDefaults, ...fieldsPatch });
-      }
-      return patch(updated);
-    }, opener);
-  }
-}
-
 function writeDemoNotice() {
+  if (demoSite) {
+    openDemoSheet("공지 쓰기", `<p>가상 공지를 이 기기에만 저장합니다.</p>
+      ${demoField("제목", "title", "", 50)}${demoField("공지 내용", "detail", "", 160)}`, (form) => {
+      const title = formText(form, "title"), detail = formText(form, "detail");
+      if (!title || !detail || title.length > 50 || detail.length > 160) return "제목과 공지 내용을 확인해 주세요.";
+      return demoSite.prependNotice({ title, detail, date: "11월 16일", id: `local-${Date.now()}` });
+    });
+    return;
+  }
   openDialog("공지 쓰기", `<p>가상 공지를 이 기기에만 저장합니다.</p>
     <label>제목<input name="title" maxlength="50"></label><label>공지 내용<input name="detail" maxlength="160"></label>`, "공지 저장", (form) => {
     const title = form.get("title").trim();
@@ -1195,7 +1189,7 @@ function roleTabShortcuts(screen) {
     teacher: {
       attendance: [["수업·휴가 일정", "schedule"]],
       learning: [["영상 현황", "video"]],
-      students: [["내신 일정", "school-schedule"], ["발송 기록", "notifications"], ["홈페이지", "website"]],
+      students: [["내신 일정", "school-schedule"], ["발송 기록", "notifications"], ["홈페이지 편집", "website"]],
     },
     student: {
       "home-overview": [["알림", "notifications"]],
@@ -1244,9 +1238,9 @@ function openDialog(title, body, confirmLabel, handler, destructive = false) {
   dialog.innerHTML = `<h2 id="dialog-title">${escapeHtml(title)}</h2><div class="dialog-body">${body}
     <div class="dialog-actions"><button type="button" class="secondary" data-action="close-dialog">닫기</button>
     ${confirmLabel ? `<button type="button" data-confirm class="${destructive ? "secondary danger" : "primary"}">${escapeHtml(confirmLabel)}</button>` : ""}</div></div>`;
-  dialog.querySelector("[data-confirm]")?.addEventListener("click", () => {
+  dialog.querySelector("[data-confirm]")?.addEventListener("click", async () => {
     const selected = new Map(Array.from(dialog.querySelectorAll('select[name], input[name]:not([type="file"])'), (control) => [control.name, control.value]));
-    if (handler?.(selected) !== false) dialog.close();
+    if (await handler?.(selected) !== false) dialog.close();
   });
   dialog.showModal();
 }
@@ -1378,14 +1372,14 @@ function submitHomework(taskId = assignment.id) {
 }
 
 function requestLeave() {
-  const options = classes.filter(({ id, teacher, day }) => teacher === "이도현" && day !== "목"
-    && !state.leaves.some((entry) => entry.classId === id && entry.status !== "declined"));
+  const options = scheduledClasses().filter((lesson) => teacherLesson(lesson) && lesson.day !== "목"
+    && !state.leaves.some((entry) => entry.classId === lesson.id && entry.status !== "declined"));
   if (!options.length) {
     announce("신청 가능한 수업이 없습니다.");
     return;
   }
   openDialog("휴가 신청", `<label>수업<select name="class">${options.map(({ id, dayNumber, group, time }) =>
-    `<option value="${id}">11월 ${dayNumber}일 · ${group} · ${time}</option>`).join("")}</select></label>
+    `<option value="${escapeHtml(id)}">11월 ${dayNumber}일 · ${escapeHtml(group)} · ${time}</option>`).join("")}</select></label>
     <label>사유<select name="reason"><option>개인 일정</option><option>병가</option><option>연수</option></select></label>`, "신청하기", (form) => {
     const classId = form.get("class");
     const reason = form.get("reason");
@@ -1399,11 +1393,11 @@ function requestLeave() {
 
 function reviewLeave(id) {
   const entry = state.leaves.find(({ classId, status }) => classId === id && status === "pending");
-  const lesson = classes.find((record) => record.id === id);
+  const lesson = scheduledClasses().find((record) => record.id === id);
   if (!entry || !lesson) return;
-  const available = teachers.filter(({ name }) => name !== lesson.teacher && !classes.some((candidate) =>
+  const available = teachers.filter(({ name }) => name !== lesson.teacher && !scheduledClasses().some((candidate) =>
     candidate.teacher === name && candidate.day === lesson.day && candidate.time === lesson.time));
-  openDialog("휴가 승인·대체 교사 배정", `<p>${lesson.teacher} 선생님 · 11월 ${lesson.dayNumber}일 · ${lesson.group}</p>
+  openDialog("휴가 승인·대체 교사 배정", `<p>${escapeHtml(lesson.teacher)} 선생님 · 11월 ${lesson.dayNumber}일 · ${escapeHtml(lesson.group)}</p>
     <p class="note">신청 사유 ${escapeHtml(entry.reason)}</p>
     <label>대체 교사<select name="substitute">${available.map(({ name }) => `<option value="${name}">${name} 선생님</option>`).join("")}</select></label>`,
   "승인·배정", (form) => {
@@ -1694,7 +1688,7 @@ document.addEventListener("click", (event) => {
       content.focus({ preventScroll: true });
       window.scrollTo(0, 0);
     } else content.focus();
-  } else if (action === "schedule-day" && scheduleDays.includes(id)) {
+  } else if (action === "schedule-day" && (scheduleDays.includes(id) || (demoSite && id === "일"))) {
     selectedDay = id;
     render();
     content.querySelector('.day-button[aria-pressed="true"]')?.focus();
@@ -1724,8 +1718,8 @@ document.addEventListener("click", (event) => {
       openDialog(entry.title, `<p>${escapeHtml(entry.detail)}</p>`);
     }
   }
-  else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && action === "homepage-edit") editDemoHomepage(id);
-  else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && activeScreen === "website" && action === "site-section") editDemoSiteSection(id, control);
+  else if (demoSite && ["owner", "teacher"].includes(role) && action === "homepage-edit") editDemoHomepage(id);
+  else if (demoSite && activeScreen === "website" && action.startsWith("site-")) void demoSite.handle(control);
   else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && activeScreen === "settings" && action === "setting-field") editDemoSetting(id, control);
   else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && activeScreen === "settings" && action === "setting-switch" && id === "rank") {
     const error = patchDemoField("settings", id, !state.settings.rank);
@@ -1734,9 +1728,9 @@ document.addEventListener("click", (event) => {
   }
   else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && action === "home-notice-write") writeDemoNotice();
   else if (window.AcademyRoleUi?.enabled("parent") && role === "parent" && action === "demo-consultation") requestDemoConsultation();
-  else if (window.AcademyRoleUi?.enabled(role) && action === "demo-contact" && ["address", "phone"].includes(id)) {
+  else if (window.AcademyRoleUi?.enabled(role) && action === "demo-contact" && ["address", "phone", "kakao"].includes(id)) {
     const value = demoWebsiteProfile()[id];
-    if (value) openDialog(id === "address" ? "지도 열기" : "전화 걸기",
+    if (value) openDialog({ address: "지도 열기", phone: "전화 걸기", kakao: "카카오 채널 보기" }[id],
       `<p>${escapeHtml(value)}</p><p class="note">가상 학원 정보입니다. 이 데모에서는 외부 앱을 열지 않습니다.</p>`);
   }
   else if (action === "website-notice") openDialog(notice.title, `<p>${escapeHtml(notice.detail)}</p>`);
@@ -1806,7 +1800,9 @@ roleSelect.addEventListener("change", () => {
 
 window.academyDemoRequestReset = (afterReset) => {
   if (dialog.open) dialog.close();
-  openDialog("데모 초기화", "<p>이 기기의 가상 출결·숙제·성적·내신 체험과 데모 알림만 초기화합니다. 실제 학원 계정과 자료에는 영향을 주지 않습니다.</p>", "데모만 초기화", () => {
+  openDialog("데모 초기화", "<p>이 기기의 가상 출결·숙제·성적·내신 체험과 데모 알림만 초기화합니다. 실제 학원 계정과 자료에는 영향을 주지 않습니다.</p>", "데모만 초기화", async () => {
+    const siteError = await demoSite?.reset();
+    if (siteError) { announce(siteError); return false; }
     rosterUploadId++;
     rosterPreview = null;
     releasePhotoPreview();

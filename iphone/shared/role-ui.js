@@ -74,24 +74,56 @@
   }
 
   function scheduleList(lessons, selectedGroup) {
-    const own = lessons.filter((lesson) => lesson.group === selectedGroup);
-    const others = lessons.filter((lesson) => lesson.group !== selectedGroup);
+    const own = lessons.filter((lesson) => (lesson.groupKey ?? lesson.group) === selectedGroup);
+    const others = lessons.filter((lesson) => (lesson.groupKey ?? lesson.group) !== selectedGroup);
     return `<ul class="demo-home-lessons demo-site-schedule">${[...own, ...others].map(({ day, time, group, teacher }, index) => `
       <li${index < own.length ? ' class="is-own" data-own-class' : ""}><strong>${escape(group)}${index < own.length ? ' <small>내 반</small>' : ""}</strong>
         <span>${escape(day)}요일 ${escape(time)}${teacher ? ` · ${escape(teacher)} 선생님` : ""}</span></li>`).join("") || "<li>등록된 수업 시간표가 없어요.</li>"}</ul>`;
   }
 
   function staffList(staff) {
-    return `<ul class="demo-site-staff">${staff.map(({ name, subject, detail }) => `
-      <li><span class="demo-site-initial" aria-hidden="true">${escape(name[0] || "·")}</span>
-        <div><strong>${escape(name)}</strong>${subject ? `<span>${escape(subject)}</span>` : ""}${detail ? `<p>${escape(detail)}</p>` : ""}</div></li>`).join("") || "<li>강사진 안내를 준비하고 있어요.</li>"}</ul>`;
+    return `<ul class="demo-site-staff">${staff.map(({ name, title, subject, grade, detail, credentials, photoUrl }) => `
+      <li>${photoUrl ? `<img class="demo-site-photo" src="${escape(photoUrl)}" alt="${escape(name)} 강사 사진" width="44" height="44">`
+        : `<span class="demo-site-initial" aria-hidden="true">${escape(Array.from(name)[0] || "·")}</span>`}
+        <div><strong>${escape(name)}${title ? ` <small>${escape(title)}</small>` : ""}</strong>
+          ${subject || grade ? `<span>${escape([subject, grade].filter(Boolean).join(" · "))}</span>` : ""}
+          ${detail ? `<p>${escape(detail)}</p>` : ""}
+          ${credentials?.length ? `<ul class="demo-staff-credentials">${credentials.map((entry) => `<li>${escape(entry)}</li>`).join("")}</ul>` : ""}</div></li>`).join("") || "<li>강사진 안내를 준비하고 있어요.</li>"}</ul>`;
   }
 
   function contactList(profile) {
-    const rows = [["운영시간", "hours"], ["주소", "address"], ["전화", "phone"]].filter(([, key]) => profile[key]);
+    const rows = [["운영시간", "hours"], ["주소", "address"], ["전화", "phone"], ["카카오 채널", "kakao"]].filter(([, key]) => profile[key]);
     if (!rows.length) return '<p class="demo-site-muted">학원 안내를 준비하고 있어요.</p>';
     return `<dl class="demo-site-contact">${rows.map(([label, key]) => `<div><dt>${label}</dt><dd>${key === "hours" ? escape(profile[key])
-      : homeButton({ label: profile[key], action: "demo-contact", id: key, chevron: true }, "tertiary", "demo-home-link")}</dd></div>`).join("")}</dl>`;
+      : homeButton({ label: key === "kakao" ? "카카오 채널 보기" : profile[key], action: "demo-contact", id: key, chevron: true }, "tertiary", "demo-home-link")}</dd></div>`).join("")}</dl>`;
+  }
+
+  function noticeSection(role, notices) {
+    return `<section class="demo-home-section" aria-labelledby="demo-notice-title">
+      <header class="demo-home-section-heading"><h2 id="demo-notice-title">공지</h2>
+        ${sectionLink("더 보기", role === "parent" ? "news" : role === "student" ? "learning" : "website")}</header>
+      <ul class="demo-home-list">${notices.slice(0, 2).map(({ title, detail, date, id }) => `
+        <li class="demo-home-notice"><button type="button" data-action="home-notice" data-id="${escape(id)}" data-action-level="tertiary"><span class="demo-home-icon">${icon("notice")}</span>
+          <span class="demo-home-copy"><strong>${escape(title)}</strong><span>${escape(detail)} · ${escape(date)}</span></span></button></li>`).join("")}</ul>
+    </section>`;
+  }
+
+  function homepageSections(role, profile, timetable, staff, notices, selectedGroup) {
+    const section = (id, title, html) => `<section class="demo-home-section" aria-labelledby="demo-${id}-title">
+      <header class="demo-home-section-heading"><h2 id="demo-${id}-title">${title}</h2></header>${html}</section>`;
+    const order = profile.sections ?? ["notices", "timetable", "staff", "contact"];
+    const content = {
+      intro: () => profile.cover || profile.longIntro || profile.tags?.length
+        ? section("intro", "학원 소개", `${profile.cover ? `<img class="demo-site-cover" src="${escape(profile.cover)}" alt="학원 대표 사진">` : ""}
+          ${profile.longIntro ? `<p class="demo-site-paragraph">${escape(profile.longIntro)}</p>` : ""}
+          ${profile.tags?.length ? `<p class="demo-site-tags">${profile.tags.map((tag) => `<span>${escape(tag)}</span>`).join("")}</p>` : ""}`) : "",
+      staff: () => section("staff", "강사진", staffList(staff)),
+      timetable: () => section("timetable", "수업 시간표", scheduleList(timetable, selectedGroup)),
+      notices: () => noticeSection(role, notices),
+      hours: () => profile.hours ? section("hours", "운영시간", `<p class="demo-site-paragraph">${escape(profile.hours)}</p>`) : "",
+      contact: () => section("guide", "학원 안내", contactList(profile.sections ? { ...profile, hours: "" } : profile)),
+    };
+    return order.map((id) => content[id]?.() ?? "").join("");
   }
 
   function home(role, { context, name, summary, actions, rows, controls, notices, lessons, profile, staff, timetable = [], staffProfiles = [], selectedGroup }) {
@@ -100,7 +132,7 @@
     const learner = parent || role === "student";
     return `<section class="demo-role-home" data-role-home="${role}">
       <header class="demo-greeting${learner ? " demo-greeting-learner" : ""}">
-        ${learner ? `<h1>${escape(profile.name)}</h1><p class="demo-greeting-intro">${escape(profile.intro)}</p>
+        ${learner ? `<h1>${escape(profile.name)}</h1><p class="demo-greeting-intro">${escape(profile.sections && !profile.sections.includes("intro") ? "수업 시간표와 학원 소식을 한곳에서 확인하세요." : profile.intro)}</p>
           <p class="demo-greeting-meta">${escape(name)}, 반가워요</p>`
           : `<p class="demo-greeting-meta">${escape(context)} · 11월 16일 월요일</p>
           <h1>${escape(name)},<br>오늘도 반가워요</h1>
@@ -116,28 +148,8 @@
         ${controls}
         ${role === "owner" ? metricGrid(rows) : rowList(rows)}
       </section>
-      <section class="demo-home-section" aria-labelledby="demo-notice-title">
-        <header class="demo-home-section-heading"><h2 id="demo-notice-title">공지</h2>
-          ${sectionLink("더 보기", parent ? "news" : learner ? "learning" : "website")}
-        </header>
-        <ul class="demo-home-list">${notices.slice(0, 2).map(({ title, detail, date, id }) => `
-          <li class="demo-home-notice"><button type="button" data-action="home-notice" data-id="${escape(id)}" data-action-level="tertiary"><span class="demo-home-icon">${icon("notice")}</span>
-            <span class="demo-home-copy"><strong>${escape(title)}</strong><span>${escape(detail)} · ${escape(date)}</span></span>
-          </button></li>`).join("")}</ul>
-      </section>
-      ${learner ? `<section class="demo-home-section" aria-labelledby="demo-timetable-title">
-        <header class="demo-home-section-heading"><h2 id="demo-timetable-title">수업 시간표</h2></header>
-        ${scheduleList(timetable, selectedGroup)}
-      </section>
-      <section class="demo-home-section" aria-labelledby="demo-staff-title">
-        <header class="demo-home-section-heading"><h2 id="demo-staff-title">강사진</h2></header>
-        ${staffList(staffProfiles)}
-      </section>
-      <section class="demo-home-section" aria-labelledby="demo-guide-title">
-        <header class="demo-home-section-heading"><h2 id="demo-guide-title">학원 안내</h2></header>
-        ${contactList(profile)}
-      </section>
-      ${parent ? homeButton({ label: "상담 신청", action: "demo-consultation", symbol: "calendar" }, "secondary", "demo-contact-cta") : ""}` : ""}
+      ${learner ? homepageSections(role, profile, timetable, staffProfiles, notices, selectedGroup) : noticeSection(role, notices)}
+      ${parent ? homeButton({ label: "상담 신청", action: "demo-consultation", symbol: "calendar" }, "secondary", "demo-contact-cta") : ""}
       ${role === "teacher" ? `<section class="demo-home-section" aria-labelledby="demo-week-title">
         <header class="demo-home-section-heading"><h2 id="demo-week-title">이번 주 수업</h2>
           ${homeButton({ label: "수업 일정", id: "schedule" }, "tertiary", "demo-home-link")}</header>
@@ -154,7 +166,7 @@
             ${role === "owner" ? homeButton(websiteEdit, "tertiary", "demo-home-link")
               + (!profile.phone ? homeButton({ label: "연락처 등록", action: "homepage-edit", id: "contact", chevron: true }, "tertiary", "demo-home-link") : "")
               : `<p>강사진 ${escape(staff)}</p>${profile.phone ? `<p>${escape(profile.phone)}</p>` : ""}
-                ${sectionLink("학원 홈페이지 전체 보기", "website")}`}
+                ${homeButton({ ...websiteEdit, label: "홈페이지 편집" }, "tertiary", "demo-home-link")}`}
           </div>
         </div>
       </section>` : ""}
