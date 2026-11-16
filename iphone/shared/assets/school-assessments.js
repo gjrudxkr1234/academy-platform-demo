@@ -342,5 +342,12 @@ const DemoSchoolAssessments = (() => {
     announce(isConfirmed(entry) ? "일정이 확정되었습니다." : "확인 기록을 추가했습니다.");
   }
 
-  return { view, handle, reset() { demo = fresh(); } };
+  function upcoming() {
+    const entry = schoolEvents().find((item) => !item.hidden && isConfirmed(item) && dayOffset(item.date) >= 0);
+    if (!entry) return null;
+    const days = dayOffset(entry.date);
+    return { title: eventTitle(entry), detail: dateLabel(entry.date), days, countdown: days === 0 ? "D-DAY" : `D-${days}` };
+  }
+
+  return { view, handle, upcoming, reset() { demo = fresh(); } };
 })();
