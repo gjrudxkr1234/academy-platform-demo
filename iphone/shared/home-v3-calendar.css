@@ -1,0 +1,120 @@
+.demo-v3-calendar {
+  --v3-cal-accent: var(--accent);
+  --v3-cal-sunday: #e5484d;
+  --v3-cal-saturday: #3e63dd;
+  --v3-cal-muted: var(--muted);
+  padding: 8px 20px 20px;
+  background: var(--panel);
+  color: var(--ink);
+}
+.v3-cal-title, .v3-cal-title > div, .v3-cal-filters, .v3-cal-month { display: flex; align-items: center; gap: 8px; }
+.v3-cal-title, .v3-cal-month { justify-content: space-between; }
+.v3-cal-title h2 { margin: 0; font-size: 18px; line-height: 1.35; font-weight: 760; }
+.role-app-ui .demo-v3-calendar button { color: var(--ink); background: transparent; border: 0; }
+.role-app-ui .demo-v3-calendar button:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.role-app-ui .demo-v3-calendar .v3-cal-add {
+  min-height: 44px; min-width: 44px; padding: 4px 8px; font-size: 13px; font-weight: 700; border-radius: 12px;
+  background: var(--soft); color: var(--ink); white-space: nowrap;
+}
+.role-app-ui .demo-v3-calendar .v3-cal-link {
+  min-height: 44px; min-width: 44px; padding: 4px 0 4px 3px; color: var(--v3-cal-muted); font-size: 12.5px;
+  font-weight: 650; white-space: nowrap;
+}
+.v3-cal-link span { padding-left: 2px; }
+.v3-cal-filters { gap: 6px; margin: 5px 0 6px; }
+.role-app-ui .v3-cal-filters button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-width: 44px; min-height: 44px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px;
+  font-size: 13px; font-weight: 650; white-space: nowrap;
+}
+.role-app-ui .v3-cal-filters button[aria-pressed="true"] { background: var(--soft); border-color: var(--control-line); }
+.v3-cal-filters [data-v3-dot], .v3-cal-dots i {
+  display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--ink);
+}
+.v3-cal-filters [data-v3-dot="personal"], .v3-cal-dots [data-v3-dot="personal"] { background: var(--v3-cal-accent); }
+.v3-cal-month h3 { margin: 0; font-size: 16px; font-weight: 750; }
+.role-app-ui .v3-cal-month button {
+  font-weight: 540; min-width: 44px; min-height: 44px; padding: 0; border-radius: 9px; font-size: 25px; line-height: 1;
+}
+.role-app-ui .v3-cal-month button:hover, .role-app-ui .v3-cal-link:hover { background: var(--soft); }
+.v3-cal-grid {
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); row-gap: 0; text-align: center;
+  touch-action: pan-y; user-select: none;
+}
+.v3-cal-weekday { min-height: 28px; padding-block: 4px; color: var(--v3-cal-muted); font-size: 12px; font-weight: 700; }
+.v3-cal-weekday[data-v3-weekday="0"], .role-app-ui .v3-cal-day[data-v3-weekday="0"] { color: color-mix(in srgb, var(--v3-cal-sunday) 73%, var(--ink)); }
+.v3-cal-weekday[data-v3-weekday="6"], .role-app-ui .v3-cal-day[data-v3-weekday="6"] { color: color-mix(in srgb, var(--v3-cal-saturday) 75%, var(--ink)); }
+.role-app-ui .v3-cal-day {
+  min-width: 0; min-height: 44px; padding: 3px 0 4px; border-radius: 8px; display: grid;
+  grid-template-rows: 29px 5px; gap: 2px; place-items: center; font-size: 14px; font-weight: 650; line-height: 1;
+}
+.role-app-ui .v3-cal-day[data-past] { color: var(--v3-cal-muted); }
+.v3-cal-day > span:first-child {
+  display: grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; border: 1px solid transparent;
+}
+.v3-cal-day[aria-current="date"] > span:first-child { border-color: var(--ink); }
+.v3-cal-day[aria-pressed="true"] > span:first-child { background: var(--action); border-color: var(--action); color: var(--inverse); }
+.role-app-ui .v3-cal-day:hover > span:first-child { border-color: var(--control-line); }
+.v3-cal-dots { display: flex; align-items: center; justify-content: center; gap: 2px; height: 5px; }
+.v3-cal-dots i { width: 5px; height: 5px; }
+.v3-cal-day-list { border-top: 1px solid var(--line); margin-top: 10px; }
+.v3-cal-day-list h3 { font-size: 14px; margin: 13px 0 8px; }
+.v3-cal-day-list ul { margin: 0; padding: 0; list-style: none; }
+.v3-cal-event { border-bottom: 1px solid var(--line); }
+.v3-cal-event:last-child { border-bottom: 0; }
+.role-app-ui .v3-cal-event > :is(button, div) {
+  display: grid; grid-template-columns: minmax(56px, auto) minmax(0, 1fr) auto; gap: 10px; align-items: center;
+  min-height: 52px; position: relative; padding: 8px 0 8px 9px; width: 100%; text-align: left;
+}
+.role-app-ui .v3-cal-event button:hover { background: var(--soft); }
+.v3-cal-event > :is(button, div)::before {
+  content: ""; position: absolute; inset: 9px auto 9px 0; width: 2px; border-radius: 2px; background: var(--ink);
+}
+.v3-cal-event[data-v3-event-type="regular"] > :is(button, div)::before { background: var(--control-line); }
+.v3-cal-event:is([data-v3-event-type="school"],[data-v3-event-type="personal"]) > :is(button, div)::before { background: var(--v3-cal-accent); }
+.v3-cal-time { font-size: 12.5px; color: var(--v3-cal-muted); font-variant-numeric: tabular-nums; text-wrap: balance; }
+.v3-cal-event-copy { display: grid; gap: 3px; min-width: 0; overflow-wrap: anywhere; }
+.v3-cal-event-copy strong { font-size: 15.5px; font-weight: 720; }
+.v3-cal-event-copy small { color: var(--v3-cal-muted); font-size: 12.5px; }
+.v3-cal-event-tag { padding: 4px 6px; border-radius: 6px; background: var(--soft); color: var(--v3-cal-muted); font-size: 11.5px; white-space: nowrap; }
+.v3-cal-event:is([data-v3-event-type="school"],[data-v3-event-type="personal"]) .v3-cal-event-tag { background: var(--accent-tint); color: var(--accent-text); }
+.v3-cal-empty { margin: 0; color: var(--v3-cal-muted); font-size: 13px; line-height: 1.65; }
+.v3-cal-empty span { overflow-wrap: anywhere; }
+
+.v3-cal-form { display: grid; gap: 10px; }
+.v3-cal-form fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.v3-cal-form legend { padding: 0; font-weight: 700; }
+.v3-cal-form .v3-cal-kind { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 6px; }
+.v3-cal-kind legend { margin-bottom: 3px; }
+.v3-cal-kind label { position: relative; display: inline-flex; margin: 0; cursor: pointer; }
+.v3-cal-kind input[type="radio"] { position: absolute; opacity: 0; pointer-events: none; }
+.v3-cal-kind label span {
+  display: grid; place-items: center; min-height: 44px; min-width: 44px; padding-inline: 10px; border-radius: 999px;
+  border: 1px solid var(--control-line); color: var(--ink); background: var(--panel); font-size: 13px;
+}
+.v3-cal-kind label input:checked + span { background: var(--action); color: var(--inverse); border-color: var(--action); }
+.v3-cal-kind label input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
+.v3-cal-form-time, .v3-cal-form-detail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: end; gap: 10px; }
+.v3-cal-form label, .v3-cal-form input { min-width: 0; }
+.v3-cal-form input:disabled { opacity: .65; }
+.role-app-ui .v3-cal-form [data-v3-target][hidden] { display: none; }
+.role-app-ui .v3-cal-form .v3-cal-delete { margin-right: auto; padding-inline: 0; color: var(--danger); }
+
+.role-app-ui #dialog.demo-sheet[open]:has(.v3-cal-form) {
+  display: flex; flex-direction: column; overflow: hidden; padding: 0; background: var(--panel); box-shadow: none;
+}
+#dialog.demo-sheet:has(.v3-cal-form) h2 { margin: 15px 20px 12px; }
+#dialog.demo-sheet:has(.v3-cal-form) .dialog-body { display: flex; flex-direction: column; min-height: 0; gap: 0; }
+#dialog.demo-sheet:has(.v3-cal-form) .demo-sheet-fields { overflow-y: auto; min-height: 0; padding: 2px 20px 10px; }
+#dialog.demo-sheet:has(.v3-cal-form) [role="alert"] { margin: 8px 20px; }
+#dialog.demo-sheet:has(.v3-cal-form) .dialog-actions {
+  margin: 0; padding: 12px 20px calc(12px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line);
+}
+#dialog.demo-sheet .v3-cal-kind { border: 0; padding: 0; }
+#dialog.demo-sheet .v3-cal-kind label + label { margin-top: 0; }
+#dialog.demo-sheet .v3-cal-form input:not([type="radio"]):not([type="checkbox"]) {
+  border: 1px solid var(--control-line); border-radius: 11px; padding: 8px 12px; font-size: 15px;
+}
+#dialog.demo-sheet .v3-cal-form .v3-cal-detail-toggle { border-top: 1px solid var(--line); }
+#dialog.demo-sheet .v3-cal-detail-toggle summary { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px; }
+#dialog.demo-sheet .v3-cal-detail-toggle summary::after { content: "›"; }

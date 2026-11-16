@@ -349,5 +349,13 @@ const DemoSchoolAssessments = (() => {
     return { title: eventTitle(entry), detail: dateLabel(entry.date), days, countdown: days === 0 ? "D-DAY" : `D-${days}` };
   }
 
-  return { view, handle, upcoming, reset() { demo = fresh(); } };
+  function calendarItems() {
+    const classBySchool = { naru: "중2 심화반", moon: "중1 개념반" };
+    return demo.events.filter((entry) => !entry.hidden && isConfirmed(entry)).map((entry) => ({
+      id: entry.id, title: eventTitle(entry), date: entry.date, school: schools[entry.school].name,
+      groups: [classBySchool[entry.school]],
+    }));
+  }
+
+  return { view, handle, upcoming, calendarItems, reset() { demo = fresh(); } };
 })();

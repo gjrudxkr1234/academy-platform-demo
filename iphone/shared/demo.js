@@ -66,7 +66,10 @@ for (const staff of ["owner", "teacher"]) {
 }
 if (window.AcademyRoleUi?.enabled("parent")) menus.parent.push(["news", "소식"]);
 const demoAppRole = window.ACADEMY_APP_ROLE;
-if (window.AcademyRoleUi?.enabled(demoAppRole)) menus[demoAppRole].push(["home-overview", "오늘 전체 보기"]);
+if (window.AcademyRoleUi?.enabled(demoAppRole)) {
+  menus[demoAppRole].push(["home-overview", "오늘 전체 보기"]);
+  if (["owner", "parent"].includes(demoAppRole)) menus[demoAppRole].push(["video", "학습 영상"]);
+}
 
 const content = document.getElementById("content");
 const navigation = document.getElementById("navigation");
@@ -428,7 +431,7 @@ function homeNotices() {
 function academyWebsite() {
   const roleUi = window.AcademyRoleUi?.enabled(role) ? window.AcademyRoleUi : null;
   if (roleUi && demoSite && ["owner", "teacher"].includes(role)) return demoSite.editor(roleUi, demoWebsiteProfile().name);
-  if (roleUi && demoSite) return roleUi.home(role, roleHomeOptions());
+  if (roleUi && demoSite) return window.DemoHomeV3.academyIntro(roleHomeOptions());
   const profile = demoWebsiteProfile();
   const contact = profile.address ? `<dl class="school-contact">
       <div><dt>주소</dt><dd>${escapeHtml(profile.address)}</dd></div>
@@ -974,6 +977,24 @@ function roleHomeOptions() {
       actions: [{ label: "출결 보기", id: "attendance", symbol: "qr" }, { label: "상담 신청", action: "demo-consultation", symbol: "calendar" }],
       rows: allRows.slice(0, 3) },
   };
+  const roster = roleStudents();
+  const ownCalendarLessons = scheduledClasses();
+  const teacherGroups = [...new Set(ownCalendarLessons.filter(teacherLesson).map(lesson => lesson.groupKey ?? lesson.group))];
+  const calendar = {
+    studentId: learner?.id,
+    selectedGroup: learner?.group,
+    students,
+    teacherGroups,
+    lessons: ownCalendarLessons,
+    assignments: [
+      { id:assignment.id, title:assignment.title, date:"2026-11-16", time:"21:00", groups:["중2 심화반"] },
+      { id:reviewAssignment.id, title:reviewAssignment.title, date:"2026-11-18", time:"20:00", groups:["중2 심화반"] },
+    ],
+    schoolEvents: DemoSchoolAssessments.calendarItems?.() ?? [],
+    consultations: [{ id:"fixture-counsel", title:"학습 상담", date:"2026-11-16", time:"18:30", group:"중2 심화반", studentId:"jiwoo", room:"상담실", teacher:"김서윤" }],
+  };
+  const missingAssignments = [state.submissions.jiwoo, state.reviewSubmissions.jiwoo]
+    .filter(record => !["submitted","reviewed"].includes(record?.status)).length;
   const staffProfiles = demoSite?.visibleStaff() ?? state.siteSections?.staff ?? teachers;
   const rows = context[role].rows.map((row) => {
     const countdown = row.screen === "school-schedule" ? row.value.match(/ · (D[+-](?:\d+|day))$/i)?.[1] : "";
@@ -981,7 +1002,11 @@ function roleHomeOptions() {
   });
   return { ...context[role], rows, lessons, profile, brandName: document.title.split(" ")[0], notices: homeNotices(), staff: staffProfiles.map(({ name }) => name).join(" · "),
     staffProfiles, ownStaff: demoSite?.ownStaff(), timetable: demoSite?.calendar(true) ?? state.siteSections?.timetable ?? classes, selectedGroup: learner?.group, homepageDay,
-    controls: role === "parent" ? childPicker() : "" };
+    controls: role === "parent" ? childPicker() : "", calendar,
+    pendingCount: missingAssignments, attendance: learner ? latestEvent(learner.id) : null,
+    todayLessonCount: ownCalendarLessons.filter(lesson => lesson.day === "월" && teacherLesson(lesson)).length,
+    reviewCount: roster.filter(({ id }) => state.submissions[id]?.status === "submitted").length,
+    presentCount: roster.filter(({ id }) => latestEvent(id)).length, rosterCount: roster.length, appointmentCount: calendar.consultations.length };
 }
 
 function editDemoHomepage(section) {
@@ -1180,6 +1205,7 @@ function parentView(screen) {
   if (screen === "attendance") return header("자녀 출결", "자녀별 등원·하원 기록입니다.") + controls + panel("출결 기록", attendanceHistory(child));
   if (screen === "notifications") return header("받은 알림", "등원·하원 알림을 자녀별로 확인합니다.") + controls + panel("알림 기록", notificationList(child, 20));
   if (screen === "learning") return controls + learnerWork(child, false);
+  if (screen === "video") return controls + header("학습 영상", "자녀가 볼 수 있는 영상의 시청 상태예요.") + videoCard(child, false);
   return `<section class="hero"><div><h1>우리 아이 학원 현황</h1><p>두 자녀의 출결과 오늘 할 일을 확인하세요.</p></div></section>${controls}
     <div class="columns">
       <div>${panel(`${studentName(child)} 학생 출결`, attendanceHistory(child))}
@@ -1222,7 +1248,7 @@ function render() {
   else if (activeScreen === "schedule") content.innerHTML = calendarView();
   else if (activeScreen === "school-schedule") content.innerHTML = DemoSchoolAssessments.view();
   else if (activeScreen === "home" && window.AcademyRoleUi?.enabled(role)) {
-    content.innerHTML = window.AcademyRoleUi.home(role, roleHomeOptions());
+    content.innerHTML = window.DemoHomeV3.home(role, roleHomeOptions());
   } else if (activeScreen === "home-overview" && window.AcademyRoleUi?.enabled(role)) {
     content.innerHTML = window.AcademyRoleUi.overview(role, roleHomeRows(), role === "parent" ? childPicker() : "");
   }
@@ -1240,8 +1266,15 @@ function render() {
       notifications: () => header("발송 기록", "출결과 연결된 알림톡·문자 발송 예시입니다.") + panel("발송 예시", notificationList(null, 30)) };
     content.innerHTML = screens[activeScreen]();
   }
-  if (window.AcademyRoleUi?.enabled(role)) roleTabShortcuts(activeScreen);
+  if (window.AcademyRoleUi?.enabled(role)) {
+    if (activeScreen === "notifications" && window.DemoHomeV3.getNoticeMode()) {
+      const reminders = window.DemoHomeCalendar.reminders(role, roleHomeOptions());
+      if (reminders.length) content.insertAdjacentHTML("beforeend", panel("일정 알림", list(reminders.map(({ topic, time }) => item(topic, time)))));
+    }
+    roleTabShortcuts(activeScreen);
+  }
   window.AcademyRoleUi?.apply(content, role, activeScreen);
+  if (window.AcademyRoleUi?.enabled(role)) window.DemoHomeV3.apply(homeV3Context());
   paintScoreCharts();
 }
 
@@ -1680,7 +1713,37 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden && cameraSession?.stream) dialog.close();
 });
 
+function homeV3Context() {
+  const route = (screen) => navigation.querySelector(`[data-action="navigate"][data-id="${CSS.escape(screen)}"]`)?.click();
+  return { role, options:roleHomeOptions(), screen:activeScreen, rerender:render, navigate:route,
+    openSheet:openDemoSheet, openDialog, announce,
+    closeDialog:() => { if (dialog.open) dialog.close(); },
+    cropFields:photo => demoSite.bannerCropFields(photo),
+    setupCrop:() => demoSite.bannerCropPicker(),
+    openInstructor:id => { void demoSite.handle({ dataset:{ action:"site-own-card", id } }); },
+    openNotice:id => showHomeNotice(id),
+  };
+}
+
+function showHomeNotice(id) {
+  const entry = homeNotices().find(candidate => candidate.id === id);
+  if (!entry) return;
+  if (role === "parent" && id === "initial" && !state.parentNoticeReads.includes(child)) {
+    state.parentNoticeReads.push(child);
+    saveState();
+  }
+  openDialog(entry.title, `<p>${escapeHtml(entry.detail)}</p>`);
+}
+
 document.addEventListener("click", (event) => {
+  const v3 = event.target.closest("[data-v3-home-action], [data-v3-banner-action], [data-v3-calendar-action]");
+  if (v3 && window.AcademyRoleUi?.enabled(role)) {
+    const context = homeV3Context();
+    if (v3.dataset.v3HomeAction) window.DemoHomeV3.handle(v3, context);
+    else if (v3.dataset.v3BannerAction) window.DemoHomeBanners.handle(v3, context);
+    else window.DemoHomeCalendar.handle(v3, context);
+    return;
+  }
   const control = event.target.closest("[data-action]");
   if (!control) return;
   const { action, id } = control.dataset;
@@ -1727,24 +1790,9 @@ document.addEventListener("click", (event) => {
       content.focus();
     } else if (action === "consultation-note") editConsultationNote(id);
   }
-  else if (window.AcademyRoleUi?.enabled(role) && action === "home-notice") {
-    const entry = homeNotices().find((candidate) => candidate.id === id);
-    if (entry) {
-      if (role === "parent" && id === "initial" && !state.parentNoticeReads.includes(child)) {
-        state.parentNoticeReads.push(child);
-        saveState();
-      }
-      openDialog(entry.title, `<p>${escapeHtml(entry.detail)}</p>`);
-    }
-  }
+  else if (window.AcademyRoleUi?.enabled(role) && action === "home-notice") showHomeNotice(id);
   else if (demoSite && ["owner", "teacher"].includes(role) && action === "homepage-edit") editDemoHomepage(id);
   else if (demoSite && (activeScreen === "website" && action.startsWith("site-") || ["site-own-card", "site-staff-detail", "site-staff-all"].includes(action))) void demoSite.handle(control);
-  else if (action === "demo-appearance" && window.GradientAppearance) {
-    const choices = [["system", "시스템 따라가기"], ["light", "밝게"], ["dark", "어둡게"]];
-    const mode = window.GradientAppearance.preference();
-    openDemoSheet("화면 모드", choices.map(([value, label]) => `<label><input type="radio" name="appearance" value="${value}"${mode === value ? " checked" : ""}>${label}</label>`).join(""),
-      (form) => { window.GradientAppearance.set(form.get("appearance")); return ""; }, control);
-  }
   else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && activeScreen === "settings" && action === "setting-field") editDemoSetting(id, control);
   else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && activeScreen === "settings" && action === "setting-switch" && id === "rank") {
     const error = patchDemoField("settings", id, !state.settings.rank);
@@ -1846,6 +1894,8 @@ window.academyDemoRequestReset = (afterReset) => {
     selectedLearner = null;
     consultationPeriod = "all";
     DemoSchoolAssessments.reset();
+    window.DemoHomeCalendar?.reset();
+    window.DemoHomeBanners?.reset();
     saveState();
     nativeShell?.resetDemo?.();
     window.academyDemoGuide?.reset();
