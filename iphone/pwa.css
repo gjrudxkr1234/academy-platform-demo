@@ -1,13 +1,6 @@
 :root { color-scheme:light; }
 * { box-sizing:border-box; }
 [hidden] { display:none !important; }
-.iphone-status { background:#f1f5f9; color:#334155; padding:8px max(20px,env(safe-area-inset-left)); display:flex; flex-wrap:wrap; gap:4px 12px; align-items:center; justify-content:space-between; font:14px/1.5 system-ui,sans-serif; }
-.iphone-status p { margin:0; }
-.iphone-status > div { display:flex; gap:12px; }
-.iphone-status :is(a,button) { min-height:48px; display:inline-flex; align-items:center; border:0; background:transparent; color:#1e40af; font:inherit; font-weight:650; text-decoration:underline; padding:8px 0; }
-.role-app-ui .proposal-banner { padding-top:max(6px,env(safe-area-inset-top)); }
-.role-app-ui .topbar { padding:8px 20px; }
-.role-app-ui .topbar .school strong { font-size:15px; }
 .role-app-ui #content { padding-inline:max(20px,env(safe-area-inset-left)) max(20px,env(safe-area-inset-right)); }
 .role-app-ui input, .role-app-ui select, .role-app-ui textarea { font-size:16px; }
 .role-app-ui .demo-action-dock { padding-inline:max(20px,env(safe-area-inset-left)) max(20px,env(safe-area-inset-right)); }
@@ -22,7 +15,7 @@
 #iphone-help::backdrop { background:#0f172a88; }
 .iphone-landing { margin:0; background:#f8fafc; color:#172554; font:16px/1.65 system-ui,-apple-system,sans-serif; }
 .iphone-landing main { max-width:560px; margin:auto; padding:max(30px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-left)) max(32px,env(safe-area-inset-bottom)); }
-.iphone-landing .eyebrow { font-size:14px; font-weight:700; color:#475569; }
+.landing-brand { display:block; height:29px; width:auto; }
 .iphone-landing h1 { font-size:36px; line-height:1.25; letter-spacing:-.045em; margin:18px 0; }
 .iphone-landing .intro { color:#475569; margin:0 0 28px; }
 .iphone-landing nav { display:grid; gap:12px; }
@@ -34,4 +27,4 @@
 .install-note { margin-top:30px; color:#475569; font-size:14px; }
 .install-note h2 { font-size:18px; color:#172554; }
 @media(max-width:374px) { .iphone-landing main { padding-inline:18px; } }
-@media print { .iphone-status,.demo-notification { display:none; } }
+@media print { .demo-footer-controls,.demo-notification { display:none; } }

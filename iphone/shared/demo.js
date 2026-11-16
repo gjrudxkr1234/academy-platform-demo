@@ -18,6 +18,7 @@ const video = { title: "일차함수의 그래프 풀이", minutes: 12 };
 const assignment = { id: "linear-practice", title: "일차함수 실전 문제 8–12번", due: "오늘 오후 9:00", detail: "8–12번 풀이 사진을 첨부해 주세요. 답과 함께 식을 정리한 과정이 보이면 좋아요." };
 const reviewAssignment = { id: "graph-review", title: "그래프 읽기 복습 1–3번", due: "수요일 오후 8:00", detail: "그래프에서 찾은 좌표 3개의 풀이를 찍어 주세요." };
 const notice = { title: "다음 주 수업 시간 안내", detail: "다음 주 목요일 중2 심화반은 오후 4시에 시작합니다. 교재와 지난 숙제 풀이를 가져오세요." };
+const initialDemoNotice = { ...notice, date: "11월 12일", id: "initial" };
 const academyProfiles = {
   generic: { name: "온새미 수학학원", intro: "수업 전 진단으로 학생의 수준을 살피고, 개념 수업부터 문제 풀이와 오답 점검까지 이어갑니다." },
 
@@ -46,7 +47,7 @@ const assessments = [
   { id: "middle-one-third", title: "방정식 단원 평가", date: "11.06", group: "중1 개념반", maximum: 100 },
 ];
 
-const symbols = { home: "◈", website: "⌂", schedule: "▦", attendance: "▤", learning: "◇", grades: "▥", video: "▷", notifications: "◌", roster: "▧", settings: "⚙", "school-schedule": "▣", students: "▧", news: "◌" };
+const symbols = { "home-overview": "◈", home: "◈", website: "⌂", schedule: "▦", attendance: "▤", learning: "◇", grades: "▥", video: "▷", notifications: "◌", roster: "▧", settings: "⚙", "school-schedule": "▣", students: "▧", news: "◌" };
 const menus = {
   owner: [["home", "운영 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 리포트"], ["notifications", "발송 기록"], ["roster", "학생·보호자"], ["settings", "학원 설정"]],
   teacher: [["home", "수업 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 입력"], ["video", "영상 현황"], ["notifications", "발송 기록"]],
@@ -59,6 +60,8 @@ for (const staff of ["owner", "teacher"]) {
   if (window.AcademyRoleUi?.enabled(staff)) menus[staff].push(["students", "학생"]);
 }
 if (window.AcademyRoleUi?.enabled("parent")) menus.parent.push(["news", "소식"]);
+const demoAppRole = window.ACADEMY_APP_ROLE;
+if (window.AcademyRoleUi?.enabled(demoAppRole)) menus[demoAppRole].push(["home-overview", "오늘 전체 보기"]);
 
 const content = document.getElementById("content");
 const navigation = document.getElementById("navigation");
@@ -69,7 +72,7 @@ const installButton = document.getElementById("install-demo");
 const nativeShell = window.AcademyDemo;
 let role = window.ACADEMY_APP_ROLE;
 roleSelect.value = role;
-let activeScreen = window.location.hash === "#school-schedule" ? "school-schedule" : nativeShell ? "home" : "website";
+let activeScreen = "home";
 let child = "jiwoo";
 let toastTimer;
 let cameraSession = null;
@@ -99,6 +102,8 @@ function freshState() {
     },
     notices: ["seoha", "hyun"],
     parentNoticeReads: [],
+    homeNotice: null,
+    homepageIntro: null,
     reviewSubmissions: {},
     consultationNotes: {},
     progress: { jiwoo: 40, seoha: 100, hyun: 65, siwoo: 0, minjun: 100, yuna: 15 },
@@ -364,8 +369,19 @@ function videoCard(id, interactive) {
     ? button(label, "watch-video", { variant: "primary", disabled: progress >= 90 }) : (progress >= 90 ? badge("시청 완료", "green") : badge("시청 중", "purple")));
 }
 
-function academyWebsite() {
+function demoWebsiteProfile() {
   const profile = academyProfiles[demoVariant];
+  if (!window.AcademyRoleUi?.enabled(role)) return profile;
+  const intro = state.homepageIntro ?? profile.intro;
+  return { ...profile, intro: intro || "학원 소개가 아직 등록되지 않았습니다. 수업과 학원 소식을 확인할 수 있어요.", ready: Boolean(intro) };
+}
+
+function homeNotices() {
+  return [state.homeNotice, initialDemoNotice].filter(Boolean);
+}
+
+function academyWebsite() {
+  const profile = demoWebsiteProfile();
   const contact = profile.address ? `<dl class="school-contact">
       <div><dt>주소</dt><dd>${escapeHtml(profile.address)}</dd></div>
       <div><dt>운영시간</dt><dd>${escapeHtml(profile.hours)}</dd></div>
@@ -387,7 +403,9 @@ function academyWebsite() {
       <div class="columns">
         ${panel("수업 시간표", `<div class="table-scroll"><table><thead><tr><th scope="col">반</th><th scope="col">요일</th>
           <th scope="col">시간</th><th scope="col">담당</th></tr></thead><tbody>${rows}</tbody></table></div>`, badge("예시", "purple"))}
-        ${panel("공지", list([item(notice.title, "11월 12일", button("공지 보기", "website-notice", { variant: "text-button" }))]), badge("예시", "purple"))}
+        ${panel("공지", list(window.AcademyRoleUi?.enabled(role)
+          ? homeNotices().map(({ title, date, id }) => item(title, date, button("공지 보기", "home-notice", { id, variant: "text-button" })))
+          : [item(notice.title, "11월 12일", button("공지 보기", "website-notice", { variant: "text-button" }))]), badge("예시", "purple"))}
       </div>
     </div>`;
 }
@@ -859,11 +877,74 @@ function roleHomeRows() {
   const risk = needsAttention.filter(({ id }) => attentionReasons(id).length >= 2);
   return [
     { label: "오늘 출석률", value: `${Math.round(present / roster.length * 100)}%`, detail: `${present}명 출석 · 등록 ${roster.length}명`, screen: "attendance", symbol: "qr" },
-    { label: "선생님별 검사 대기", value: `전체 ${pending.length}건`, detail: pendingByGroup.join(" · "), screen: "learning", symbol: "book", attention: pending.length > 0 },
+    { label: "선생님별 검사 대기", value: `전체 ${pending.length}건`, detail: pendingByGroup.filter((entry) => !entry.endsWith(" 0건")).join(" · ") || "검사 대기 없음", screen: "learning", symbol: "book", attention: pending.length > 0 },
     { label: "이탈 위험 학생", value: `${risk.length}명 확인 필요`, detail: risk.map(({ name }) => name).join(" · ") || "출결·과제·성적에 겹치는 주의 신호가 없어요.", screen: "students", symbol: "people", attention: risk.length > 0 },
     { label: "상담 일정", value: "오늘 오후 6:30 · 김지우", detail: "가상 상담 1건 · 성적 추이와 이전 메모", screen: "students", symbol: "calendar" },
     { label: "요금제·AI 사용량", value: "스탠다드 · 가상 사용량 1건", detail: "운영 설정에서 확인할 항목의 예시", screen: "settings", symbol: "settings" },
   ];
+}
+
+function roleHomeOptions() {
+  const allRows = roleHomeRows();
+  const learner = student(role === "student" ? "jiwoo" : child);
+  const profile = demoWebsiteProfile();
+  const lessons = classes.filter(({ teacher, group }) => role === "teacher" ? teacher === "이도현" : group === learner?.group).slice(0, 2);
+  const upload = { label: "과제 제출", action: "submit-homework", id: assignment.id, symbol: "book" };
+  const attendance = { label: "출석 체크", id: "attendance", symbol: "qr" };
+  const review = { label: "과제 검사", id: "learning", symbol: "book" };
+  const context = {
+    owner: { context: "원장", name: "김서윤 원장님", summary: `오늘 수업 ${new Set(classes.map(({ group }) => group)).size}개 반 · 학생 ${students.length}명`,
+      actions: [{ label: profile.ready ? "홈페이지 편집" : "홈페이지 만들기", action: "homepage-edit", symbol: "edit" },
+        { label: "공지 쓰기", action: "home-notice-write", symbol: "notice" }], rows: allRows.slice(0, 4).map((row, index) => {
+          if (index === 1) return { ...row, label: "검사 대기", value: row.value.replace("전체 ", ""), attention: false };
+          if (index === 2) return { ...row, value: row.value.replace(" 확인 필요", "") };
+          if (index === 3) return { ...row, label: "상담", value: "18:30", detail: "김지우 보호자" };
+          return row;
+        }) },
+    teacher: { context: "중2 심화반 · 선생님", name: "이도현 선생님", summary: `${allRows[0]?.value ?? ""} · 검사 대기 ${allRows[1]?.value ?? ""}`,
+      actions: [attendance, review], rows: allRows.slice(0, 3) },
+    student: { context: learner?.group ?? "학생", name: "지우님",
+      summary: `${state.submissions.jiwoo ? "과제 제출 확인" : "오늘 마감 과제 1개"} · ${allRows[1]?.value ?? ""}`,
+      actions: [upload], rows: allRows.slice(0, 3) },
+    parent: { context: "학부모", name: `${learner?.name ?? "학생"} 보호자님`,
+      summary: `${allRows[0]?.value ?? ""} · 이번 주 과제 완료율 ${allRows[1]?.value ?? ""}`,
+      actions: [{ label: "출결 보기", id: "attendance", symbol: "qr" }, { label: "상담 신청", action: "demo-consultation", symbol: "calendar" }],
+      rows: allRows.slice(0, 3) },
+  };
+  return { ...context[role], lessons, profile, notices: homeNotices(), staff: teachers.map(({ name }) => name).join(" · "),
+    controls: role === "parent" ? childPicker() : "" };
+}
+
+function editDemoHomepage() {
+  const intro = state.homepageIntro ?? academyProfiles[demoVariant].intro;
+  openDialog("학원 홈페이지 편집", `<p>가상 학원 소개를 편집합니다. 실제 학원 정보는 입력하지 마세요.</p>
+    <label>학원 소개<input name="intro" value="${escapeHtml(intro)}" maxlength="160"></label>`, "저장", (form) => {
+    state.homepageIntro = form.get("intro").trim();
+    saveState();
+    announce("가상 홈페이지를 이 기기에 저장했습니다.");
+  });
+}
+
+function writeDemoNotice() {
+  openDialog("공지 쓰기", `<p>가상 공지를 이 기기에만 저장합니다.</p>
+    <label>제목<input name="title" maxlength="50"></label><label>공지 내용<input name="detail" maxlength="160"></label>`, "공지 저장", (form) => {
+    const title = form.get("title").trim();
+    const detail = form.get("detail").trim();
+    if (!title || !detail) {
+      dialog.querySelector(title ? '[name="detail"]' : '[name="title"]').focus();
+      return false;
+    }
+    state.homeNotice = { title, detail, date: "11월 16일", id: "local" };
+    saveState();
+    announce("가상 공지를 이 기기에 저장했습니다.");
+  });
+}
+
+function requestDemoConsultation() {
+  openDialog("상담 신청", `<p>가상 상담 시간을 선택합니다. 실제 학원에 전송되지 않습니다.</p>
+    <label>희망 시간<select name="time"><option>평일 오후 6:00</option><option>평일 오후 7:00</option></select></label>`, "신청 체험", (form) => {
+    announce(`${form.get("time")} 상담 신청을 체험했습니다.`);
+  });
 }
 
 function assignmentRows(id, interactive) {
@@ -934,7 +1015,7 @@ function roleTabShortcuts(screen) {
       students: [["내신 일정", "school-schedule"], ["발송 기록", "notifications"], ["홈페이지", "website"]],
     },
     student: {
-      home: [["알림", "notifications"], ["홈페이지", "website"]],
+      "home-overview": [["알림", "notifications"], ["홈페이지", "website"]],
       attendance: [["수업 일정", "schedule"]],
       grades: [["내신 일정", "school-schedule"]],
     },
@@ -951,7 +1032,9 @@ function render() {
   else if (activeScreen === "schedule") content.innerHTML = calendarView();
   else if (activeScreen === "school-schedule") content.innerHTML = DemoSchoolAssessments.view();
   else if (activeScreen === "home" && window.AcademyRoleUi?.enabled(role)) {
-    content.innerHTML = window.AcademyRoleUi.home(role, academyProfiles[demoVariant].name, roleHomeRows(), role === "parent" ? childPicker() : "");
+    content.innerHTML = window.AcademyRoleUi.home(role, roleHomeOptions());
+  } else if (activeScreen === "home-overview" && window.AcademyRoleUi?.enabled(role)) {
+    content.innerHTML = window.AcademyRoleUi.overview(role, roleHomeRows(), role === "parent" ? childPicker() : "");
   }
   else if (role === "parent") content.innerHTML = parentView(activeScreen);
   else if (role === "student") {
@@ -1411,6 +1494,10 @@ document.addEventListener("click", (event) => {
   if (!control) return;
   const { action, id } = control.dataset;
   if (action === "navigate" && menus[role].some(([screen]) => screen === id)) {
+    if (id === "home" && activeScreen === "home" && window.AcademyRoleUi?.enabled(role)) {
+      window.scrollTo(0, 0);
+      return;
+    }
     if (activeScreen === "roster" && id !== "roster") {
       rosterUploadId++;
       rosterPreview = null;
@@ -1418,7 +1505,10 @@ document.addEventListener("click", (event) => {
     if (id === "students") selectedLearner = null;
     activeScreen = id;
     render();
-    content.focus();
+    if (window.AcademyRoleUi?.enabled(role)) {
+      content.focus({ preventScroll: true });
+      window.scrollTo(0, 0);
+    } else content.focus();
   } else if (action === "schedule-day" && scheduleDays.includes(id)) {
     selectedDay = id;
     render();
@@ -1439,6 +1529,19 @@ document.addEventListener("click", (event) => {
       content.focus();
     } else if (action === "consultation-note") editConsultationNote(id);
   }
+  else if (window.AcademyRoleUi?.enabled(role) && action === "home-notice") {
+    const entry = homeNotices().find((candidate) => candidate.id === id);
+    if (entry) {
+      if (role === "parent" && id === "initial" && !state.parentNoticeReads.includes(child)) {
+        state.parentNoticeReads.push(child);
+        saveState();
+      }
+      openDialog(entry.title, `<p>${escapeHtml(entry.detail)}</p>`);
+    }
+  }
+  else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && action === "homepage-edit") editDemoHomepage();
+  else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && action === "home-notice-write") writeDemoNotice();
+  else if (window.AcademyRoleUi?.enabled("parent") && role === "parent" && action === "demo-consultation") requestDemoConsultation();
   else if (action === "website-notice") openDialog(notice.title, `<p>${escapeHtml(notice.detail)}</p>`);
   else if (action === "request-leave" && role === "teacher") requestLeave();
   else if (action === "review-leave" && role === "owner") reviewLeave(id);
