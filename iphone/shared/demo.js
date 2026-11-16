@@ -67,7 +67,15 @@ for (const staff of ["owner", "teacher"]) {
 if (window.AcademyRoleUi?.enabled("parent")) menus.parent.push(["news", "소식"]);
 const demoAppRole = window.ACADEMY_APP_ROLE;
 if (window.AcademyRoleUi?.enabled(demoAppRole)) {
+  classes.push(
+    { id:"middle-two-mon", day:"월", dayNumber:16, group:"중2 심화반", time:"16:00–17:30", teacher:"이도현", room:"강의실 A" },
+    { id:"middle-one-mon", day:"월", dayNumber:16, group:"중1 개념반", time:"18:00–19:30", teacher:"김하람", room:"강의실 B" },
+  );
+}
+if (window.AcademyRoleUi?.enabled(demoAppRole)) {
   menus[demoAppRole].push(["home-overview", "오늘 전체 보기"], ["academy-calendar", "캘린더"]);
+  if (demoAppRole === "owner") menus.owner.push(["operations", "운영"], ["staff-pay", "근무·급여"], ["staff-leave", "강사 휴가·대타"], ["timetable", "수업 시간표"]);
+  if (demoAppRole === "teacher") menus.teacher.push(["my-work", "내 근무·휴가"]);
   if (["owner", "parent"].includes(demoAppRole)) {
     menus[demoAppRole].push(["video", "학습 영상"], ["tuition", demoAppRole === "owner" ? "수납 관리" : "학원비"]);
   }
@@ -331,9 +339,10 @@ function teacherHome() {
     </div>`;
 }
 
-function attendanceHistory(id) {
+function attendanceHistory(id, kind) {
   const roster = roleStudents();
-  const records = state.attendance.filter((event) => id ? event.student === id : roster.some((learner) => learner.id === event.student)).toReversed();
+  const records = state.attendance.filter((event) => (!kind || event.kind === kind)
+    && (id ? event.student === id : roster.some((learner) => learner.id === event.student))).toReversed();
   return list(records.map((event) => item(`${studentName(event.student)} 학생 · ${event.kind === "in" ? "등원" : "하원"}`, event.time, event.late ? badge("지각", "orange") : badge("기록 완료", "green"))));
 }
 
@@ -343,8 +352,12 @@ function staffAttendanceActions() {
 
 function staffAttendance() {
   const roster = roleStudents();
-  return `${header("출결 관리", "등원·하원 기록과 지각을 확인합니다.", staffAttendanceActions())}
-    ${metrics(roster)}<div class="columns">${panel("학생별 출결", attendanceTable(roster))}${panel("출결 기록", attendanceHistory())}</div>`;
+  const title = header("출결 관리", "등원·하원 기록과 지각을 확인합니다.", staffAttendanceActions());
+  const rosterPanel = panel("학생별 출결", attendanceTable(roster));
+  if (role === "owner" && window.AcademyRoleUi?.enabled(role)) {
+    return title + `<div class="columns">${panel("오늘 등원", attendanceHistory(undefined, "in"))}${rosterPanel}</div>`;
+  }
+  return title + `${metrics(roster)}<div class="columns">${rosterPanel}${panel("출결 기록", attendanceHistory())}</div>`;
 }
 
 function submissionBadge(value) {
@@ -668,7 +681,7 @@ function staffStudents() {
   const learner = roster.find(({ id }) => id === selectedLearner);
   const actions = `<div class="demo-subnav">${role === "owner" ? button("명부 등록", "navigate", { id: "roster" }) : ""}${button(role === "owner" ? "반별 성적" : "성적 입력", "navigate", { id: "grades" })}</div>`;
   if (!learner) {
-    return header(role === "owner" ? "학생/반" : "담당 학생", "학생을 선택하면 성적 추이와 상담 메모가 열립니다.") + actions
+    return header(role === "owner" ? "학생·반" : "담당 학생", "학생을 선택하면 성적 추이와 상담 메모가 열립니다.") + actions
       + panel("학생 명단", list(roster.map(({ id, name, group }) => item(name, group, button("학생 상세", "student-detail", { id })))));
   }
   const period = `<label class="field-inline">조회 기간<select id="consultation-period">
@@ -974,7 +987,7 @@ function roleHomeOptions() {
     student: { context: learner?.group ?? "학생", name: "지우님",
       summary: `${state.submissions.jiwoo ? "과제 제출 확인" : "오늘 마감 과제 1개"} · ${allRows[1]?.value ?? ""}`,
       actions: [upload], rows: allRows.slice(0, 3) },
-    parent: { context: "학부모", name: `${learner?.name ?? "학생"} 보호자님`,
+    parent: { context: learner ? `${learner.name} 보호자` : "학부모", name: `${learner?.name ?? "학생"} 보호자님`,
       summary: `${allRows[0]?.value ?? ""} · 이번 주 과제 완료율 ${allRows[1]?.value ?? ""}`,
       actions: [{ label: "출결 보기", id: "attendance", symbol: "qr" }, { label: "상담 신청", action: "demo-consultation", symbol: "calendar" }],
       rows: allRows.slice(0, 3) },
@@ -1002,11 +1015,21 @@ function roleHomeOptions() {
     const countdown = row.screen === "school-schedule" ? row.value.match(/ · (D[+-](?:\d+|day))$/i)?.[1] : "";
     return countdown ? { ...row, value: row.value.slice(0, -(countdown.length + 3)), countdown } : row;
   });
-  return { ...context[role], rows, lessons, profile, brandName: document.title.split(" ")[0], notices: homeNotices(), staff: staffProfiles.map(({ name }) => name).join(" · "),
+  const teachingToday = role === "teacher" ? window.DemoStaffOperations.teachingToday(ownCalendarLessons).map((lesson) => ({
+    ...lesson, studentCount: students.filter((entry) => entry.group === (lesson.groupKey ?? lesson.group)).length,
+  })) : [];
+  const latestSiteChange = demoSite?.lastChange();
+  const notifiedThisWeek = state.notifications.length + homeNotices().filter(({ date }) => parseInt(date?.split("월 ")[1]) >= 16).length;
+  return { ...context[role], rows, lessons, profile, teachingToday, currentChild:child,
+    homepageEditLabel:latestSiteChange ? `${new Date(latestSiteChange).toLocaleDateString("ko-KR", { month:"numeric", day:"numeric", timeZone:"Asia/Seoul" })} 수정` : "11월 13일 수정",
+    bannerCount:window.DemoHomeBanners.activeCount(),
+    weeklyNotices:notifiedThisWeek,
+    scoreLabel:state.grades["linear-fourth"]?.published ? "11월 발행 완료" : "11월 발행 전", brandName: document.title.split(" ")[0], notices: homeNotices(), staff: staffProfiles.map(({ name }) => name).join(" · "),
     staffProfiles, ownStaff: demoSite?.ownStaff(), timetable: demoSite?.calendar(true) ?? state.siteSections?.timetable ?? classes, selectedGroup: learner?.group, homepageDay,
     controls: role === "parent" ? childPicker() : "", calendar,
     pendingCount: missingAssignments, attendance: learner ? latestEvent(learner.id) : null,
-    todayLessonCount: ownCalendarLessons.filter(lesson => lesson.day === "월" && teacherLesson(lesson)).length,
+    arrival:learner ? state.attendance.findLast((event) => event.student === learner.id && event.kind === "in")?.time : null,
+    todayLessonCount: teachingToday.length,
     reviewCount: roster.filter(({ id }) => state.submissions[id]?.status === "submitted").length,
     presentCount: roster.filter(({ id }) => latestEvent(id)).length, rosterCount: roster.length, appointmentCount: calendar.consultations.length };
 }
@@ -1219,34 +1242,16 @@ function parentView(screen) {
     </div>`;
 }
 
-function roleTabShortcuts(screen) {
-  const links = {
-    owner: {
-      settings: [["수납 관리", "tuition"], ["과제 검사", "learning"], ["발송 기록", "notifications"], ["홈페이지 편집", "website"]],
-      attendance: [["수업·휴가 일정", "schedule"], ["내신 일정", "school-schedule"]],
-    },
-    teacher: {
-      attendance: [["수업·휴가 일정", "schedule"]],
-      learning: [["영상 현황", "video"]],
-      students: [["내신 일정", "school-schedule"], ["발송 기록", "notifications"], ["홈페이지 편집", "website"]],
-    },
-    student: {
-      "home-overview": [["알림", "notifications"]],
-      attendance: [["수업 일정", "schedule"]],
-      grades: [["내신 일정", "school-schedule"]],
-    },
-    parent: { news: [["학원비", "tuition"]] },
-  };
-  if (screen === "students" && selectedLearner) return;
-  const shortcuts = links[role][screen] ?? [];
-  if (shortcuts.length) content.insertAdjacentHTML("beforeend", `<nav class="demo-subnav" aria-label="관련 화면">${shortcuts.map(([label, id]) => button(label, "navigate", { id, variant: "text-button" })).join("")}</nav>`);
-}
-
 function render() {
   const brandName = document.querySelector(".demo-brand-actions .school strong");
   if (brandName) brandName.textContent = demoWebsiteProfile().name;
   navigation.innerHTML = menus[role].map(([screen, label]) => `<button class="nav-button" type="button" data-action="navigate" data-id="${screen}"${screen === activeScreen ? ' aria-current="page"' : ""}><span aria-hidden="true">${symbols[screen]}</span>${label}</button>`).join("");
   if (activeScreen === "website") content.innerHTML = academyWebsite();
+  else if (activeScreen === "operations") content.innerHTML = window.DemoStaffOperations.operations(roleHomeOptions());
+  else if (activeScreen === "staff-leave") content.innerHTML = window.DemoStaffOperations.leave(staffOperationsContext());
+  else if (activeScreen === "staff-pay") content.innerHTML = window.DemoStaffOperations.pay(staffOperationsContext());
+  else if (activeScreen === "my-work") content.innerHTML = window.DemoStaffOperations.myWork();
+  else if (activeScreen === "timetable") content.innerHTML = demoSite.timetableEditor();
   else if (activeScreen === "tuition") content.innerHTML = window.DemoTuition.render(tuitionContext());
   else if (activeScreen === "schedule") content.innerHTML = calendarView();
   else if (activeScreen === "academy-calendar") content.innerHTML = window.DemoHomeCalendar.render(role, roleHomeOptions(), true);
@@ -1267,7 +1272,9 @@ function render() {
   } else {
     const screens = { home: role === "owner" ? ownerHome : teacherHome, attendance: staffAttendance, learning: staffLearning,
       grades: role === "owner" ? ownerGrades : teacherGrades, roster: ownerRoster, settings: ownerSettings, video: staffVideo, students: staffStudents,
-      notifications: () => header("발송 기록", "출결과 연결된 알림톡·문자 발송 예시입니다.") + panel("발송 예시", notificationList(null, 30)) };
+      notifications: () => header(role === "owner" ? "공지·발송" : "발송 기록", "출결과 연결된 발송 예시입니다.",
+        role === "owner" && window.AcademyRoleUi?.enabled(role) ? button("공지 쓰기", "home-notice-write", { variant:"primary" }) : "")
+        + panel("발송 예시", notificationList(null, 30)) };
     content.innerHTML = screens[activeScreen]();
   }
   if (window.AcademyRoleUi?.enabled(role)) {
@@ -1275,7 +1282,11 @@ function render() {
       const reminders = window.DemoHomeCalendar.reminders(role, roleHomeOptions());
       if (reminders.length) content.insertAdjacentHTML("beforeend", panel("일정 알림", list(reminders.map(({ topic, time }) => item(topic, time)))));
     }
-    roleTabShortcuts(activeScreen);
+    if (activeScreen === "students" && role === "owner" && !selectedLearner) {
+      const title = content.querySelector(".page-head");
+      if (title) title.insertAdjacentHTML("afterend", window.DemoStaffOperations.schoolTile());
+      else content.insertAdjacentHTML("afterbegin", window.DemoStaffOperations.schoolTile());
+    }
   }
   window.AcademyRoleUi?.apply(content, role, activeScreen);
   if (window.AcademyRoleUi?.enabled(role)) window.DemoHomeV3.apply(homeV3Context());
@@ -1714,7 +1725,8 @@ window.addEventListener("pagehide", releasePhotoPreview);
 window.addEventListener("resize", paintScoreCharts);
 window.addEventListener("gradient:appearance-change", paintScoreCharts);
 window.addEventListener("storage", (event) => {
-  if (activeScreen === "tuition" && !dialog.open && window.DemoTuition?.ownsStorage(event.key)) render();
+  const tuitionScreen = ["home", "operations", "tuition"].includes(activeScreen) && window.DemoTuition?.ownsStorage(event.key);
+  if (!dialog.open && (tuitionScreen || window.DemoStaffOperations?.ownsStorage(event.key)) && window.AcademyRoleUi?.enabled(role)) render();
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && cameraSession?.stream) dialog.close();
@@ -1733,8 +1745,13 @@ function homeV3Context() {
 }
 
 function tuitionContext() {
-  return { role, child, students, childControls: role === "parent" ? childPicker() : "", dialog,
+  return { role, child, students, navigate:homeV3Context().navigate, childControls: role === "parent" ? childPicker() : "", dialog,
     openSheet: openDemoSheet, rerender: render, announce };
+}
+
+function staffOperationsContext() {
+  const context = homeV3Context();
+  return { ...context, lessons:scheduledClasses() };
 }
 
 function showHomeNotice(id) {
@@ -1748,8 +1765,13 @@ function showHomeNotice(id) {
 }
 
 document.addEventListener("click", (event) => {
+  const staffOperation = event.target.closest("[data-staff-operation]");
+  if (staffOperation && window.AcademyRoleUi?.enabled(role)) {
+    window.DemoStaffOperations.handle(staffOperation, staffOperationsContext());
+    return;
+  }
   const tuition = event.target.closest("[data-tuition-action]");
-  if (tuition && activeScreen === "tuition" && window.AcademyRoleUi?.enabled(role)) {
+  if (tuition && (activeScreen === "tuition" || (activeScreen === "home" && role === "parent")) && window.AcademyRoleUi?.enabled(role)) {
     window.DemoTuition.handle(tuition, tuitionContext());
     return;
   }
@@ -1809,7 +1831,7 @@ document.addEventListener("click", (event) => {
   }
   else if (window.AcademyRoleUi?.enabled(role) && action === "home-notice") showHomeNotice(id);
   else if (demoSite && ["owner", "teacher"].includes(role) && action === "homepage-edit") editDemoHomepage(id);
-  else if (demoSite && (activeScreen === "website" && action.startsWith("site-") || ["site-own-card", "site-staff-detail", "site-staff-all"].includes(action))) void demoSite.handle(control);
+  else if (demoSite && (["website","timetable"].includes(activeScreen) && action.startsWith("site-") || ["site-own-card", "site-staff-detail", "site-staff-all"].includes(action))) void demoSite.handle(control);
   else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && activeScreen === "settings" && action === "setting-field") editDemoSetting(id, control);
   else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && activeScreen === "settings" && action === "setting-switch" && id === "rank") {
     const error = patchDemoField("settings", id, !state.settings.rank);
@@ -1912,6 +1934,7 @@ window.academyDemoRequestReset = (afterReset) => {
     consultationPeriod = "all";
     DemoSchoolAssessments.reset();
     window.DemoTuition.reset();
+    window.DemoStaffOperations.reset();
     window.DemoHomeCalendar?.reset();
     window.DemoHomeBanners?.reset();
     saveState();

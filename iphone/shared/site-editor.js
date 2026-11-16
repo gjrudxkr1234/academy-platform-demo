@@ -216,7 +216,7 @@ window.AcademyDemoSite = (() => {
     function calendar(published = false) {
       return state.classes.filter((classroom) => !published || classroom.visible).flatMap((classroom) =>
         classroom.slots.map(({ id, day, start, end }) => ({
-          id, day, dayNumber: 9 + weekdays.indexOf(day), group: classroom.group, groupKey: classroom.groupKey,
+          id, day, dayNumber: 9 + weekdays.indexOf(day), group: classroom.group, groupKey: classroom.groupKey, shortName: classroom.shortName,
           time: `${start}–${end}`, teacher: teacherName(classroom.teacherId), teacherId: classroom.teacherId, room: classroom.room,
         })));
     }
@@ -262,6 +262,14 @@ window.AcademyDemoSite = (() => {
         return `<li>${photo}<div><strong>${escaped(card.name)}</strong><p>${escaped([card.title, card.subject, card.grade].filter(Boolean).join(" · "))}</p>
           ${!card.visible ? "<small>홈페이지 숨김</small>" : ""}</div><div class="demo-site-editor-actions">${edit}${controls}</div></li>`;
       }).join("");
+    }
+
+    function timetableEditor() {
+      return `<div class="ops-page" data-staff-screen="timetable"><header class="ops-heading">
+        <button type="button" class="ops-back" data-action="navigate" data-id="operations" aria-label="뒤로 가기">‹</button><h1>수업 시간표</h1></header>
+        <section class="demo-home-section" aria-labelledby="ops-timetable-classes"><header class="demo-home-section-heading demo-edit-heading">
+          <h2 id="ops-timetable-classes">반·반복 수업</h2>${action("반 추가", "site-class-edit")}</header>
+          <ul class="demo-site-editor-list">${classRows()}</ul></section></div>`;
     }
 
     function editor(ui, name) {
@@ -757,6 +765,7 @@ window.AcademyDemoSite = (() => {
           ${field(`end-${index}`, `${day}요일 끝`, slot?.end ?? "17:30", 5, "time")}</div></div>`;
       }).join("");
       openSheet(current ? `${record.group} 반 편집` : "반 추가", field("group", "반 이름", record.group, 50)
+        + field("short-name", "반 짧은 이름 (최대 4자)", record.shortName, 4)
         + field("grade", "대상 학년", record.grade, 50)
         + `<fieldset><legend>요일·시간</legend>${days}</fieldset>`
         + (role === "owner" ? `<label>담당 선생님<select name="teacher">
@@ -765,9 +774,9 @@ window.AcademyDemoSite = (() => {
         + (role === "owner" ? `<label class="demo-site-check"><input type="checkbox" name="visible"${checked(record.visible)}>홈페이지에 보이기</label>`
           + (current ? action("반 삭제", "site-delete", record.id, 'data-group="classes"') : "") : ""),
       (form) => {
-        const changes = { group: asText(form, "group"), grade: asText(form, "grade"), room: asText(form, "room"), note: asText(form, "note") };
+        const changes = { group: asText(form, "group"), shortName: asText(form, "short-name").replace(/\s/g,""), grade: asText(form, "grade"), room: asText(form, "room"), note: asText(form, "note") };
         if (!changes.group || !changes.grade || changes.group.length > 50 || changes.grade.length > 50
-          || changes.room.length > 50 || changes.note.length > 400) return "반 이름과 대상 학년 및 입력 길이를 확인해 주세요.";
+          || Array.from(changes.shortName).length > 4 || changes.room.length > 50 || changes.note.length > 400) return "반 이름과 대상 학년 및 입력 길이를 확인해 주세요.";
         const draftedSlots = weekdays.flatMap((day, index) => form.has(`day-${index}`) ? [{ day, start: asText(form, `start-${index}`), end: asText(form, `end-${index}`) }] : []);
         if (!draftedSlots.length || draftedSlots.some(({ start, end }) => !timeFormat.test(start) || !timeFormat.test(end) || start >= end))
           return "요일을 고르고 시작보다 늦은 종료 시간을 입력해 주세요.";
@@ -918,7 +927,7 @@ window.AcademyDemoSite = (() => {
         longIntro: state.intro.long, tags: state.intro.tags, cover: photoUrl(state.intro.photo), sections: state.sections.filter(({ visible }) => visible).map(({ id }) => id) };
     }
 
-    return Object.freeze({ calendar, visibleStaff, ownStaff, homepage, notices: () => state.notices, editor, startSection, handle, reset, prependNotice,
+    return Object.freeze({ calendar, visibleStaff, ownStaff, homepage, notices: () => state.notices, editor, timetableEditor, lastChange: () => state.audit?.at(-1)?.at, startSection, handle, reset, prependNotice,
       bannerCropFields: photo => cropControls(photo, 2, "배너 사진 · 2:1 자르기"), bannerCropPicker: () => cropPicker(2) });
   }
 

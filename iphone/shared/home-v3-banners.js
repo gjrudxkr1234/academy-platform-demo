@@ -301,5 +301,6 @@
   function reset() {
     save({ teacherCanEdit:false, banners:defaultBanners });
   }
-  window.DemoHomeBanners = Object.freeze({ render, enhance, handle, reset, canManage });
+  const activeCount = () => state().banners.filter(showing).length;
+  window.DemoHomeBanners = Object.freeze({ render, enhance, handle, reset, canManage, activeCount });
 })();

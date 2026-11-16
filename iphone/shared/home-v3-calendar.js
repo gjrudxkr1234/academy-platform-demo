@@ -19,6 +19,7 @@
   };
   const filters = { lesson: "수업", assignment: "과제", exam: "시험", academy: "학원", consultation: "상담" };
   const filterCategory = { makeup: "lesson", closure: "academy" };
+  const monthPriority = { exam:0, assignment:1, consultation:2, academy:3, closure:3, makeup:4, lesson:5 };
   const dayMillis = 86400000;
   const titleCompare = new Intl.Collator("ko").compare;
   const minimumDate = "2000-01-01";
@@ -137,7 +138,8 @@
 
   function regularLessons(date, lessons) {
     return lessons.filter((lesson) => lesson.day === weekdays[weekdayFor(date)]).map((lesson) => ({
-      id: lesson.id, title: lesson.group, source: "regular", type: "lesson", date, time: lesson.time, room: lesson.room,
+      id: lesson.id, title: lesson.group, monthTitle: lesson.shortName || Array.from(lesson.group.replace(/\s/g,"")).slice(0,4).join(""),
+      source: "regular", type: "lesson", date, time: lesson.time, room: lesson.room,
       teacher: lesson.teacher ? `${lesson.teacher} 선생님` : "",
     })).sort(compareEvents);
   }
@@ -183,7 +185,8 @@
     const lanes = [];
     const overflow = Array.from({ length: 7 }, () => ({ mobile: 0, wide: 0 }));
     const bars = [];
-    for (const event of events) {
+    const ordered = [...events].sort((a,b) => monthPriority[a.type] - monthPriority[b.type] || compareEvents(a,b));
+    for (const event of ordered) {
       if (event.date > end || eventEnd(event) < start) continue;
       const from = event.date > start ? event.date : start;
       const through = eventEnd(event) < end ? eventEnd(event) : end;
@@ -219,7 +222,7 @@
           data-v31-last="${last + 2}" data-v31-start="${from}" data-v31-end="${through}" ${adjacent ? 'data-v31-adjacent=""' : ""}
           data-v3-calendar-action="event" data-v3-event="${escape(event.id)}" data-v3-source="${event.source}" data-v3-event-date="${from}"
           aria-label="${escape(`${shortDate(from)}${from === through ? "" : `–${shortDate(through)}`}, ${typeLabel(event)}, ${event.title}`)}">
-          ${icon(event.type)}<span>${escape(event.title)}</span></button>`;
+          ${icon(event.type)}<span>${escape(event.monthTitle ?? event.title)}</span></button>`;
       }).join("");
       weeks.push(`<div class="v31-month-week" data-v31-week="${start}">${cells}${markup}</div>`);
     }
@@ -266,7 +269,8 @@
     const weekStart = shiftDay(selectedDate, -weekdayFor(selectedDate));
     const gridStart = view === "month" ? shiftDay(firstOfMonth, -weekdayFor(firstOfMonth)) : weekStart;
     const gridEnd = view === "month" ? shiftDay(lastOfMonth, 6 - weekdayFor(lastOfMonth)) : shiftDay(gridStart, 6);
-    const events = boundedEvents(gridStart, gridEnd, visibleEvents(role, input), visibleLessons(role, input));
+    const hideRegular = !full && !isStaff(role) && view === "month" && !selectedFilters.has("lesson");
+    const events = boundedEvents(gridStart, gridEnd, visibleEvents(role, input), hideRegular ? [] : visibleLessons(role, input));
     const label = view === "month" ? `${year}년 ${monthNumber}월` : `${shortDate(gridStart)} – ${shortDate(gridEnd)}`;
     const period = view === "month" ? "달" : "주";
     const staff = isStaff(role);
@@ -508,6 +512,10 @@
     } else if (["month", "step"].includes(action) && ["1", "-1"].includes(control.dataset.v3Direction)) {
       stepPeriod(Number(control.dataset.v3Direction));
       contextRender(ctx, `[data-v3-direction="${control.dataset.v3Direction}"]`);
+    } else if (action === "exam-only") {
+      selectedFilters.clear();
+      selectedFilters.add("exam");
+      openFull(ctx);
     } else if (action === "full") openFull(ctx);
     else if (action === "back") ctx.navigate?.(returnScreen);
     else if (action === "new" && isStaff(ctx.role)) {
