@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="robots" content="noindex,nofollow">
   <meta name="color-scheme" content="light">
-  <meta name="theme-color" content="#1e40af">
+  <meta name="theme-color" content="#0B0B0C">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' blob:; media-src 'self' blob:; manifest-src 'self'; worker-src 'self'; connect-src 'self'; object-src 'none'; form-action 'none'; base-uri 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="description" content="온새미 수학학원 운영 화면 체험">
-  <title>원장 · 학원 운영 플랫폼 데모</title>
+  <title>gradient 원장</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="apple-touch-icon" sizes="180x180" href="../icons/owner-180.png">
   <link rel="stylesheet" href="../shared/style.css">
@@ -24,14 +24,13 @@
   <script src="../shared/demo.js" defer></script>
 
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="원장 데모">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <link rel="stylesheet" href="../pwa.css">
+  <meta name="apple-mobile-web-app-title" content="gradient 원장">
 </head>
-<body data-demo="generic">
+<body class="role-app-ui" data-demo="generic">
   <a class="skip" href="#content">본문으로 이동</a>
-  <div class="proposal-banner general-banner">원장 데모 · 가상 자료 · 실제 전송 없음</div>
-  <section class="iphone-status" aria-label="데모 준비 상태"><p id="offline-status" role="status">오프라인 사용 준비 중…</p><div><a href="../">다른 역할</a><button id="iphone-install" type="button">설치 방법</button></div></section>
+  <div class="proposal-banner general-banner" hidden>가상 학원 운영 체험</div>
   <div class="shell">
     <aside class="rail" aria-label="학원 메뉴">
       <div class="brand">
@@ -41,21 +40,26 @@
       <nav class="navigation" id="navigation" aria-label="화면 선택"></nav>
     </aside>
     <div class="workspace">
-      <header class="topbar">
-        <div class="school"><strong>온새미 수학학원</strong><button id="install-demo" class="ghost install-button" type="button">홈 화면에 추가</button></div>
-        <div class="top-actions">
-          <label for="role" class="sr-only">체험 역할</label>
-          <select id="role">
+      <header class="topbar demo-brand-bar">
+        <button class="demo-brand-home" type="button" data-action="navigate" data-id="home" aria-label="홈으로">
+          <picture><source srcset="../shared/assets/brand/gradient-logo-white.svg" media="(prefers-color-scheme: dark)"><img src="../shared/assets/brand/gradient-logo.svg" alt="" height="24"></picture>
+        </button>
+        <div class="demo-brand-actions"><span class="school"><strong>온새미 수학학원</strong></span>
+          <button class="demo-brand-bell" type="button" aria-label="알림" data-action="navigate" data-id="notifications">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 17h16l-2-3V9a6 6 0 0 0-12 0v5zM10 21h4"/></svg>
+          </button>
+        </div>
+      </header>
+      <main id="content" tabindex="-1"></main>
+      <footer class="demo-brand-footer"><p>가상 자료만 사용합니다. 변경 사항은 이 기기에 저장됩니다.</p>
+        <div hidden><select id="role">
             <option value="owner">원장 체험</option>
             <option value="teacher">선생님 체험</option>
             <option value="student">학생 체험</option>
             <option value="parent">보호자 체험</option>
-          </select>
-          <button id="reset" class="ghost" type="button">초기화</button>
-        </div>
-      </header>
-      <main id="content" tabindex="-1"></main>
-      <footer>변경 사항은 이 브라우저에만 저장됩니다.</footer>
+          </select><button id="install-demo" type="button">홈 화면에 추가</button></div>
+        <div class="demo-footer-controls"><p id="offline-status" role="status">오프라인 사용 준비 중…</p><a href="../">다른 역할</a><button class="text-button" id="iphone-install" type="button">설치 방법</button><button id="reset" class="text-button" type="button">초기화</button></div>
+      </footer>
     </div>
   </div>
   <dialog id="dialog" aria-labelledby="dialog-title"></dialog>

@@ -71,3 +71,97 @@ button.demo-home-row:hover { background:#f1f5f9; }
   .role-app-ui:has(.demo-action-dock) footer { padding-bottom:calc(var(--demo-tab-height) + 24px + env(safe-area-inset-bottom)); }
 }
 @media print { .demo-action-dock,.demo-role-tabs { display:none; } }
+
+.role-app-ui:has(.demo-brand-bar) { background:#F4F4F5; }
+.role-app-ui .demo-brand-bar {
+  position:sticky; top:0; z-index:8; min-height:60px;
+  padding:env(safe-area-inset-top) max(10px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));
+  color:#0B0B0C; border-color:#E4E4E7;
+}
+.demo-brand-home,.demo-brand-bell {
+  display:inline-grid; place-items:center; min-width:48px; min-height:48px;
+  padding:0 5px; border:0; border-radius:8px; background:transparent; color:inherit;
+}
+.demo-brand-home picture,.demo-brand-home img { display:block; }
+.demo-brand-home img { height:24px; width:auto; max-width:none; }
+.demo-brand-actions { display:flex; align-items:center; min-width:0; gap:2px; }
+.demo-brand-actions .school { display:block; min-width:0; overflow:hidden; }
+.demo-brand-actions .school strong { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:#606068; font-size:13px; font-weight:650; }
+@media (prefers-color-scheme:dark) {
+  .role-app-ui .demo-brand-bar { background:#0B0B0C; color:#FFF; border-color:#333337; }
+  .demo-brand-actions .school strong { color:#CCC; }
+}
+.role-app-ui:has(.demo-brand-bar) #content { padding-top:14px; }
+.role-app-ui:has(.demo-brand-bar) .demo-role-tabs button[aria-current="page"] { background:#F0F0F2; color:#0B0B0C; }
+.role-app-ui .demo-brand-footer { max-width:960px; color:#595961; }
+.demo-brand-footer p { margin:0; }
+.demo-footer-controls { display:flex; align-items:center; flex-wrap:wrap; gap:0 12px; }
+.demo-footer-controls a { display:inline-flex; align-items:center; min-height:48px; color:#1E40AF; }
+.demo-footer-controls .text-button { padding-inline:0; }
+.demo-footer-controls #offline-status { flex-basis:100%; margin-top:8px; }
+.demo-greeting {
+  position:relative; isolation:isolate; overflow:hidden; padding:20px;
+  border-radius:22px; background:#0B0B0C; color:#FFF; min-height:194px;
+}
+.demo-greeting::before {
+  position:absolute; z-index:-1; inset:auto -23px -38px auto; width:210px; height:185px; content:"";
+  background:url("assets/brand/gradient-symbol-white.svg") center/contain no-repeat;
+  opacity:.075; transform:rotate(-9deg); pointer-events:none;
+}
+.demo-greeting-meta { color:#BEBEC4; font-size:13px; font-weight:650; }
+.demo-greeting h1 { margin:7px 0 8px; font-size:clamp(25px,5.6vw,36px); line-height:1.23; letter-spacing:-.04em; overflow-wrap:anywhere; }
+.demo-greeting-summary { color:#D4D4D8; font-size:14px; margin-bottom:14px; overflow-wrap:anywhere; }
+.demo-greeting-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.role-app-ui .demo-greeting-button {
+  display:inline-flex; align-items:center; justify-content:center; gap:6px; min-height:48px; padding:0 12px;
+  border:1px solid #919196; border-radius:12px; font-size:14px; font-weight:730; color:#FFF; background:transparent;
+}
+.demo-greeting-button svg,.demo-home-link svg { width:16px; height:16px; flex:none; }
+.role-app-ui .demo-greeting-button[data-action-level="primary"] { background:#FFF; color:#0B0B0C; border-color:#FFF; }
+.role-app-ui .demo-greeting-button:focus-visible { outline-color:#BFCFFF; }
+.role-app-ui .demo-greeting-button[data-action-level="primary"]:focus-visible { outline-color:#1E40AF; }
+.demo-home-section { margin-top:16px; }
+.demo-home-section-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:3px; }
+.demo-home-section-heading h2 { color:#18181B; font-size:18px; font-weight:800; letter-spacing:-.025em; }
+.demo-home-link {
+  display:inline-flex; align-items:center; justify-content:flex-end; gap:5px; padding:4px 0;
+  border:0; background:transparent; color:#575760; font-size:13px; font-weight:680; text-align:left;
+}
+.demo-home-section .demo-home-item { border-color:#DEDEE3; }
+.demo-home-section .demo-home-item.demo-home-attention,.demo-home-metric.demo-home-attention { border-color:#E4B887; background:#FFFAF2; }
+.demo-home-metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; list-style:none; padding:0; }
+.demo-home-metric {
+  width:100%; height:100%; display:grid; grid-template-rows:auto auto 1fr; align-content:start; gap:3px;
+  padding:12px 14px; text-align:left; border:1px solid #DEDEE3; border-radius:15px; background:#FFF; color:#0B0B0C;
+  overflow-wrap:anywhere;
+}
+.demo-home-metric small,.demo-home-metric span { color:#595961; font-size:12px; }
+.demo-home-metric strong { color:#0B0B0C; font-size:22px; line-height:1.2; letter-spacing:-.045em; margin:2px 0; }
+.demo-home-metric.demo-home-attention strong { color:#854209; }
+.demo-home-notice button {
+  display:flex; align-items:center; gap:10px; width:100%; padding:9px 12px; text-align:left;
+  border:1px solid #DEDEE3; border-radius:14px; background:#FFF; color:#18181B;
+}
+.demo-home-notice .demo-home-icon { background:#F0F0F2; color:#3F3F46; }
+.demo-home-notice .demo-home-copy > span {
+  display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; overflow:hidden;
+}
+.demo-home-lessons { list-style:none; background:#FFF; border:1px solid #DEDEE3; border-radius:14px; padding:0 12px; }
+.demo-home-lessons li { display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 10px; padding:9px 0; font-size:14px; }
+.demo-home-lessons li + li { border-top:1px solid #E4E4E7; }
+.demo-home-lessons li span:last-child { flex:1 1 125px; color:#595961; font-size:13px; overflow-wrap:anywhere; }
+.demo-home-website {
+  display:flex; align-items:center; gap:12px; padding:12px;
+  background:#FFF; border:1px solid #DEDEE3; border-radius:15px; overflow-wrap:anywhere;
+}
+.demo-home-website > div:last-child { flex:1; min-width:0; }
+.demo-home-website p { color:#595961; font-size:13px; margin-top:4px; }
+.demo-site-thumbnail {
+  flex:0 0 76px; min-width:0; background:#F0F0F2; border:1px solid #DEDEE3;
+  padding:6px; border-radius:10px; display:grid; gap:5px;
+}
+.demo-site-thumbnail > div { min-height:24px; background:#0B0B0C; border-radius:6px; }
+.demo-site-thumbnail strong { font-size:8px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.demo-site-thumbnail i { display:block; width:80%; height:3px; border-radius:3px; background:#B8B8BE; }
+.demo-site-thumbnail i:last-child { width:55%; }
+.role-app-ui .demo-home-section .parent-picker { margin:0 0 8px; }

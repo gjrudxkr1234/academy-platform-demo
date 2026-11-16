@@ -1,13 +1,13 @@
 {
   "id": "/academy-platform-demo/iphone/owner/",
-  "name": "원장 · 학원 데모",
-  "short_name": "원장 데모",
+  "name": "gradient 원장",
+  "short_name": "gradient 원장",
   "lang": "ko-KR",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f8fafc",
-  "theme_color": "#1e40af",
+  "background_color": "#f4f4f5",
+  "theme_color": "#0B0B0C",
   "description": "서버와 실제 계정 없이 체험하는 가상 학원 화면",
   "icons": [
     {
