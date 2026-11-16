@@ -68,7 +68,9 @@ if (window.AcademyRoleUi?.enabled("parent")) menus.parent.push(["news", "소식"
 const demoAppRole = window.ACADEMY_APP_ROLE;
 if (window.AcademyRoleUi?.enabled(demoAppRole)) {
   menus[demoAppRole].push(["home-overview", "오늘 전체 보기"], ["academy-calendar", "캘린더"]);
-  if (["owner", "parent"].includes(demoAppRole)) menus[demoAppRole].push(["video", "학습 영상"]);
+  if (["owner", "parent"].includes(demoAppRole)) {
+    menus[demoAppRole].push(["video", "학습 영상"], ["tuition", demoAppRole === "owner" ? "수납 관리" : "학원비"]);
+  }
 }
 
 const content = document.getElementById("content");
@@ -1055,7 +1057,7 @@ function openDemoSheet(title, fields, save, opener, options = {}) {
       return;
     }
     dialog.close();
-    announce("저장했어요");
+    if (options.successMessage !== false) announce(options.successMessage ?? "저장했어요");
   });
   dialog.addEventListener("close", () => {
     dialog.removeEventListener("cancel", cancelWhileSaving);
@@ -1199,11 +1201,11 @@ function parentView(screen) {
         item("내신 일정", "시험과 수행평가", button("보기", "navigate", { id: "school-schedule" })),
         item("수업 일정", "학원 시간표", button("보기", "navigate", { id: "schedule" })),
       ]), "", "stack")
-      + panel("받은 알림", notificationList(child, 3), button("전체", "navigate", { id: "notifications", variant: "text-button" }), "stack");
+      + panel("받은 알림", notificationList(child, 3) + (window.AcademyRoleUi?.enabled(role) ? window.DemoTuition.notices(child) : ""), button("전체", "navigate", { id: "notifications", variant: "text-button" }), "stack");
   }
   if (screen === "grades") return learnerGrades(child, "성적 추이");
   if (screen === "attendance") return header("자녀 출결", "자녀별 등원·하원 기록입니다.") + controls + panel("출결 기록", attendanceHistory(child));
-  if (screen === "notifications") return header("받은 알림", "등원·하원 알림을 자녀별로 확인합니다.") + controls + panel("알림 기록", notificationList(child, 20));
+  if (screen === "notifications") return header("받은 알림", "자녀별 등원·하원과 학원비 알림을 확인합니다.") + controls + panel("알림 기록", notificationList(child, 20) + (window.AcademyRoleUi?.enabled(role) ? window.DemoTuition.notices(child) : ""));
   if (screen === "learning") return controls + learnerWork(child, false);
   if (screen === "video") return controls + header("학습 영상", "자녀가 볼 수 있는 영상의 시청 상태예요.") + videoCard(child, false);
   return `<section class="hero"><div><h1>우리 아이 학원 현황</h1><p>두 자녀의 출결과 오늘 할 일을 확인하세요.</p></div></section>${controls}
@@ -1220,7 +1222,7 @@ function parentView(screen) {
 function roleTabShortcuts(screen) {
   const links = {
     owner: {
-      settings: [["과제 검사", "learning"], ["발송 기록", "notifications"], ["홈페이지 편집", "website"]],
+      settings: [["수납 관리", "tuition"], ["과제 검사", "learning"], ["발송 기록", "notifications"], ["홈페이지 편집", "website"]],
       attendance: [["수업·휴가 일정", "schedule"], ["내신 일정", "school-schedule"]],
     },
     teacher: {
@@ -1233,7 +1235,7 @@ function roleTabShortcuts(screen) {
       attendance: [["수업 일정", "schedule"]],
       grades: [["내신 일정", "school-schedule"]],
     },
-    parent: {},
+    parent: { news: [["학원비", "tuition"]] },
   };
   if (screen === "students" && selectedLearner) return;
   const shortcuts = links[role][screen] ?? [];
@@ -1245,6 +1247,7 @@ function render() {
   if (brandName) brandName.textContent = demoWebsiteProfile().name;
   navigation.innerHTML = menus[role].map(([screen, label]) => `<button class="nav-button" type="button" data-action="navigate" data-id="${screen}"${screen === activeScreen ? ' aria-current="page"' : ""}><span aria-hidden="true">${symbols[screen]}</span>${label}</button>`).join("");
   if (activeScreen === "website") content.innerHTML = academyWebsite();
+  else if (activeScreen === "tuition") content.innerHTML = window.DemoTuition.render(tuitionContext());
   else if (activeScreen === "schedule") content.innerHTML = calendarView();
   else if (activeScreen === "academy-calendar") content.innerHTML = window.DemoHomeCalendar.render(role, roleHomeOptions(), true);
   else if (activeScreen === "school-schedule") content.innerHTML = DemoSchoolAssessments.view();
@@ -1710,6 +1713,9 @@ window.addEventListener("pagehide", stopCamera);
 window.addEventListener("pagehide", releasePhotoPreview);
 window.addEventListener("resize", paintScoreCharts);
 window.addEventListener("gradient:appearance-change", paintScoreCharts);
+window.addEventListener("storage", (event) => {
+  if (activeScreen === "tuition" && !dialog.open && window.DemoTuition?.ownsStorage(event.key)) render();
+});
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && cameraSession?.stream) dialog.close();
 });
@@ -1726,6 +1732,11 @@ function homeV3Context() {
   };
 }
 
+function tuitionContext() {
+  return { role, child, students, childControls: role === "parent" ? childPicker() : "", dialog,
+    openSheet: openDemoSheet, rerender: render, announce };
+}
+
 function showHomeNotice(id) {
   const entry = homeNotices().find(candidate => candidate.id === id);
   if (!entry) return;
@@ -1737,6 +1748,11 @@ function showHomeNotice(id) {
 }
 
 document.addEventListener("click", (event) => {
+  const tuition = event.target.closest("[data-tuition-action]");
+  if (tuition && activeScreen === "tuition" && window.AcademyRoleUi?.enabled(role)) {
+    window.DemoTuition.handle(tuition, tuitionContext());
+    return;
+  }
   const v3 = event.target.closest("[data-v3-home-action], [data-v3-banner-action], [data-v3-calendar-action]");
   if (v3 && window.AcademyRoleUi?.enabled(role)) {
     const context = homeV3Context();
@@ -1874,7 +1890,7 @@ roleSelect.addEventListener("change", () => {
 
 window.academyDemoRequestReset = (afterReset) => {
   if (dialog.open) dialog.close();
-  openDialog("데모 초기화", "<p>이 기기의 가상 출결·숙제·성적·내신 체험과 데모 알림만 초기화합니다. 실제 학원 계정과 자료에는 영향을 주지 않습니다.</p>", "데모만 초기화", async () => {
+  openDialog("데모 초기화", "<p>이 기기의 가상 출결·숙제·성적·내신·학원비 체험과 데모 알림만 초기화합니다. 실제 학원 계정과 자료에는 영향을 주지 않습니다.</p>", "데모만 초기화", async () => {
     const siteError = await demoSite?.reset();
     if (siteError) { announce(siteError); return false; }
     rosterUploadId++;
@@ -1895,6 +1911,7 @@ window.academyDemoRequestReset = (afterReset) => {
     selectedLearner = null;
     consultationPeriod = "all";
     DemoSchoolAssessments.reset();
+    window.DemoTuition.reset();
     window.DemoHomeCalendar?.reset();
     window.DemoHomeBanners?.reset();
     saveState();
