@@ -1,7 +1,7 @@
 {
   "synthetic_only": true,
   "network_required_after_preparation": false,
-  "version": "21ebec9c77a0a8eb",
+  "version": "92a554fc9f19accb",
   "assets": [
     {
       "path": "icons/owner-180.png",
@@ -66,12 +66,12 @@
     {
       "path": "index.html",
       "bytes": 2776,
-      "sha256": "e5f4aa0c3a4ded06f750d9ce9b935cffc4c863c87ebc25ee11e0274d3fa249b8"
+      "sha256": "0b0f5ee079ffb2349c61300eb40edee91991f1a703ba05116b39f886b157999c"
     },
     {
       "path": "owner/index.html",
       "bytes": 7386,
-      "sha256": "12dca413af7785ff8c532ac9a560f6d808b7c58e7bcefd3c8c36307a7b9099c8"
+      "sha256": "8e3fb234a6f19cb60ae92195444b007582a9546955acd6d49ccc5a72e0f19a41"
     },
     {
       "path": "owner/manifest.webmanifest",
@@ -86,7 +86,7 @@
     {
       "path": "parent/index.html",
       "bytes": 7393,
-      "sha256": "2c3f58e804938daa4d4d419dbb87bda2ff4b39bf4edb33ac97a5922196e668e6"
+      "sha256": "bf5e6861e8482e4bb717cebe547903d9f59df20904087b604522c08c87c1065d"
     },
     {
       "path": "parent/manifest.webmanifest",
@@ -265,13 +265,13 @@
     },
     {
       "path": "shared/tuition.js",
-      "bytes": 24546,
-      "sha256": "ea0b317b2004bb9aef9ad0d8036d169409791a6f2127a19ab09b33a845f6fc69"
+      "bytes": 24573,
+      "sha256": "68e084629cbe0413ad4415cffe4084e06462ce8336904e3bfb765789b616f51e"
     },
     {
       "path": "student/index.html",
       "bytes": 7388,
-      "sha256": "c846a7ad736b3dd902e7c68ee18caca8aee3edabada30528bf3f658f20508199"
+      "sha256": "465c1c521798e42158263918fcadf4b043cea27dcfb65c50c0adb1a02facf2e7"
     },
     {
       "path": "student/manifest.webmanifest",
@@ -286,7 +286,7 @@
     {
       "path": "teacher/index.html",
       "bytes": 7394,
-      "sha256": "b75f5a6c7265f9b715270e1747abbf00ce4ffc14cbfe9d1afd924371153cb28a"
+      "sha256": "e425c11a6da7702f228e7055fd742b032076dc529c0d95c64cb26d9cd1bd80a4"
     },
     {
       "path": "teacher/manifest.webmanifest",

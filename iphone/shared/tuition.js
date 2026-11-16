@@ -125,7 +125,7 @@
   function details(invoice, context) {
     const isOwner = context.role === "owner";
     const total = sum(invoice.lines);
-    const offlineCash = ["cash", "academy_bank"].includes(invoice.payment?.method) && invoice.payment.amount >= 100000;
+    const offlineCash = ["cash", "academy_bank"].includes(invoice.payment?.method) && total >= 100000;
     const actions = context.role === "parent"
       ? invoice.payment ? action("영수증 보기", "receipt", invoice.id, "primary")
         : invoice.pending ? action("가상계좌 입금 체험", "deposit", invoice.id, "primary") : action("결제하기", "pay", invoice.id, "primary")
@@ -140,7 +140,7 @@
           <div class="tuition-total"><dt>청구 금액</dt><dd>${won(total)}</dd></div>
           ${amountRefunded(invoice) ? `<div><dt>누적 환불</dt><dd>${won(amountRefunded(invoice))}</dd></div>` : ""}</dl>
         ${invoice.pending ? '<p class="tuition-note">입금 대기 중이에요. 체험용으로 실제 계좌번호는 발급하지 않아요.</p>' : ""}
-        ${isOwner && offlineCash ? `<p class="tuition-note">현금·이체 수납 10만 원 이상은 5일 안에 현금영수증을 발급해야 해요. 가상 발급 기한 ${readableDate(nextDay(invoice.payment.date, 5))}.</p>` : ""}
+        ${isOwner && offlineCash ? `<p class="tuition-note">10만 원 이상인 거래를 현금·이체로 수납하면 현금영수증을 발급해야 해요. 고객 정보를 모를 때의 가상 자진발급 기한 ${readableDate(nextDay(invoice.payment.date, 5))}.</p>` : ""}
         <div class="tuition-actions">${actions}</div></section>`;
   }
 
