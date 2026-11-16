@@ -161,7 +161,7 @@
       <div class="demo-v3-drawer-academy">${button(`${academyMark(academy.name)}<strong>${text(academy.name)}</strong>`, homeAction("academy"))}
       ${academy.phone ? button(`${icon("phone")}전화`, 'data-action="demo-contact" data-id="phone"') : ""}</div>
       <nav class="demo-v3-shortcuts" aria-label="역할 바로가기">${optionsFor[role].map(([label, symbol, attrs]) => shortcut(label, symbol, attrs)).join("")}</nav>
-      ${group("학원", [[homeAction("academy"), "학원 소개"], [navigate("schedule"), "수업 시간표"], [homeAction("staff"), "강사진"], [navigate("video"), "학습 영상"]])}
+      ${group("학원", [[homeAction("academy"), "학원 소개"], [navigate("schedule"), "수업 시간표"], ...(role === "parent" ? [[homeAction("calendar"), "일정"]] : []), [homeAction("staff"), "강사진"], [navigate("video"), "학습 영상"]])}
       ${role === "owner" ? group("운영", [[navigate("students"), "학생·반"], [navigate("settings"), "설정"]])
         : role === "teacher" && window.DemoHomeBanners.canManage(role)
           ? group("운영", [['data-v3-banner-action="manage"', "배너 편집"]]) : ""}
@@ -217,8 +217,9 @@
     if (action === "menu") { openDrawer(); return true; }
     if (action === "close") { closeDrawer(); return true; }
     closeDrawer();
-    if (action === "calendar" || action === "notices" || action === "staff") {
-      const target = { calendar:".demo-v3-calendar", notices:"#demo-v3-notices", staff:"#demo-v3-staff" }[action];
+    if (action === "calendar") window.DemoHomeCalendar.openFull(context);
+    else if (action === "notices" || action === "staff") {
+      const target = { notices:"#demo-v3-notices", staff:"#demo-v3-staff" }[action];
       if (context.screen !== "home") context.navigate("home");
       const scrollTo = document.querySelector(target);
       if (scrollTo) scrollTo.scrollIntoView({ block:"start" });

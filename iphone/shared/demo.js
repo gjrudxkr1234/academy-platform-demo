@@ -52,7 +52,7 @@ const assessments = [
   { id: "middle-one-third", title: "방정식 단원 평가", date: "11.06", group: "중1 개념반", maximum: 100 },
 ];
 
-const symbols = { "home-overview": "◈", home: "◈", website: "⌂", schedule: "▦", attendance: "▤", learning: "◇", grades: "▥", video: "▷", notifications: "◌", roster: "▧", settings: "⚙", "school-schedule": "▣", students: "▧", news: "◌" };
+const symbols = { "academy-calendar": "▦", "home-overview": "◈", home: "◈", website: "⌂", schedule: "▦", attendance: "▤", learning: "◇", grades: "▥", video: "▷", notifications: "◌", roster: "▧", settings: "⚙", "school-schedule": "▣", students: "▧", news: "◌" };
 const menus = {
   owner: [["home", "운영 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 리포트"], ["notifications", "발송 기록"], ["roster", "학생·보호자"], ["settings", "학원 설정"]],
   teacher: [["home", "수업 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 입력"], ["video", "영상 현황"], ["notifications", "발송 기록"]],
@@ -67,7 +67,7 @@ for (const staff of ["owner", "teacher"]) {
 if (window.AcademyRoleUi?.enabled("parent")) menus.parent.push(["news", "소식"]);
 const demoAppRole = window.ACADEMY_APP_ROLE;
 if (window.AcademyRoleUi?.enabled(demoAppRole)) {
-  menus[demoAppRole].push(["home-overview", "오늘 전체 보기"]);
+  menus[demoAppRole].push(["home-overview", "오늘 전체 보기"], ["academy-calendar", "캘린더"]);
   if (["owner", "parent"].includes(demoAppRole)) menus[demoAppRole].push(["video", "학습 영상"]);
 }
 
@@ -1246,6 +1246,7 @@ function render() {
   navigation.innerHTML = menus[role].map(([screen, label]) => `<button class="nav-button" type="button" data-action="navigate" data-id="${screen}"${screen === activeScreen ? ' aria-current="page"' : ""}><span aria-hidden="true">${symbols[screen]}</span>${label}</button>`).join("");
   if (activeScreen === "website") content.innerHTML = academyWebsite();
   else if (activeScreen === "schedule") content.innerHTML = calendarView();
+  else if (activeScreen === "academy-calendar") content.innerHTML = window.DemoHomeCalendar.render(role, roleHomeOptions(), true);
   else if (activeScreen === "school-schedule") content.innerHTML = DemoSchoolAssessments.view();
   else if (activeScreen === "home" && window.AcademyRoleUi?.enabled(role)) {
     content.innerHTML = window.DemoHomeV3.home(role, roleHomeOptions());
