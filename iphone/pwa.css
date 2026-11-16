@@ -8,7 +8,7 @@
 .role-app-ui .proposal-banner { padding-top:max(6px,env(safe-area-inset-top)); }
 .role-app-ui .topbar { padding:8px 20px; }
 .role-app-ui .topbar .school strong { font-size:15px; }
-.role-app-ui #content { padding-inline:max(20px,env(safe-area-inset-left)) max(20px,env(safe-area-inset-right)); padding-bottom:calc(120px + env(safe-area-inset-bottom)); }
+.role-app-ui #content { padding-inline:max(20px,env(safe-area-inset-left)) max(20px,env(safe-area-inset-right)); }
 .role-app-ui input, .role-app-ui select, .role-app-ui textarea { font-size:16px; }
 .role-app-ui .demo-action-dock { padding-inline:max(20px,env(safe-area-inset-left)) max(20px,env(safe-area-inset-right)); }
 .role-app-ui .demo-action-dock .primary { padding-inline:16px; }
@@ -33,5 +33,5 @@
 .role-choice small { display:block; color:#475569; font-size:13px; margin-top:4px; word-break:keep-all; }
 .install-note { margin-top:30px; color:#475569; font-size:14px; }
 .install-note h2 { font-size:18px; color:#172554; }
-@media(max-width:374px) { .role-app-ui .demo-role-card { padding:14px 12px; } .role-app-ui .demo-role-card strong { font-size:16px; } .iphone-landing main { padding-inline:18px; } }
+@media(max-width:374px) { .iphone-landing main { padding-inline:18px; } }
 @media print { .iphone-status,.demo-notification { display:none; } }

@@ -15,7 +15,8 @@ const students = [
   { id: "siwoo", name: "한시우", group: "중2 심화반" },
 ];
 const video = { title: "일차함수의 그래프 풀이", minutes: 12 };
-const assignment = { title: "일차함수 실전 문제 8–12번", due: "오늘 오후 9:00", detail: "8–12번 풀이 사진을 첨부해 주세요. 답과 함께 식을 정리한 과정이 보이면 좋아요." };
+const assignment = { id: "linear-practice", title: "일차함수 실전 문제 8–12번", due: "오늘 오후 9:00", detail: "8–12번 풀이 사진을 첨부해 주세요. 답과 함께 식을 정리한 과정이 보이면 좋아요." };
+const reviewAssignment = { id: "graph-review", title: "그래프 읽기 복습 1–3번", due: "수요일 오후 8:00", detail: "그래프에서 찾은 좌표 3개의 풀이를 찍어 주세요." };
 const notice = { title: "다음 주 수업 시간 안내", detail: "다음 주 목요일 중2 심화반은 오후 4시에 시작합니다. 교재와 지난 숙제 풀이를 가져오세요." };
 const academyProfiles = {
   generic: { name: "온새미 수학학원", intro: "수업 전 진단으로 학생의 수준을 살피고, 개념 수업부터 문제 풀이와 오답 점검까지 이어갑니다." },
@@ -45,7 +46,7 @@ const assessments = [
   { id: "middle-one-third", title: "방정식 단원 평가", date: "11.06", group: "중1 개념반", maximum: 100 },
 ];
 
-const symbols = { home: "◈", website: "⌂", schedule: "▦", attendance: "▤", learning: "◇", grades: "▥", video: "▷", notifications: "◌", roster: "▧", settings: "⚙", "school-schedule": "▣" };
+const symbols = { home: "◈", website: "⌂", schedule: "▦", attendance: "▤", learning: "◇", grades: "▥", video: "▷", notifications: "◌", roster: "▧", settings: "⚙", "school-schedule": "▣", students: "▧", news: "◌" };
 const menus = {
   owner: [["home", "운영 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 리포트"], ["notifications", "발송 기록"], ["roster", "학생·보호자"], ["settings", "학원 설정"]],
   teacher: [["home", "수업 현황"], ["website", "학원 홈페이지"], ["schedule", "일정·휴가"], ["attendance", "출결"], ["learning", "과제·공지"], ["grades", "성적 입력"], ["video", "영상 현황"], ["notifications", "발송 기록"]],
@@ -54,6 +55,10 @@ const menus = {
 };
 for (const menu of Object.values(menus)) menu.splice(3, 0, ["school-schedule", "내신 일정"]);
 menus.student.push(["attendance", "QR 출석"], ["notifications", "알림"]);
+for (const staff of ["owner", "teacher"]) {
+  if (window.AcademyRoleUi?.enabled(staff)) menus[staff].push(["students", "학생"]);
+}
+if (window.AcademyRoleUi?.enabled("parent")) menus.parent.push(["news", "소식"]);
 
 const content = document.getElementById("content");
 const navigation = document.getElementById("navigation");
@@ -71,6 +76,8 @@ let cameraSession = null;
 let photoPreviewUrl = null;
 let selectedDay = "목";
 let selectedExam = "linear-fourth";
+let selectedLearner = null;
+let consultationPeriod = "all";
 let installPrompt = null;
 let rosterPreview = null;
 let rosterUploadId = 0;
@@ -91,6 +98,9 @@ function freshState() {
       hyun: { status: "returned", attachment: "문제 풀이 · 예시 사진", note: "기울기 부호를 확인해 주세요." },
     },
     notices: ["seoha", "hyun"],
+    parentNoticeReads: [],
+    reviewSubmissions: {},
+    consultationNotes: {},
     progress: { jiwoo: 40, seoha: 100, hyun: 65, siwoo: 0, minjun: 100, yuna: 15 },
     reminders: [],
     scannedQr: [],
@@ -125,6 +135,9 @@ function readState() {
         ...freshState(), ...saved,
         importedRosterRows: Array.isArray(saved.importedRosterRows) ? saved.importedRosterRows : [],
         sentRosterInvites: Array.isArray(saved.sentRosterInvites) ? saved.sentRosterInvites : [],
+        parentNoticeReads: Array.isArray(saved.parentNoticeReads) ? saved.parentNoticeReads : [],
+        reviewSubmissions: saved.reviewSubmissions ?? {},
+        consultationNotes: saved.consultationNotes ?? {},
       };
     }
   } catch {
@@ -294,12 +307,19 @@ function submissionBadge(value) {
   return badge("미제출", "orange");
 }
 
+function needsSampleReview(id) {
+  return id === "seoha" && state.submissions[id]?.status === "submitted";
+}
+
 function staffLearning() {
   const roster = roleStudents();
   const unread = roster.filter(({ id }) => !state.notices.includes(id));
-  return `${header("과제·공지 관리", "미제출 학생과 공지를 확인하지 않은 학생을 확인하세요.")}
+  const roleUi = window.AcademyRoleUi?.enabled(role);
+  const reviewFirst = roleUi ? roster.filter(({ id }) => needsSampleReview(id)) : [];
+  return `${header(roleUi ? "과제 검사" : "과제·공지 관리", "제출 기록과 공지를 확인하지 않은 학생을 확인하세요.")}
+  ${reviewFirst.length ? panel("꼭 확인", list(reviewFirst.map(({ id, name }) => item(name, "가상 채점 · 흐린 풀이를 선생님이 확인", button("검토", "review", { id, variant: "text-button" }))))) : ""}
   <div class="columns">
-    ${panel(assignment.title, list(roster.map(({ id, name, group }) => {
+    ${panel(assignment.title, list(roster.filter(({ id }) => !reviewFirst.some((learner) => learner.id === id)).map(({ id, name, group }) => {
       const record = state.submissions[id];
       const control = record?.status === "submitted" ? button("검토", "review", { id, variant: "text-button" })
         : record?.status !== "reviewed" ? button("리마인드", "remind", { id: `${id}:과제 제출` }) : "";
@@ -472,16 +492,31 @@ function publishedScores(id) {
   });
 }
 
-function scoreChart(id) {
-  const points = publishedScores(id).filter(({ percent }) => percent !== null);
+function scorePeriod(id, period = "all") {
+  return publishedScores(id).filter(({ exam }) => period !== "november" || exam.date.startsWith("11."));
+}
+
+function chartAverage({ exam, average }) {
+  const count = Object.values(state.grades[exam.id].scores).filter(Number.isFinite).length;
+  return Number.isFinite(average) && count >= 3 ? Math.round(average / exam.maximum * 1000) / 10 : null;
+}
+
+function scoreChart(id, period = "all", compare = false) {
+  const points = scorePeriod(id, period).filter(({ percent }) => percent !== null);
   if (!points.length) return '<p class="empty">공개된 성적이 없습니다.</p>';
-  const description = points.map(({ exam, percent }) => `${exam.date} ${percent}점`).join(", ");
-  return `<div class="score-chart"><canvas data-score-chart="${id}" role="img" aria-label="100점 환산 성적 추이 · ${escapeHtml(description)}">${escapeHtml(description)}</canvas></div>`;
+  const description = points.map((point) => {
+    const { exam, percent } = point;
+    const average = compare ? chartAverage(point) : null;
+    const mean = average === null ? "" : ` · 반 평균 ${average}점`;
+    return `${exam.date} ${percent}점${mean}`;
+  }).join(", ");
+  const legend = compare ? '<div class="demo-score-legend"><span>학생 점수</span><span>반 평균</span></div>' : "";
+  return `${legend}<div class="score-chart"><canvas data-score-chart="${id}" data-period="${period}" data-compare="${compare}" role="img" aria-label="100점 환산 성적 추이 · ${escapeHtml(description)}">${escapeHtml(description)}</canvas></div>`;
 }
 
 function paintScoreCharts() {
   for (const canvas of content.querySelectorAll("[data-score-chart]")) {
-    const points = publishedScores(canvas.dataset.scoreChart).filter(({ percent }) => percent !== null);
+    const points = scorePeriod(canvas.dataset.scoreChart, canvas.dataset.period).filter(({ percent }) => percent !== null);
     const width = Math.max(200, Math.floor(canvas.getBoundingClientRect().width));
     const height = 200;
     const scale = window.devicePixelRatio || 1;
@@ -513,6 +548,27 @@ function paintScoreCharts() {
       x: points.length === 1 ? (left + right) / 2 : left + pointInset + (right - left - 2 * pointInset) * index / (points.length - 1),
       y: y(percent),
     }));
+    if (canvas.dataset.compare === "true") {
+      context.beginPath();
+      context.setLineDash([5, 4]);
+      context.lineWidth = 2;
+      context.strokeStyle = "#0f625a";
+      let previous = false;
+      points.forEach((point, index) => {
+        const average = chartAverage(point);
+        if (average === null) {
+          previous = false;
+          return;
+        }
+        const x = coordinates[index].x;
+        const meanY = y(average);
+        if (previous) context.lineTo(x, meanY); else context.moveTo(x - 5, meanY);
+        context.lineTo(x + 5, meanY);
+        previous = true;
+      });
+      context.stroke();
+      context.setLineDash([]);
+    }
     context.beginPath();
     coordinates.forEach((point, index) => index ? context.lineTo(point.x, point.y) : context.moveTo(point.x, point.y));
     context.lineWidth = 2.5;
@@ -530,6 +586,35 @@ function paintScoreCharts() {
       context.fillText(points[index].exam.date, point.x, bottom + 18);
     });
   }
+}
+
+function staffStudents() {
+  const roster = roleStudents();
+  const learner = roster.find(({ id }) => id === selectedLearner);
+  const actions = `<div class="demo-subnav">${role === "owner" ? button("명부 등록", "navigate", { id: "roster" }) : ""}${button(role === "owner" ? "반별 성적" : "성적 입력", "navigate", { id: "grades" })}</div>`;
+  if (!learner) {
+    return header(role === "owner" ? "학생/반" : "담당 학생", "학생을 선택하면 성적 추이와 상담 메모가 열립니다.") + actions
+      + panel("학생 명단", list(roster.map(({ id, name, group }) => item(name, group, button("학생 상세", "student-detail", { id })))));
+  }
+  const period = `<label class="field-inline">조회 기간<select id="consultation-period">
+    <option value="all"${consultationPeriod === "all" ? " selected" : ""}>전체</option>
+    <option value="november"${consultationPeriod === "november" ? " selected" : ""}>11월</option>
+    </select></label>`;
+  const memo = state.consultationNotes[learner.id];
+  return header(`${learner.name} 학생`, `${learner.group} · 상담용 성적 추이`, button("학생 목록", "student-list"))
+    + panel("공개 성적 추이", period + scoreChart(learner.id, consultationPeriod, true) + '<p class="note">100점 환산 · 점수를 등록한 학생이 3명 이상인 평가에서 반 평균을 표시합니다.</p>')
+    + panel("상담 메모", memo ? `<p class="note">${escapeHtml(memo)}</p>` : '<p class="empty">저장된 가상 상담 메모가 없습니다.</p>',
+      button(memo ? "상담 메모 편집" : "상담 메모 작성", "consultation-note", { id: learner.id }), "stack");
+}
+
+function editConsultationNote(id) {
+  if (selectedLearner !== id || !roleStudents().some((learner) => learner.id === id)) return;
+  openDialog("상담 메모", `<label class="demo-memo">가상 상담 메모<textarea id="demo-consultation-note" maxlength="600">${escapeHtml(state.consultationNotes[id] ?? "")}</textarea></label>
+    <p class="note">가상 메모는 이 기기에 저장됩니다.</p>`, "메모 저장", () => {
+    state.consultationNotes[id] = dialog.querySelector("#demo-consultation-note").value.trim().slice(0, 600);
+    saveState();
+    announce("상담 메모를 저장했습니다.");
+  });
 }
 
 function learnerGrades(id, heading) {
@@ -695,14 +780,113 @@ function studentHome() {
     <div class="columns"><div>${panel("오늘 할 일", list(taskRows("jiwoo", true)))}${alerts}</div>${videoCard("jiwoo", true)}</div>`;
 }
 
+function dueSchoolRow(label) {
+  const event = DemoSchoolAssessments.upcoming();
+  return { label, value: event ? `${event.title} · ${event.countdown}` : "예정된 시험 없음",
+    detail: event?.detail ?? "확정된 내신 일정을 확인하세요.", screen: "school-schedule", symbol: "calendar", attention: Boolean(event && event.days <= 3) };
+}
+
+function lastScoreChange(id) {
+  const scores = publishedScores(id).filter(({ percent }) => Number.isFinite(percent));
+  const last = scores.at(-1);
+  const previous = scores.at(-2);
+  const difference = previous && last ? Math.round((last.percent - previous.percent) * 10) / 10 : 0;
+  return { last, difference };
+}
+
+function changeLabel(difference) {
+  return difference === 0 ? "직전과 같음" : `직전보다 ${Math.abs(difference)}점 ${difference > 0 ? "상승" : "하락"}`;
+}
+
+function attentionReasons(id) {
+  return [
+    !latestEvent(id) && "미등원",
+    !["submitted", "reviewed"].includes(state.submissions[id]?.status) && "과제 미제출",
+    lastScoreChange(id).difference < 0 && "최근 성적 하락",
+  ].filter(Boolean);
+}
+
+function roleHomeRows() {
+  if (role === "student") {
+    const record = state.submissions.jiwoo;
+    const progress = Number(state.progress.jiwoo) || 0;
+    return [
+      { label: "오늘 마감 과제", value: assignment.title, detail: record?.status === "submitted" ? "사진 제출 완료" : record?.status === "reviewed" ? "검사 및 피드백 완료" : `마감 ${assignment.due}`,
+        assignment: assignment.id, symbol: "book", attention: !record || record.status === "returned" },
+      dueSchoolRow("시험 D-day"),
+      { label: "남은 보강 영상", value: progress >= 90 ? "모두 시청 완료" : "1개 남음", detail: `${video.title} · ${progress}%`, screen: "video", symbol: "book" },
+      { label: "최근 확인된 피드백", value: record?.status === "reviewed" && record.note ? record.note : "그래프 축과 교점을 정리했어요.",
+        detail: record?.status === "reviewed" ? assignment.title : "지난 과제 · 일차함수 기초 평가", screen: "learning", symbol: "chart" },
+    ];
+  }
+  if (role === "parent") {
+    const today = state.attendance.filter(({ student }) => student === child);
+    const entered = today.findLast(({ kind }) => kind === "in");
+    const exited = today.at(-1)?.kind === "out" ? today.at(-1) : null;
+    const work = [state.submissions[child], state.reviewSubmissions[child]];
+    const complete = work.filter((record) => ["submitted", "reviewed"].includes(record?.status)).length;
+    const score = lastScoreChange(child);
+    const unread = !state.parentNoticeReads.includes(child);
+    return [
+      { label: "오늘 등·하원 상태", value: exited ? "하원 완료" : entered ? "등원 중" : "등원 기록 없음",
+        detail: `등원 ${entered?.time ?? "—"} · 하원 ${exited?.time ?? "—"}`, screen: "attendance", symbol: "qr" },
+      { label: "이번 주 과제 완료율", value: `${Math.round(complete / work.length * 100)}%`, detail: `전체 ${work.length}개 중 ${complete}개 제출`, screen: "learning", symbol: "book" },
+      { label: "최근 성적 변화", value: score.last ? `${score.last.percent}점` : "공개 성적 없음",
+        detail: score.last ? `${score.last.exam.title} · ${changeLabel(score.difference)}` : "공개된 평가만 표시합니다.", screen: "grades", symbol: "chart", attention: score.difference < 0 },
+      dueSchoolRow("다가오는 시험"),
+      { label: "안 읽은 공지", value: unread ? "1건" : "모두 확인", detail: notice.title, screen: "news", symbol: "bell", attention: unread },
+    ];
+  }
+  const roster = roleStudents();
+  const present = roster.filter(({ id }) => latestEvent(id)).length;
+  const pending = roster.filter(({ id }) => state.submissions[id]?.status === "submitted");
+  const needsAttention = roster.filter(({ id }) => attentionReasons(id).length);
+  const riskDetails = needsAttention.slice(0, 2).map(({ id, name }) => `${name} · ${attentionReasons(id).join(", ")}`).join(" / ");
+  if (role === "teacher") {
+    const mustReview = pending.filter(({ id }) => needsSampleReview(id)).length;
+    return [
+      { label: "오늘 수업 출석 현황", value: `${present} / ${roster.length}명 출석`, detail: "16:00 · 중2 심화반", screen: "attendance", symbol: "qr" },
+      { label: "검사 대기", value: `${pending.length}건`, detail: `AI 1차 완료 ${pending.length}건 · 꼭 확인 ${mustReview}건 (가상)`, screen: "learning", symbol: "book", attention: mustReview > 0 },
+      { label: "주의 학생", value: `${needsAttention.length}명`, detail: riskDetails || "오늘 확인할 학생 없음", screen: "students", symbol: "people", attention: needsAttention.length > 0 },
+      dueSchoolRow("다가오는 내신"),
+    ];
+  }
+  const pendingByGroup = teachers.flatMap(({ name }) => {
+    const groups = new Set(classes.filter(({ teacher }) => teacher === name).map(({ group }) => group));
+    const count = pending.filter(({ group }) => groups.has(group)).length;
+    return groups.size ? [`${name} ${count}건`] : [];
+  });
+  const risk = needsAttention.filter(({ id }) => attentionReasons(id).length >= 2);
+  return [
+    { label: "오늘 출석률", value: `${Math.round(present / roster.length * 100)}%`, detail: `${present}명 출석 · 등록 ${roster.length}명`, screen: "attendance", symbol: "qr" },
+    { label: "선생님별 검사 대기", value: `전체 ${pending.length}건`, detail: pendingByGroup.join(" · "), screen: "learning", symbol: "book", attention: pending.length > 0 },
+    { label: "이탈 위험 학생", value: `${risk.length}명 확인 필요`, detail: risk.map(({ name }) => name).join(" · ") || "출결·과제·성적에 겹치는 주의 신호가 없어요.", screen: "students", symbol: "people", attention: risk.length > 0 },
+    { label: "상담 일정", value: "오늘 오후 6:30 · 김지우", detail: "가상 상담 1건 · 성적 추이와 이전 메모", screen: "students", symbol: "calendar" },
+    { label: "요금제·AI 사용량", value: "스탠다드 · 가상 사용량 1건", detail: "운영 설정에서 확인할 항목의 예시", screen: "settings", symbol: "settings" },
+  ];
+}
+
+function assignmentRows(id, interactive) {
+  return [assignment, reviewAssignment].map((task) => {
+    const record = task.id === assignment.id ? state.submissions[id] : state.reviewSubmissions[id];
+    const status = record ? submissionBadge(record) : badge(task.id === assignment.id ? "오늘 마감" : "미제출", "orange");
+    if (!interactive) return item(task.title, task.due, status);
+    return `<li><button type="button" class="demo-assignment-row" data-action="submit-homework" data-id="${task.id}" data-action-level="secondary"><span><strong>${task.title}</strong><small>마감 ${task.due}</small></span>${status}</button></li>`;
+  }).join("");
+}
+
 function learnerWork(id, interactive) {
   const record = state.submissions[id];
-  const assignmentBody = list(taskRows(id, interactive).slice(0, 1));
-  return `${header("과제·공지", "과제 제출 상태와 수업 공지를 확인하세요.")}
+  const roleUi = window.AcademyRoleUi?.enabled(role);
+  const assignmentBody = roleUi ? `<ul class="${interactive ? "demo-assignment-list" : "item-list"}">${assignmentRows(id, interactive)}</ul>`
+    : list(taskRows(id, interactive).slice(0, 1));
+  const actions = roleUi ? `<div class="demo-subnav">${interactive ? button("학습 영상", "navigate", { id: "video" }) : button("성적 추이", "navigate", { id: "grades" })}</div>` : "";
+  return `${header(roleUi ? (interactive ? "과제" : "과제/성적") : "과제·공지", interactive && roleUi ? "과제 제목을 누르면 바로 제출 화면이 열립니다." : "과제 제출 상태와 수업 공지를 확인하세요.")}
+    ${actions}
     <div class="columns">
-      ${panel("과제", assignmentBody + (record?.attachment ? `<p class="note">첨부 ${escapeHtml(record.attachment)}</p>` : "")
-        + (record?.note ? `<p class="note">${escapeHtml(record.note)}</p>` : ""))}
-      ${panel("학원 공지", list(taskRows(id, interactive).slice(1)))}
+      ${panel("과제 목록", assignmentBody + (!roleUi && record?.attachment ? `<p class="note">첨부 ${escapeHtml(record.attachment)}</p>` : "")
+        + (!roleUi && record?.note ? `<p class="note">${escapeHtml(record.note)}</p>` : ""))}
+      ${!roleUi || interactive ? panel("학원 공지", list(taskRows(id, interactive).slice(1))) : ""}
     </div>`;
 }
 
@@ -713,6 +897,16 @@ function childPicker() {
 
 function parentView(screen) {
   const controls = childPicker();
+  if (screen === "news") {
+    const read = state.parentNoticeReads.includes(child);
+    return header("소식", "학원 공지와 내신 일정을 확인합니다.") + controls
+      + panel("학원 공지", list([item(notice.title, read ? "읽음" : "안 읽음", button("공지 보기", "parent-notice"))]))
+      + panel("다가오는 일정", list([
+        item("내신 일정", "시험과 수행평가", button("보기", "navigate", { id: "school-schedule" })),
+        item("수업 일정", "학원 시간표", button("보기", "navigate", { id: "schedule" })),
+      ]), "", "stack")
+      + panel("받은 알림", notificationList(child, 3), button("전체", "navigate", { id: "notifications", variant: "text-button" }), "stack");
+  }
   if (screen === "grades") return learnerGrades(child, "성적 추이");
   if (screen === "attendance") return header("자녀 출결", "자녀별 등원·하원 기록입니다.") + controls + panel("출결 기록", attendanceHistory(child));
   if (screen === "notifications") return header("받은 알림", "등원·하원 알림을 자녀별로 확인합니다.") + controls + panel("알림 기록", notificationList(child, 20));
@@ -728,20 +922,36 @@ function parentView(screen) {
     </div>`;
 }
 
+function roleTabShortcuts(screen) {
+  const links = {
+    owner: {
+      settings: [["과제 검사", "learning"], ["발송 기록", "notifications"], ["홈페이지", "website"]],
+      attendance: [["수업·휴가 일정", "schedule"], ["내신 일정", "school-schedule"]],
+    },
+    teacher: {
+      attendance: [["수업·휴가 일정", "schedule"]],
+      learning: [["영상 현황", "video"]],
+      students: [["내신 일정", "school-schedule"], ["발송 기록", "notifications"], ["홈페이지", "website"]],
+    },
+    student: {
+      home: [["알림", "notifications"], ["홈페이지", "website"]],
+      attendance: [["수업 일정", "schedule"]],
+      grades: [["내신 일정", "school-schedule"]],
+    },
+    parent: { news: [["홈페이지", "website"]] },
+  };
+  if (screen === "students" && selectedLearner) return;
+  const shortcuts = links[role][screen] ?? [];
+  if (shortcuts.length) content.insertAdjacentHTML("beforeend", `<nav class="demo-subnav" aria-label="관련 화면">${shortcuts.map(([label, id]) => button(label, "navigate", { id, variant: "text-button" })).join("")}</nav>`);
+}
+
 function render() {
   navigation.innerHTML = menus[role].map(([screen, label]) => `<button class="nav-button" type="button" data-action="navigate" data-id="${screen}"${screen === activeScreen ? ' aria-current="page"' : ""}><span aria-hidden="true">${symbols[screen]}</span>${label}</button>`).join("");
   if (activeScreen === "website") content.innerHTML = academyWebsite();
   else if (activeScreen === "schedule") content.innerHTML = calendarView();
   else if (activeScreen === "school-schedule") content.innerHTML = DemoSchoolAssessments.view();
   else if (activeScreen === "home" && window.AcademyRoleUi?.enabled(role)) {
-    const summary = role === "owner" ? `가상 학생 ${students.length}명 · 출결과 학습 기록은 이 기기에만 저장됩니다.`
-      : role === "teacher" ? `담당 반 학생 ${roleStudents().length}명 · 검사가 필요한 숙제를 먼저 확인하세요.`
-      : role === "student" ? `${assignment.title} · 마감 ${assignment.due}`
-      : `${studentName(child)} 학생 · 자녀를 바꾸려면 출결·학습 화면에서 선택하세요.`;
-    const submissionStatus = state.submissions.jiwoo?.status;
-    const primary = role === "student" && (submissionStatus === "reviewed" || submissionStatus === "submitted")
-      ? [submissionStatus === "reviewed" ? "숙제 피드백 확인" : "제출한 숙제 보기", "navigate", "learning"] : undefined;
-    content.innerHTML = window.AcademyRoleUi.home(role, academyProfiles[demoVariant].name, menus[role], summary, primary);
+    content.innerHTML = window.AcademyRoleUi.home(role, academyProfiles[demoVariant].name, roleHomeRows(), role === "parent" ? childPicker() : "");
   }
   else if (role === "parent") content.innerHTML = parentView(activeScreen);
   else if (role === "student") {
@@ -753,10 +963,11 @@ function render() {
     content.innerHTML = screens[activeScreen]();
   } else {
     const screens = { home: role === "owner" ? ownerHome : teacherHome, attendance: staffAttendance, learning: staffLearning,
-      grades: role === "owner" ? ownerGrades : teacherGrades, roster: ownerRoster, settings: ownerSettings, video: staffVideo,
+      grades: role === "owner" ? ownerGrades : teacherGrades, roster: ownerRoster, settings: ownerSettings, video: staffVideo, students: staffStudents,
       notifications: () => header("발송 기록", "출결과 연결된 알림톡·문자 발송 예시입니다.") + panel("발송 예시", notificationList(null, 30)) };
     content.innerHTML = screens[activeScreen]();
   }
+  if (window.AcademyRoleUi?.enabled(role)) roleTabShortcuts(activeScreen);
   window.AcademyRoleUi?.apply(content, role, activeScreen);
   paintScoreCharts();
 }
@@ -829,9 +1040,19 @@ function releasePhotoPreview() {
   dialog.querySelector("[data-photo-preview]")?.removeAttribute("src");
 }
 
-function submitHomework() {
+function submitHomework(taskId = assignment.id) {
+  const task = [assignment, reviewAssignment].find(({ id }) => id === taskId);
+  if (!task) return;
+  const submissions = task.id === assignment.id ? state.submissions : state.reviewSubmissions;
+  const previous = submissions.jiwoo;
+  const roleUi = window.AcademyRoleUi?.enabled(role);
+  const heading = roleUi ? `<h3>${task.title}</h3><p class="note">마감 ${task.due}</p>` : "";
+  if (previous?.status === "reviewed") {
+    openDialog("과제 결과", heading + `<p>${escapeHtml(previous.note || "검사를 마쳤습니다.")}</p>`);
+    return;
+  }
   let ready = false;
-  openDialog("풀이 사진 제출", `<p>${assignment.detail}</p>
+  openDialog("풀이 사진 제출", `${heading}<p>${task.detail}</p>${previous?.note ? `<p class="note">${escapeHtml(previous.note)}</p>` : ""}
     <div class="actions photo-actions">
       <label class="secondary file-choice" for="worksheet-camera">사진 찍기
         <input class="sr-only" id="worksheet-camera" type="file" accept="image/*" capture="environment">
@@ -843,7 +1064,7 @@ function submitHomework() {
     <img class="photo-preview" data-photo-preview alt="선택한 풀이 사진 미리보기" hidden>
     <p class="note" data-photo-status role="status" aria-live="polite">사진은 이 창에서만 보이며, 닫으면 미리보기가 지워집니다.</p>`, "제출하기", () => {
     if (!ready) return false;
-    state.submissions.jiwoo = { status: "submitted", attachment: "풀이 사진", note: "" };
+    submissions.jiwoo = { status: "submitted", attachment: "풀이 사진", note: "" };
     saveState();
     announce("가상 제출 상태를 이 기기에 저장했습니다. 실제 선생님에게 전송되지 않습니다.");
   });
@@ -981,7 +1202,7 @@ function editSettings() {
 
 function reviewSubmission(id) {
   const record = state.submissions[id];
-  if (!student(id) || !record) return;
+  if (!["owner", "teacher"].includes(role) || !roleStudents().some((learner) => learner.id === id) || !record) return;
   openDialog(`${studentName(id)} 학생 과제 검토`, `<p>첨부 ${escapeHtml(record.attachment)}</p>
     <label>검토 결과<select name="status"><option value="reviewed">검토 완료</option><option value="returned">반려 및 재제출 요청</option></select></label>
     <label>예시 피드백<select name="note"><option value="">선택 안 함</option><option>그래프 축과 교점을 표시해 주세요.</option><option>기울기 부호를 확인해 주세요.</option></select></label>`, "검토 저장", (form) => {
@@ -995,6 +1216,15 @@ function reviewSubmission(id) {
 function readNotice() {
   openDialog(notice.title, `<p>${notice.detail}</p>`, state.notices.includes("jiwoo") ? "" : "읽음 확인", () => {
     state.notices.push("jiwoo");
+    saveState();
+    announce("공지를 읽음 처리했습니다.");
+  });
+}
+
+function readParentNotice() {
+  const read = state.parentNoticeReads.includes(child);
+  openDialog(notice.title, `<p>${notice.detail}</p>`, read ? "" : "읽음 확인", () => {
+    if (!state.parentNoticeReads.includes(child)) state.parentNoticeReads.push(child);
     saveState();
     announce("공지를 읽음 처리했습니다.");
   });
@@ -1185,6 +1415,7 @@ document.addEventListener("click", (event) => {
       rosterUploadId++;
       rosterPreview = null;
     }
+    if (id === "students") selectedLearner = null;
     activeScreen = id;
     render();
     content.focus();
@@ -1194,7 +1425,20 @@ document.addEventListener("click", (event) => {
     content.querySelector('.day-button[aria-pressed="true"]')?.focus();
   } else if (activeScreen === "school-schedule" && action.startsWith("school-demo-")) DemoSchoolAssessments.handle(action, id);
   else if (action === "record-attendance" && ["owner", "teacher"].includes(role)) recordAttendance();
-  else if (action === "submit-homework" && role === "student") submitHomework();
+  else if (action === "submit-homework" && role === "student") submitHomework(id);
+  else if (action === "parent-notice" && role === "parent" && activeScreen === "news") readParentNotice();
+  else if (activeScreen === "students" && ["student-detail", "student-list", "consultation-note"].includes(action) && ["owner", "teacher"].includes(role)) {
+    if (action === "student-detail" && roleStudents().some((learner) => learner.id === id)) {
+      selectedLearner = id;
+      consultationPeriod = "all";
+      render();
+      content.focus();
+    } else if (action === "student-list") {
+      selectedLearner = null;
+      render();
+      content.focus();
+    } else if (action === "consultation-note") editConsultationNote(id);
+  }
   else if (action === "website-notice") openDialog(notice.title, `<p>${escapeHtml(notice.detail)}</p>`);
   else if (action === "request-leave" && role === "teacher") requestLeave();
   else if (action === "review-leave" && role === "owner") reviewLeave(id);
@@ -1238,6 +1482,12 @@ content.addEventListener("change", (event) => {
     if (file) void previewRosterFile(file);
     return;
   }
+  if (field.id === "consultation-period" && activeScreen === "students" && ["all", "november"].includes(field.value)) {
+    consultationPeriod = field.value;
+    render();
+    content.querySelector("#consultation-period")?.focus();
+    return;
+  }
   if (field.id !== "grade-assessment") return;
   selectedExam = field.value;
   render();
@@ -1271,6 +1521,8 @@ window.academyDemoRequestReset = (afterReset) => {
     child = "jiwoo";
     selectedDay = "목";
     selectedExam = "linear-fourth";
+    selectedLearner = null;
+    consultationPeriod = "all";
     DemoSchoolAssessments.reset();
     saveState();
     nativeShell?.resetDemo?.();

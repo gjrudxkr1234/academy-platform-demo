@@ -1,7 +1,7 @@
 {
   "synthetic_only": true,
   "network_required_after_preparation": false,
-  "version": "64637e267494ceeb",
+  "version": "cc7af231ff8db574",
   "assets": [
     {
       "path": "icons/owner-180.png",
@@ -100,8 +100,8 @@
     },
     {
       "path": "pwa.css",
-      "bytes": 3538,
-      "sha256": "8736dc35680e6ac59fe332a2802ceb9cacf355f421298279c322e1987b515361"
+      "bytes": 3372,
+      "sha256": "94d07fb81e3ee74ce56d70c9428fb4958ccf8edcdcfd41a4864baf201491bbe1"
     },
     {
       "path": "pwa.js",
@@ -145,23 +145,23 @@
     },
     {
       "path": "shared/assets/school-assessments.js",
-      "bytes": 19947,
-      "sha256": "dde0278b8c977b00578904cc07f463eb5226018296880530dc35266e35d7598d"
+      "bytes": 20293,
+      "sha256": "9e54b85dca88a8c6e9c0a82785dcc3e3a323daa3106ba437eda4d76c4444fccf"
     },
     {
       "path": "shared/demo.js",
-      "bytes": 79050,
-      "sha256": "f9e67fcbe6fe6fe3282658076431934f97c2d821a963d9d39422b3f455c43aeb"
+      "bytes": 94994,
+      "sha256": "6747667f69310bc399fa582baf52f442c9506343e8a19841ade8cd2bd1b31db0"
     },
     {
       "path": "shared/role-ui.css",
-      "bytes": 4114,
-      "sha256": "e344e6f51d3dc17f0d5977290e8f85dd8bf7881d13da62e7dbe23c4123cfcecb"
+      "bytes": 6827,
+      "sha256": "de63889563420f6035d171fdd87430ef07ab934a546964fdf8e372fa8da3bdba"
     },
     {
       "path": "shared/role-ui.js",
-      "bytes": 7392,
-      "sha256": "0f0c1ae4084c200c89c3f5438d926e0dbdcb6ccb7aa3f4ac33e1abf198db1082"
+      "bytes": 6888,
+      "sha256": "b0df5f3a28098e2d85e79ae8cf5bfd518381b789f2ef231a574771708f877d17"
     },
     {
       "path": "shared/style.css",
