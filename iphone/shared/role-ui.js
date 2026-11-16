@@ -14,13 +14,13 @@
     },
     student: {
       name: "학생", title: "오늘 할 일", context: "김지우 학생 · 중2 심화반",
-      tabs: [["home", "홈", "home", ["home-overview", "website", "notifications"]], ["learning", "과제", "book", ["video"]],
+      tabs: [["home", "홈", "home", ["home-overview", "notifications"]], ["learning", "과제", "book", ["video"]],
         ["attendance", "출결", "qr", ["schedule"]], ["grades", "성적", "chart", ["school-schedule"]]],
     },
     parent: {
       name: "학부모", title: "우리 아이의 하루", context: "연결된 자녀의 학습과 출결",
       tabs: [["home", "홈", "home", ["home-overview"]], ["attendance", "출결", "qr", []], ["learning", "과제/성적", "chart", ["grades"]],
-        ["news", "소식", "bell", ["notifications", "schedule", "school-schedule", "website"]]],
+        ["news", "소식", "bell", ["notifications", "schedule", "school-schedule"]]],
     },
   };
   const paths = {
@@ -58,8 +58,8 @@
     </section>`;
   }
 
-  function homeButton({ label, action = "navigate", id = "", symbol }, level = "tertiary", classname = "") {
-    return `<button type="button" class="${classname}" data-action="${escape(action)}"${id ? ` data-id="${escape(id)}"` : ""} data-action-level="${level}">${symbol ? icon(symbol) : ""}${escape(label)}</button>`;
+  function homeButton({ label, action = "navigate", id = "", symbol, chevron = false }, level = "tertiary", classname = "") {
+    return `<button type="button" class="${classname}" data-action="${escape(action)}"${id ? ` data-id="${escape(id)}"` : ""} data-action-level="${level}">${symbol ? icon(symbol) : ""}${escape(label)}${chevron ? '<span class="demo-link-chevron" aria-hidden="true">›</span>' : ""}</button>`;
   }
 
   function metricGrid(rows) {
@@ -69,41 +69,81 @@
       </button></li>`).join("")}</ul>`;
   }
 
-  function home(role, { context, name, summary, actions, rows, controls, notices, lessons, profile, staff }) {
-    const website = { label: "학원 홈페이지 전체 보기", id: "website" };
+  function sectionLink(label, id) {
+    return homeButton({ label, id, chevron: true }, "tertiary", "demo-home-link");
+  }
+
+  function scheduleList(lessons, selectedGroup) {
+    const own = lessons.filter((lesson) => lesson.group === selectedGroup);
+    const others = lessons.filter((lesson) => lesson.group !== selectedGroup);
+    return `<ul class="demo-home-lessons demo-site-schedule">${[...own, ...others].map(({ day, time, group, teacher }, index) => `
+      <li${index < own.length ? ' class="is-own" data-own-class' : ""}><strong>${escape(group)}${index < own.length ? ' <small>내 반</small>' : ""}</strong>
+        <span>${escape(day)}요일 ${escape(time)}${teacher ? ` · ${escape(teacher)} 선생님` : ""}</span></li>`).join("") || "<li>등록된 수업 시간표가 없어요.</li>"}</ul>`;
+  }
+
+  function staffList(staff) {
+    return `<ul class="demo-site-staff">${staff.map(({ name, subject, detail }) => `
+      <li><span class="demo-site-initial" aria-hidden="true">${escape(name[0] || "·")}</span>
+        <div><strong>${escape(name)}</strong>${subject ? `<span>${escape(subject)}</span>` : ""}${detail ? `<p>${escape(detail)}</p>` : ""}</div></li>`).join("") || "<li>강사진 안내를 준비하고 있어요.</li>"}</ul>`;
+  }
+
+  function contactList(profile) {
+    const rows = [["운영시간", "hours"], ["주소", "address"], ["전화", "phone"]].filter(([, key]) => profile[key]);
+    if (!rows.length) return '<p class="demo-site-muted">학원 안내를 준비하고 있어요.</p>';
+    return `<dl class="demo-site-contact">${rows.map(([label, key]) => `<div><dt>${label}</dt><dd>${key === "hours" ? escape(profile[key])
+      : homeButton({ label: profile[key], action: "demo-contact", id: key, chevron: true }, "tertiary", "demo-home-link")}</dd></div>`).join("")}</dl>`;
+  }
+
+  function home(role, { context, name, summary, actions, rows, controls, notices, lessons, profile, staff, timetable = [], staffProfiles = [], selectedGroup }) {
     const websiteEdit = { label: profile.ready ? "편집하기" : "홈페이지 만들기", action: "homepage-edit", symbol: "edit" };
     const parent = role === "parent";
+    const learner = parent || role === "student";
     return `<section class="demo-role-home" data-role-home="${role}">
-      <header class="demo-greeting">
-        <p class="demo-greeting-meta">${escape(context)} · 11월 16일 월요일</p>
-        <h1>${escape(name)},<br>오늘도 반가워요</h1>
-        <p class="demo-greeting-summary">${escape(summary)}</p>
+      <header class="demo-greeting${learner ? " demo-greeting-learner" : ""}">
+        ${learner ? `<h1>${escape(profile.name)}</h1><p class="demo-greeting-intro">${escape(profile.intro)}</p>
+          <p class="demo-greeting-meta">${escape(name)}, 반가워요</p>`
+          : `<p class="demo-greeting-meta">${escape(context)} · 11월 16일 월요일</p>
+          <h1>${escape(name)},<br>오늘도 반가워요</h1>
+          <p class="demo-greeting-summary">${escape(summary)}</p>`}
         <div class="demo-greeting-actions">${actions.map((action, index) =>
           homeButton(action, index === 0 ? "primary" : "secondary", "demo-greeting-button")).join("")}</div>
       </header>
       <section class="demo-home-section" aria-labelledby="demo-today-title">
         <header class="demo-home-section-heading">
           <h2 id="demo-today-title">${role === "owner" ? "오늘 운영" : "오늘"}</h2>
-          ${homeButton({ label: "전체 보기", id: "home-overview" }, "tertiary", "demo-home-link")}
+          ${sectionLink("전체 보기", "home-overview")}
         </header>
         ${controls}
         ${role === "owner" ? metricGrid(rows) : rowList(rows)}
       </section>
       <section class="demo-home-section" aria-labelledby="demo-notice-title">
         <header class="demo-home-section-heading"><h2 id="demo-notice-title">공지</h2>
-          ${homeButton({ label: "더 보기", id: parent ? "news" : "website" }, "tertiary", "demo-home-link")}
+          ${sectionLink("더 보기", parent ? "news" : learner ? "learning" : "website")}
         </header>
-        <ul class="demo-home-list">${notices.map(({ title, detail, date, id }) => `
+        <ul class="demo-home-list">${notices.slice(0, 2).map(({ title, detail, date, id }) => `
           <li class="demo-home-notice"><button type="button" data-action="home-notice" data-id="${escape(id)}" data-action-level="tertiary"><span class="demo-home-icon">${icon("notice")}</span>
             <span class="demo-home-copy"><strong>${escape(title)}</strong><span>${escape(detail)} · ${escape(date)}</span></span>
           </button></li>`).join("")}</ul>
       </section>
-      ${role !== "owner" ? `<section class="demo-home-section" aria-labelledby="demo-week-title">
+      ${learner ? `<section class="demo-home-section" aria-labelledby="demo-timetable-title">
+        <header class="demo-home-section-heading"><h2 id="demo-timetable-title">수업 시간표</h2></header>
+        ${scheduleList(timetable, selectedGroup)}
+      </section>
+      <section class="demo-home-section" aria-labelledby="demo-staff-title">
+        <header class="demo-home-section-heading"><h2 id="demo-staff-title">강사진</h2></header>
+        ${staffList(staffProfiles)}
+      </section>
+      <section class="demo-home-section" aria-labelledby="demo-guide-title">
+        <header class="demo-home-section-heading"><h2 id="demo-guide-title">학원 안내</h2></header>
+        ${contactList(profile)}
+      </section>
+      ${parent ? homeButton({ label: "상담 신청", action: "demo-consultation", symbol: "calendar" }, "secondary", "demo-contact-cta") : ""}` : ""}
+      ${role === "teacher" ? `<section class="demo-home-section" aria-labelledby="demo-week-title">
         <header class="demo-home-section-heading"><h2 id="demo-week-title">이번 주 수업</h2>
           ${homeButton({ label: "수업 일정", id: "schedule" }, "tertiary", "demo-home-link")}</header>
         <ul class="demo-home-lessons">${lessons.map(({ day, time, group, teacher }) => `<li><strong>${escape(day)}</strong><span>${escape(time)}</span><span>${escape(group)} · ${escape(teacher)} 선생님</span></li>`).join("") || "<li>예정된 수업이 없어요.</li>"}</ul>
       </section>` : ""}
-      <section class="demo-home-section" aria-labelledby="demo-website-title">
+      ${!learner ? `<section class="demo-home-section" aria-labelledby="demo-website-title">
         <header class="demo-home-section-heading"><h2 id="demo-website-title">학원 홈페이지</h2>
           ${role === "owner" && profile.ready ? homeButton({ label: "미리보기", id: "website" }, "tertiary", "demo-home-link") : ""}
         </header>
@@ -111,12 +151,13 @@
           ${role === "owner" && profile.ready ? `<div class="demo-site-thumbnail" aria-hidden="true"><div></div><strong>${escape(profile.name)}</strong><i></i><i></i></div>` : ""}
           <div><strong>${escape(role === "owner" && profile.ready ? "학생·학부모 첫 화면" : profile.name)}</strong>
             <p>${escape(role === "owner" && profile.ready ? "소개 · 강사진 · 시간표 · 공지" : profile.intro)}</p>
-            ${role === "owner" ? homeButton(websiteEdit, "tertiary", "demo-home-link") : `
-              <p>강사진 ${escape(staff)}</p><p>연락처 미등록 · 평일 14:00–22:00</p>
-              ${homeButton(website, "tertiary", "demo-home-link")}`}
+            ${role === "owner" ? homeButton(websiteEdit, "tertiary", "demo-home-link")
+              + (!profile.phone ? homeButton({ label: "연락처 등록", action: "homepage-edit", id: "contact", chevron: true }, "tertiary", "demo-home-link") : "")
+              : `<p>강사진 ${escape(staff)}</p>${profile.phone ? `<p>${escape(profile.phone)}</p>` : ""}
+                ${sectionLink("학원 홈페이지 전체 보기", "website")}`}
           </div>
         </div>
-      </section>
+      </section>` : ""}
     </section>`;
   }
 
@@ -129,11 +170,10 @@
   }
 
   function primarySelector(role, screen) {
-    if (screen === "website") return '[data-action="navigate"][data-id="home"]';
+    if (screen === "website" && role !== "owner") return '[data-action="navigate"][data-id="home"]';
     if (screen === "attendance") return role === "student" ? '[data-action="camera-qr"]' : role === "owner" || role === "teacher" ? '[data-action="teacher-qr"]' : null;
     if (screen === "learning") return role === "owner" || role === "teacher" ? '[data-action="review"]' : null;
     if (screen === "video" && role === "student") return '[data-action="watch-video"]';
-    if (screen === "settings" && role === "owner") return '[data-action="edit-settings"]';
     if (screen === "roster" && role === "owner") return '[data-action="apply-roster"]:not(:disabled), [data-action="preview-roster"]';
     if (screen === "school-schedule") return role === "student" ? '[data-action="school-demo-report"]' : role === "parent" ? null : '[data-action="school-demo-approve"]';
     if (screen === "students") return '[data-action="consultation-note"]';
@@ -162,5 +202,5 @@
     }
     container.insertAdjacentHTML("beforeend", tabs(role, screen));
   }
-  window.AcademyRoleUi = Object.freeze({ enabled, home, overview, tabs, apply, primarySelector });
+  window.AcademyRoleUi = Object.freeze({ enabled, home, overview, tabs, apply, primarySelector, scheduleList, staffList, contactList });
 })();

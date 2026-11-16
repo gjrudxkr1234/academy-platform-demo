@@ -1,7 +1,7 @@
 {
   "synthetic_only": true,
   "network_required_after_preparation": false,
-  "version": "311a523cf245659a",
+  "version": "57fa287edd546280",
   "assets": [
     {
       "path": "icons/owner-180.png",
@@ -70,8 +70,8 @@
     },
     {
       "path": "owner/index.html",
-      "bytes": 5209,
-      "sha256": "4e7cb9ad1f696da0485ec537fedd714628c89dbb29a0de03f74278f15acc5223"
+      "bytes": 5089,
+      "sha256": "13e9868bb95198e421f5cf4cbb515e907cf5c2851275cad7a126efd6f9c3b990"
     },
     {
       "path": "owner/manifest.webmanifest",
@@ -85,8 +85,8 @@
     },
     {
       "path": "parent/index.html",
-      "bytes": 5216,
-      "sha256": "baf3f77bc7452c7997602e34d3d742afed20dc0f89235f04c08f27057855f173"
+      "bytes": 5096,
+      "sha256": "692182758467e3ade59d4275874f81224333e4900924da261fd6c3e0f87bf710"
     },
     {
       "path": "parent/manifest.webmanifest",
@@ -165,18 +165,18 @@
     },
     {
       "path": "shared/demo.js",
-      "bytes": 101199,
-      "sha256": "33bf9b6589a500efc313c6efeec6cd19516d5156eccc6be556eb0a604f57acea"
+      "bytes": 113639,
+      "sha256": "22215ac1540ec122f58da6f7cfc68d2e1743d22faeaf5e21851d87edf91dc585"
     },
     {
       "path": "shared/role-ui.css",
-      "bytes": 13068,
-      "sha256": "503e86938d5e5f97695dfcd69b817c4847e87f79a128067e9cdd9021696e0e96"
+      "bytes": 17128,
+      "sha256": "9cbcc68d3aa12c4b7dc84e3d45d716bf7b0be1969a96b994d3e610e1f2b67601"
     },
     {
       "path": "shared/role-ui.js",
-      "bytes": 11720,
-      "sha256": "5dca1c267367dd818a41eb35ce9cde2f7cb6435a3385c3121e7217016fad2cf7"
+      "bytes": 14875,
+      "sha256": "5905106312dda6ff7aa92f0610d02d04e854dace0440333e6f4b28844d03e8d7"
     },
     {
       "path": "shared/style.css",
@@ -185,8 +185,8 @@
     },
     {
       "path": "student/index.html",
-      "bytes": 5211,
-      "sha256": "e49e4f1c1125821583d759eebcebbb9b4bdb7f4c3ad4b21e56852731294efed3"
+      "bytes": 5091,
+      "sha256": "150b8c291aa974e159523f8046d155f3347bbee291f8be0ccbe972f0c108a17d"
     },
     {
       "path": "student/manifest.webmanifest",
@@ -200,8 +200,8 @@
     },
     {
       "path": "teacher/index.html",
-      "bytes": 5217,
-      "sha256": "cdf53ef3ca9f5246de8337942f19d07afbc7d88f69b7840695e123fae2ef8418"
+      "bytes": 5097,
+      "sha256": "516176427bc0bad818a0f80bdf0a6acffce2810980e8d4edafbc54ee7f092080"
     },
     {
       "path": "teacher/manifest.webmanifest",
