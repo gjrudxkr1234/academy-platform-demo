@@ -339,9 +339,10 @@ function teacherHome() {
     </div>`;
 }
 
-function attendanceHistory(id) {
+function attendanceHistory(id, kind) {
   const roster = roleStudents();
-  const records = state.attendance.filter((event) => id ? event.student === id : roster.some((learner) => learner.id === event.student)).toReversed();
+  const records = state.attendance.filter((event) => (!kind || event.kind === kind)
+    && (id ? event.student === id : roster.some((learner) => learner.id === event.student))).toReversed();
   return list(records.map((event) => item(`${studentName(event.student)} 학생 · ${event.kind === "in" ? "등원" : "하원"}`, event.time, event.late ? badge("지각", "orange") : badge("기록 완료", "green"))));
 }
 
@@ -351,8 +352,12 @@ function staffAttendanceActions() {
 
 function staffAttendance() {
   const roster = roleStudents();
-  return `${header("출결 관리", "등원·하원 기록과 지각을 확인합니다.", staffAttendanceActions())}
-    ${metrics(roster)}<div class="columns">${panel("학생별 출결", attendanceTable(roster))}${panel("출결 기록", attendanceHistory())}</div>`;
+  const title = header("출결 관리", "등원·하원 기록과 지각을 확인합니다.", staffAttendanceActions());
+  const rosterPanel = panel("학생별 출결", attendanceTable(roster));
+  if (role === "owner" && window.AcademyRoleUi?.enabled(role)) {
+    return title + `<div class="columns">${panel("오늘 등원", attendanceHistory(undefined, "in"))}${rosterPanel}</div>`;
+  }
+  return title + `${metrics(roster)}<div class="columns">${rosterPanel}${panel("출결 기록", attendanceHistory())}</div>`;
 }
 
 function submissionBadge(value) {
