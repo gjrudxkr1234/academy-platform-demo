@@ -1,7 +1,7 @@
 {
   "synthetic_only": true,
   "network_required_after_preparation": false,
-  "version": "0154039a3f55157d",
+  "version": "6730cec00622cf8f",
   "assets": [
     {
       "path": "icons/owner-180.png",
@@ -210,8 +210,8 @@
     },
     {
       "path": "shared/home-v3-banners.js",
-      "bytes": 18516,
-      "sha256": "0caa1a5c29f1a3e562b47be8fec6dd13c6ff0a21426198f36339358ed4e9758d"
+      "bytes": 18414,
+      "sha256": "5ebff500b8b880bc7ead35389b1a5202c9a7068e18be21107be1e37e16c97417"
     },
     {
       "path": "shared/home-v3-calendar.css",

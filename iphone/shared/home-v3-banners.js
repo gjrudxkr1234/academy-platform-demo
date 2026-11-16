@@ -217,7 +217,6 @@
       const banner = { id:saved?.id ?? `banner-${Date.now()}`, title, subtitle, label, source, preset, target, audience, start, end, groups, url,
         image:source === "image" ? image : null };
       const banners = saved ? latest.banners.map(item => item.id === saved.id ? banner : item) : [...latest.banners, banner];
-      if (banners.length > 40) return "이 기기에 배너를 40개까지 저장할 수 있어요.";
       const at = new Map();
       for (const item of banners) {
         at.set(item.start, (at.get(item.start) ?? 0) + 1);
