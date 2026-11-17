@@ -265,8 +265,12 @@ function panel(title, body, control = "", className = "") {
   return `<section class="panel ${className}"><div class="panel-head"><h2>${escapeHtml(title)}</h2>${control}</div>${body}</section>`;
 }
 
-function header(title, description, control = "") {
-  return `<div class="page-head"><div><h1 class="page-title">${escapeHtml(title)}</h1><p class="subtitle">${escapeHtml(description)}</p></div>${control}</div>`;
+function header(title, description = "", control = "") {
+  return `<div class="page-head"><div><h1 class="page-title">${escapeHtml(title)}</h1>${description ? `<p class="subtitle">${escapeHtml(description)}</p>` : ""}</div>${control}</div>`;
+}
+
+function appHeader(title, description, control) {
+  return header(title, window.AcademyRoleUi?.enabled(role) ? "" : description, control);
 }
 
 function item(title, detail, action = "") {
@@ -382,8 +386,8 @@ function staffLearning() {
   const unread = roster.filter(({ id }) => !state.notices.includes(id));
   const roleUi = window.AcademyRoleUi?.enabled(role);
   const reviewFirst = roleUi ? roster.filter(({ id }) => needsSampleReview(id)) : [];
-  return `${header(roleUi ? "과제 검사" : "과제·공지 관리", "제출 기록과 공지를 확인하지 않은 학생을 확인하세요.")}
-  ${reviewFirst.length ? panel("꼭 확인", list(reviewFirst.map(({ id, name }) => item(name, "가상 채점 · 흐린 풀이를 선생님이 확인", button("검토", "review", { id, variant: "text-button" }))))) : ""}
+  return `${appHeader(roleUi ? "과제 검사" : "과제·공지 관리", "제출 기록과 공지를 확인하지 않은 학생을 확인하세요.")}
+  ${reviewFirst.length ? panel("꼭 확인", list(reviewFirst.map(({ id, name }) => item(name, "가상 채점 · 흐린 풀이를 선생님이 확인", button("검토", "review", { id, variant: "primary" }))))) : ""}
   <div class="columns">
     ${panel(assignment.title, list(roster.filter(({ id }) => !reviewFirst.some((learner) => learner.id === id)).map(({ id, name, group }) => {
       const record = state.submissions[id];
@@ -397,7 +401,7 @@ function staffLearning() {
 }
 
 function staffVideo() {
-  return `${header("영상 시청 현황", "학생별 시청률과 미완료 학생을 확인하세요.")}
+  return `${appHeader("영상 시청 현황", "학생별 시청률과 미완료 학생을 확인하세요.")}
     ${panel(video.title, list(roleStudents().map(({ id, name, group }) => {
       const progress = Number(state.progress[id]) || 0;
       const control = progress < 90 ? button("리마인드", "remind", { id: `${id}:영상 시청` }) : "";
@@ -451,7 +455,7 @@ function homeNotices() {
 
 function academyWebsite() {
   const roleUi = window.AcademyRoleUi?.enabled(role) ? window.AcademyRoleUi : null;
-  if (roleUi && demoSite && ["owner", "teacher"].includes(role)) return demoSite.editor(roleUi, demoWebsiteProfile().name);
+  if (roleUi && demoSite && ["owner", "teacher"].includes(role)) return demoSite.editor(roleUi);
   if (roleUi && demoSite) return window.DemoHomeV3.academyIntro(roleHomeOptions());
   const profile = demoWebsiteProfile();
   const contact = profile.address ? `<dl class="school-contact">
@@ -503,7 +507,7 @@ function calendarView() {
   if (demoSite) {
     const days = [...scheduleDays, "일"].map(day => `<button class="day-button" type="button"
       data-action="schedule-day" data-id="${day}" aria-pressed="${day === selectedDay}"><span>${day}</span></button>`).join("");
-    return header("수업 시간표", "요일별 수업과 담당 선생님을 확인하세요.") + (role === "parent" ? childPicker() : "")
+    return header("수업 시간표") + (role === "parent" ? childPicker() : "")
       + panel("요일별 수업", `<div class="calendar-days" aria-label="요일 선택">${days}</div>
         <div class="calendar-agenda"><h3>${selectedDay}요일 수업</h3>${list(visible.filter(({ day }) => day === selectedDay).map(classRow), "예정된 수업이 없습니다.")}</div>`);
   }
@@ -553,7 +557,7 @@ function ownerGrades() {
     `<li class="grade-card"><div class="grade-card-heading"><h3>${title}</h3>${status}</div>
       <dl><div><dt>반</dt><dd>${group}</dd></div><div><dt>시험일</dt><dd>${date}</dd></div>
         <div><dt>입력</dt><dd>${entryCount}</dd></div><div><dt>반 평균</dt><dd>${classAverage}</dd></div></dl></li>`).join("");
-  return header("성적 리포트", "학원 전체 평가의 입력률, 반 평균과 공개 상태입니다.")
+  return appHeader("성적 리포트", "학원 전체 평가의 입력률, 반 평균과 공개 상태입니다.")
     + panel("평가별 현황", `<div class="table-scroll"><table><thead><tr><th scope="col">평가</th><th scope="col">반</th><th scope="col">시험일</th>
         <th scope="col">입력</th><th scope="col">반 평균</th><th scope="col">상태</th></tr></thead><tbody>${rows}</tbody></table></div>
       <ul class="grade-cards" aria-label="평가별 현황" role="list">${cards}</ul>`, "", "grade-report");
@@ -572,7 +576,7 @@ function teacherGrades() {
   });
   const publication = result.published ? badge("공개", "green")
     : button("성적 공개", "publish-scores", { id: exam.id, variant: "primary", disabled: entered < count });
-  return header("성적 입력", "담당 반의 평가 점수와 결시를 입력하고 보호자에게 공개합니다.")
+  return appHeader("성적 입력", "담당 반의 평가 점수와 결시를 입력하고 보호자에게 공개합니다.")
     + panel("평가 선택", `<label class="field-inline">평가<select id="grade-assessment">${choices}</select></label>`)
     + panel(exam.title, `<p class="note">중2 심화반 · ${exam.date} · 만점 ${exam.maximum}점 · ${entered} / ${count}명 입력</p>${list(rows)}`, publication, "stack");
 }
@@ -733,7 +737,7 @@ function ownerSettings() {
     const settingRow = (id, label, value) => `<button class="demo-setting-row" type="button" data-action="setting-field" data-id="${id}">
       <span>${label}</span><span data-setting-value>${escapeHtml(value)}</span><span aria-hidden="true">›</span></button>`;
     const group = (title, rows) => `<section class="demo-setting-group"><h2>${title}</h2>${rows}</section>`;
-    return header("학원 설정", "변경할 항목을 선택하세요.")
+    return header("학원 설정")
       + window.DemoStaffOperations.settings()
       + group("학원 정보", settingRow("academyName", "학원 이름", demoWebsiteProfile().name)
         + button("나이스에서 학원 찾기", "neis-academy"))
@@ -793,7 +797,7 @@ function ownerRoster() {
   const { samples } = DemoRoster;
   const registered = registeredRoster();
   const pending = registered.some((row) => row.phone && !state.sentRosterInvites.includes(row.key));
-  return header("학생·보호자 명부", "엑셀로 학생을 반에 배정하고 보호자 연락처와 동의 상태를 함께 등록하세요.")
+  return appHeader("학생·보호자 명부", "엑셀로 학생을 반에 배정하고 보호자 연락처와 동의 상태를 함께 등록하세요.")
     + panel("엑셀로 한 번에 등록", `<p class="note">아래 두 가상 명부 원본으로 체험할 수 있습니다. 보호자는 초대를 수락한 뒤 자녀 포털에 접근합니다.</p>
       <div class="actions roster-files"><label class="primary file-choice" for="roster-file">엑셀 파일 선택
         <input class="sr-only" id="roster-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
@@ -1446,7 +1450,7 @@ function render() {
     ? blockTabs.render(role, activeScreen, blockTabsContext()) : null;
   navigation.innerHTML = menus[role].map(([screen, label]) => `<button class="nav-button" type="button" data-action="navigate" data-id="${screen}"${screen === activeScreen ? ' aria-current="page"' : ""}><span aria-hidden="true">${symbols[screen]}</span>${label}</button>`).join("");
   if (activeScreen === "website") content.innerHTML = academyWebsite();
-  else if (activeScreen === "homepage-edit") content.innerHTML = demoSite.editor(window.AcademyRoleUi, demoWebsiteProfile().name);
+  else if (activeScreen === "homepage-edit") content.innerHTML = demoSite.editor(window.AcademyRoleUi);
   else if (activeScreen === "operations") content.innerHTML = window.DemoStaffOperations.operations(roleHomeOptions());
   else if (activeScreen === "staff-leave") content.innerHTML = window.DemoStaffOperations.leave(staffOperationsContext());
   else if (activeScreen === "staff-pay") content.innerHTML = window.DemoStaffOperations.pay(staffOperationsContext());
@@ -1473,9 +1477,12 @@ function render() {
   } else {
     const screens = { home: role === "owner" ? ownerHome : teacherHome, attendance: staffAttendance, learning: staffLearning,
       grades: role === "owner" ? ownerGrades : teacherGrades, roster: ownerRoster, settings: ownerSettings, video: staffVideo, students: staffStudents,
-      notifications: () => header(role === "owner" ? "공지·발송" : "발송 기록", "출결과 연결된 발송 예시입니다.",
-        role === "owner" && window.AcademyRoleUi?.enabled(role) ? button("공지 쓰기", "home-notice-write", { variant:"primary" }) : "")
-        + panel("발송 예시", notificationList(null, 30)) };
+      notifications: () => role === "owner" && window.AcademyRoleUi?.enabled(role)
+        ? header("공지·발송") + panel("공지", list(homeNotices().map(({ title, date, id }) =>
+          item(title, date, button("보기", "home-notice", { id }))))
+          + `<div class="actions notice-write">${button("공지 쓰기", "home-notice-write", { variant:"primary" })}</div>`)
+          + panel("발송 기록", notificationList(null, 30), "", "stack")
+        : header("발송 기록", "출결과 연결된 발송 예시입니다.") + panel("발송 예시", notificationList(null, 30)) };
     content.innerHTML = screens[activeScreen]();
   }
   if (window.AcademyRoleUi?.enabled(role)) {

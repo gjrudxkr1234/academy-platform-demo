@@ -216,7 +216,8 @@ const DemoSchoolAssessments = (() => {
   function view() {
     const school = schoolInfo(schoolId());
     const entries = schoolEvents();
-    const title = `<section class="hero school-hero"><div>
+    const title = demoSite ? '<header class="page-head"><div><h1 class="page-title">내신 일정</h1></div></header>'
+      : `<section class="hero school-hero"><div>
       <div class="school-hero-title"><h1>내신 일정</h1>${badge("기능 체험", "purple")}</div>
       <p>시험 범위와 수행평가 준비물을 내 학교 일정에서 확인하세요.</p>
       <p class="school-demo-note">가상 학교와 ${dateLabel(demoDate)} 기준의 일정이에요.</p>
@@ -227,11 +228,14 @@ const DemoSchoolAssessments = (() => {
     const academic = panel("학교 과목·평가계획", courseList(school) +
       '<p class="note">학원 교직원이 확인해 직접 입력하는 가상 평가계획입니다.</p>',
       isStaff() ? button("평가계획 입력", "school-demo-plan", { variant: "text-button" }) : "", "stack");
+    const studentReport = demoSite && role === "student"
+      ? `<div class="actions school-report-actions">${button("일정 제보 체험", "school-demo-report", { variant: "primary" })}</div>` : "";
     return title + (role === "owner" ? schoolPicker() : "") + (isStaff() && demoSite
       ? `<div class="actions school-neis-actions">${button("학생 학교 찾기", "school-demo-link")}
          ${button("학교 일정 직접 입력", "school-demo-manual-new")}</div>` : "") + neisSchedule +
       `<div class="columns"><div>${panel(isStaff() ? "내신 일정 관리" : "내 학교 일정",
-        `<p class="school-context">${escapeHtml(school.name)} · ${escapeHtml(school.grade)}</p>` + schedule, badge("가상 일정", "purple"))}</div>
+        `<p class="school-context">${escapeHtml(school.name)} · ${escapeHtml(school.grade)}</p>` + schedule + studentReport,
+        demoSite ? "" : badge("가상 일정", "purple"))}</div>
         <div>${isStaff() ? panel("제보 검토 기준", '<p>같은 학원·학교의 다른 학생 2명이 확인하거나 선생님·원장이 승인하면 확정됩니다.</p><p class="note">개인정보·금지 자료 신고가 접수된 일정은 확인 전까지 숨깁니다.</p>') : portalAlerts(entries)}
           ${academic}${role === "owner" ? academySummaryControl() : ""}</div></div>`;
   }

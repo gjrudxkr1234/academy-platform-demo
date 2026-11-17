@@ -291,7 +291,7 @@ window.AcademyDemoSite = (() => {
           <ul class="demo-site-editor-list">${classRows()}</ul></section></div>`;
     }
 
-    function editor(ui, name) {
+    function editor(ui) {
       const role = currentRole();
       const owner = role === "owner";
       const section = (id, visible) => {
@@ -314,8 +314,8 @@ window.AcademyDemoSite = (() => {
         };
         return `<section class="demo-home-section" aria-labelledby="site-${id}">${heading}${controls}</header>${content[id]}</section>`;
       };
-      return `<header class="demo-role-heading"><div><h1>홈페이지 편집</h1><p>${escaped(name)}</p></div></header>
-        ${owner ? action("나이스에서 학원 찾기", "neis-academy") + action("구역 표시·순서", "site-layout") : "<p class=\"note\">연결된 강사 카드와 담당 반을 수정할 수 있어요.</p>"}
+      return `<header class="demo-role-heading"><h1>홈페이지 편집</h1></header>
+        ${owner ? action("나이스에서 학원 찾기", "neis-academy") + action("구역 표시·순서", "site-layout") : ""}
         ${state.sections.map(({ id, visible }) => section(id, visible)).join("")}`;
     }
 
