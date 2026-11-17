@@ -16,7 +16,7 @@
 [data-kind="makeup"] { --v31-bar-fill: #fff0e5; --v31-bar-text: #b54708; --v31-bar-edge: #f26b1d; --v31-icon-fill: #bb4b0d; --v31-dark-text: #ffb78d; }
 [data-kind="consultation"] { --v31-bar-fill: #f0ebff; --v31-bar-text: #5b3fd0; --v31-bar-edge: #7c5cfc; --v31-icon-fill: #6546cf; --v31-dark-text: #c7b7ff; }
 [data-kind="academy"] { --v31-bar-fill: #fff5cc; --v31-bar-text: #6b5000; --v31-bar-edge: #e8b800; --v31-icon-fill: #826300; --v31-dark-text: #f9dc73; }
-[data-kind="closure"] { --v31-bar-fill: #f1f1f3; --v31-bar-text: #666670; --v31-bar-edge: #a1a1aa; --v31-icon-fill: #6e6e78; --v31-dark-text: #d2d2d8; }
+:is([data-kind="closure"],[data-kind="school"]) { --v31-bar-fill: #f1f1f3; --v31-bar-text: #666670; --v31-bar-edge: #a1a1aa; --v31-icon-fill: #6e6e78; --v31-dark-text: #d2d2d8; }
 :root[data-theme="dark"] [data-kind] { --v31-bar-fill: color-mix(in srgb, var(--v31-bar-edge) 18%, #111113); --v31-bar-text: var(--v31-dark-text); }
 
 .demo-v3-calendar { --v31-row-count: 3; background: var(--v3-section, var(--panel)); min-width: 0; color: var(--ink); }

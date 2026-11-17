@@ -12,14 +12,15 @@
     lesson: ["수업", "M4 5v14m0-14h6l2 2 2-2h6v14h-6l-2 2-2-2H4m8-12v14"],
     assignment: ["과제", "M4 16v4h4L20 8l-4-4L4 16Zm10-10 4 4"],
     exam: ["시험", "M12 5v9m0 4v1"],
+    school: ["학교 일정", "M3 9h18L12 3 3 9Zm2 0v11h14V9m-10 11v-5h6v5"],
     makeup: ["보강", "m8 5 12 7-12 7V5Z"],
     academy: ["학원", "m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"],
     consultation: ["상담", "M4 5h16v12h-7l-5 4v-4H4V5Z"],
     closure: ["휴원", "M5 12h14"],
   };
   const filters = { lesson: "수업", assignment: "과제", exam: "시험", academy: "학원", consultation: "상담" };
-  const filterCategory = { makeup: "lesson", closure: "academy" };
-  const monthPriority = { exam:0, assignment:1, consultation:2, academy:3, closure:3, makeup:4, lesson:5 };
+  const filterCategory = { makeup: "lesson", closure: "academy", school: "exam" };
+  const monthPriority = { exam:0, school:0, assignment:1, consultation:2, academy:3, closure:3, makeup:4, lesson:5 };
   const dayMillis = 86400000;
   const titleCompare = new Intl.Collator("ko").compare;
   const minimumDate = "2000-01-01";
@@ -122,7 +123,7 @@
   function visibleEvents(role, input) {
     const authored = readEvents().map((event) => ({ ...event, source: "authored", type: event.kind === "event" || event.kind === "other" ? "academy" : event.kind }));
     const assignment = input.assignments.map((event) => ({ ...event, source: "assignment", type: "assignment" }));
-    const school = input.schoolEvents.map((event) => ({ ...event, source: "school", type: "exam" }));
+    const school = input.schoolEvents.map((event) => ({ ...event, source: "school", type: event.type ?? "exam" }));
     const consultation = input.consultations.map((event) => ({ ...event, groups: event.group ? [event.group] : event.groups,
       source: "consultation", type: "consultation",
     }));
@@ -165,7 +166,7 @@
   }
 
   function typeLabel(event) {
-    if (event.type === "exam") return event.source === "school" ? "시험·수행평가" : "시험";
+    if (event.type === "exam") return event.source === "school" && !event.imported ? "시험·수행평가" : "시험";
     if (event.type === "academy" && event.kind === "event") return "학원 행사";
     return categories[event.type][0];
   }
@@ -230,7 +231,7 @@
   }
 
   function eventMarkup(event, date) {
-    const detail = [event.room, event.teacher, event.school].filter(Boolean).join(" · ");
+    const detail = [event.room, event.teacher, event.school, event.attribution && `출처: ${event.attribution}`].filter(Boolean).join(" · ");
     const time = event.time ? event.time.slice(0, 5) : "하루 종일";
     return `<li class="v3-cal-event" data-kind="${event.type}" data-v3-event-type="${event.source}">
       <button type="button" data-v3-calendar-action="event" data-v3-event="${escape(event.id)}" data-v3-source="${event.source}" data-v3-event-date="${date}">
@@ -459,6 +460,7 @@
       <p><span class="v31-event-icon" aria-hidden="true">${icon(event.type)}</span> ${typeLabel(event)}</p>
       <p>${dateRange} · ${escape(event.time?.slice(0, 5) || "하루 종일")}</p>
       ${detail ? `<p>${escape(detail)}</p>` : ""}
+      ${event.attribution ? `<p>출처: ${escape(event.attribution)}</p>` : ""}
       ${editing ? `<button type="button" class="v31-day-add" data-v3-calendar-action="edit" data-v3-event="${escape(id)}">일정 수정</button>
         <button type="button" class="v31-delete" data-v3-calendar-action="delete" data-v3-event="${escape(id)}">일정 삭제</button>` : ""}
       ${related ? `<button type="button" class="v31-day-add" data-v3-calendar-action="related" data-v3-related="${related}">관련 화면 보기</button>` : ""}

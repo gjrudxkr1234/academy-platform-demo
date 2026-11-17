@@ -315,7 +315,7 @@ window.AcademyDemoSite = (() => {
         return `<section class="demo-home-section" aria-labelledby="site-${id}">${heading}${controls}</header>${content[id]}</section>`;
       };
       return `<header class="demo-role-heading"><div><h1>홈페이지 편집</h1><p>${escaped(name)}</p></div></header>
-        ${owner ? action("구역 표시·순서", "site-layout") : "<p class=\"note\">연결된 강사 카드와 담당 반을 수정할 수 있어요.</p>"}
+        ${owner ? action("나이스에서 학원 찾기", "neis-academy") + action("구역 표시·순서", "site-layout") : "<p class=\"note\">연결된 강사 카드와 담당 반을 수정할 수 있어요.</p>"}
         ${state.sections.map(({ id, visible }) => section(id, visible)).join("")}`;
     }
 
@@ -828,6 +828,11 @@ window.AcademyDemoSite = (() => {
       return write(id, id, (_latest, role) => role === "owner" ? value : "수정 권한이 없어요.");
     }
 
+    function saveRegistration(fields) {
+      return write("contact", "contact", (latest, role) => role === "owner"
+        ? { ...latest.contact, ...fields } : "수정 권한이 없어요.");
+    }
+
     function startSection(id, opener) {
       if (currentRole() !== "owner" || !sectionLabels[id]) return;
       if (id === "intro") {
@@ -872,7 +877,7 @@ window.AcademyDemoSite = (() => {
           const next = { address: asText(form, "address"), phone: asText(form, "phone"), kakao: asText(form, "kakao") };
           if (next.address.length > 150 || next.phone && !/^[0-9() +\-]{6,25}$/.test(next.phone)
             || next.kakao && (next.kakao.length > 200 || !/^https:\/\/pf\.kakao\.com\/[A-Za-z0-9_\/-]+$/.test(next.kakao))) return "주소, 전화번호와 카카오 채널 링크를 확인해 주세요.";
-          return setSection("contact", next);
+          return saveRegistration(next);
         }, opener);
       } else if (id === "notices") {
         const rows = [...state.notices, {}];
@@ -946,7 +951,7 @@ window.AcademyDemoSite = (() => {
         longIntro: state.intro.long, tags: state.intro.tags, cover: photoUrl(state.intro.photo), sections: state.sections.filter(({ visible }) => visible).map(({ id }) => id) };
     }
 
-    return Object.freeze({ calendar, teacherName, visibleStaff, ownStaff, homepage, notices: () => state.notices, editor, timetableEditor, lastChange: () => state.audit?.at(-1)?.at, startSection, handle, reset, prependNotice,
+    return Object.freeze({ calendar, teacherName, visibleStaff, ownStaff, homepage, notices: () => state.notices, editor, timetableEditor, lastChange: () => state.audit?.at(-1)?.at, startSection, handle, reset, prependNotice, saveRegistration,
       bannerCropFields: photo => cropControls(photo, 2, "배너 사진 · 2:1 자르기"), bannerCropPicker: () => cropPicker(2) });
   }
 

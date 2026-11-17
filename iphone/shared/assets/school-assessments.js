@@ -21,6 +21,7 @@ const DemoSchoolAssessments = (() => {
     },
   };
   const studentSchool = { jiwoo: "naru", minjun: "moon" };
+  const neisStorage = "gradient-demo-neis-school-v1";
   const types = { performance: "수행평가", written: "지필평가" };
   const reasons = { date: "일정 오류", privacy: "개인정보", prohibited: "금지 자료", other: "기타" };
   const supplies = {
@@ -34,7 +35,6 @@ const DemoSchoolAssessments = (() => {
 
   function fresh() {
     return {
-      school: "naru",
       academySummary: false,
       summary: {},
       checks: {},
@@ -53,9 +53,41 @@ const DemoSchoolAssessments = (() => {
     return role === "owner" || role === "teacher";
   }
 
+  function readLocalSchools() {
+    try {
+      const stored = JSON.parse(localStorage.getItem(neisStorage) ?? "null");
+      if (stored && stored.links && Array.isArray(stored.events)) return stored;
+    } catch { /* The fixture keeps working without local storage. */ }
+    return { links: {}, events: [] };
+  }
+
+  function updateLocalSchools(update) {
+    try {
+      const current = readLocalSchools();
+      update(current);
+      localStorage.setItem(neisStorage, JSON.stringify(current));
+    } catch { return "이 기기에 저장하지 못했어요. 다시 시도해 주세요."; }
+  }
+
+  function defaultSchool(studentId) {
+    return studentSchool[studentId] ?? (student(studentId)?.group === "중1 개념반" ? "moon" : "naru");
+  }
+
+  function schoolForLearner(studentId, links = readLocalSchools().links) {
+    return links[studentId]?.school ?? defaultSchool(studentId);
+  }
+
+  function schoolInfo(key) {
+    const linked = key.startsWith("local-school-") ? readLocalSchools().links[key.slice("local-school-".length)] : null;
+    if (linked?.school === key) return { ...schools[defaultSchool(key.slice("local-school-".length))], name: linked.name };
+    return schools[key] ?? schools.naru;
+  }
+
   function schoolId() {
-    if (role === "owner") return demo.school;
-    return studentSchool[role === "parent" ? child : "jiwoo"];
+    const { links, preview } = readLocalSchools();
+    if (role === "owner" && demo.school) return demo.school;
+    const learner = role === "parent" ? child : isStaff() ? preview?.[role] ?? "jiwoo" : "jiwoo";
+    return schoolForLearner(learner, links);
   }
 
   function isConfirmed(entry) {
@@ -72,22 +104,24 @@ const DemoSchoolAssessments = (() => {
   }
 
   function schoolEvents() {
-    return demo.events.filter((entry) => entry.school === schoolId() && (isStaff() || !entry.hidden))
+    return [...demo.events, ...readLocalSchools().events].filter((entry) => entry.school === schoolId() && (isStaff() || !entry.hidden))
       .toSorted((a, b) => a.date.localeCompare(b.date));
   }
 
   function dateBadge(entry) {
     const days = dayOffset(entry.date);
-    return badge(days === 0 ? "D-DAY" : `D-${days}`, days <= 1 ? "red" : days <= 3 ? "orange" : "neutral");
+    return badge(days === 0 ? "D-DAY" : days < 0 ? `D+${-days}` : `D-${days}`, days < 0 ? "neutral" : days <= 1 ? "red" : days <= 3 ? "orange" : "neutral");
   }
 
   function eventTitle(entry) {
-    return `${schools[entry.school].courses[entry.course].name} ${types[entry.type]}`;
+    return `${schoolInfo(entry.school).courses[entry.course].name} ${types[entry.type]}`;
   }
 
   function schoolPicker() {
-    return `<div class="parent-picker" aria-label="가상 학교 선택">${Object.entries(schools).map(([id, school]) =>
-      `<button type="button" class="secondary" data-action="school-demo-switch" data-id="${id}" aria-pressed="${id === schoolId()}">${escapeHtml(school.name)}</button>`).join("")}</div>`;
+    const linkedSchools = [...new Set(Object.values(readLocalSchools().links).map(({ school }) => school))]
+      .filter((key) => !Object.hasOwn(schools, key)).map((key) => [key, schoolInfo(key)]);
+    return `<div class="parent-picker" aria-label="가상 학교 선택">${[...Object.entries(schools), ...linkedSchools].map(([id, school]) =>
+      `<button type="button" class="secondary" data-action="school-demo-switch" data-id="${escapeHtml(id)}" aria-pressed="${id === schoolId()}">${escapeHtml(school.name)}</button>`).join("")}</div>`;
   }
 
   function checklist(entry) {
@@ -105,17 +139,18 @@ const DemoSchoolAssessments = (() => {
   }
 
   function eventCard(entry) {
-    const course = schools[entry.school].courses[entry.course];
+    const course = schoolInfo(entry.school).courses[entry.course];
     const confirmed = !entry.hidden && isConfirmed(entry);
     let actions = "";
+    if (isStaff() && entry.manual) actions += button("직접 입력 일정 수정", "school-demo-manual-edit", { id: entry.id });
     if (role === "student" && !confirmed && entry.reporter !== "jiwoo" && !entry.confirmations.includes("jiwoo")) {
       actions += button("같은 일정 확인", "school-demo-confirm", { id: entry.id });
     }
-    if (role === "student" && !entry.report) actions += button("신고", "school-demo-flag", { id: entry.id, variant: "text-button" });
+    if (role === "student" && !entry.report && !entry.manual) actions += button("신고", "school-demo-flag", { id: entry.id, variant: "text-button" });
     if (isStaff() && !entry.hidden && !confirmed) actions += button("일정 승인", "school-demo-approve", { id: entry.id, variant: "primary" });
     if (isStaff() && entry.report) actions += button("신고 검토 완료", "school-demo-dismiss", { id: entry.id });
-    if (isStaff() && !entry.hidden) actions += button("일정 숨기기", "school-demo-hide", { id: entry.id, variant: "text-button" });
-    if (role === "owner") actions += button("일정 삭제", "school-demo-delete", { id: entry.id, variant: "text-button danger" });
+    if (isStaff() && !entry.hidden && !entry.manual) actions += button("일정 숨기기", "school-demo-hide", { id: entry.id, variant: "text-button" });
+    if (role === "owner" && !entry.manual) actions += button("일정 삭제", "school-demo-delete", { id: entry.id, variant: "text-button danger" });
     const state = entry.hidden ? badge("숨김", "neutral") : confirmed ? badge("확정", "green") : badge("확인 중", "orange");
     const reportState = !entry.report ? "" : isStaff()
       ? badge(`신고 1건 · ${reasons[entry.report]}`, "red") : badge("신고 접수", "neutral");
@@ -127,7 +162,7 @@ const DemoSchoolAssessments = (() => {
       </div>
       <dl class="school-event-details"><div><dt>범위</dt><dd>${escapeHtml(entry.scope)}</dd></div>${role !== "student" || !confirmed ? checklist(entry) : ""}</dl>
       ${role === "student" && confirmed ? checklist(entry) : ""}
-      <div class="school-event-footer"><span class="note">확인 ${entry.confirmations.length}명${entry.approved ? " · 학원 승인" : ""}</span>
+      <div class="school-event-footer"><span class="note">${entry.manual ? "출처: 학원 직접 입력" : `확인 ${entry.confirmations.length}명${entry.approved ? " · 학원 승인" : ""}`}</span>
         ${actions ? `<div class="actions">${actions}</div>` : ""}</div>
     </li>`;
   }
@@ -171,20 +206,30 @@ const DemoSchoolAssessments = (() => {
       `<p class="school-context">${escapeHtml(school.name)} · ${escapeHtml(school.grade)}</p>` + settings + summary);
   }
 
+  function schedulePanel(school) {
+    const rows = DemoNeis.schedule(schoolId()).map(({ title, date }) =>
+      item(title, `${dateLabel(date)} · 출처: ${DemoNeis.source}`));
+    return panel("학교 학사일정", `<p class="school-context">${escapeHtml(school.name)}</p>`
+      + list(rows, "불러온 학사일정이 없어요. 학원에서 시험·수행평가를 직접 입력할 수 있어요."), "", "stack");
+  }
+
   function view() {
-    const school = schools[schoolId()];
+    const school = schoolInfo(schoolId());
     const entries = schoolEvents();
     const title = `<section class="hero school-hero"><div>
       <div class="school-hero-title"><h1>내신 일정</h1>${badge("기능 체험", "purple")}</div>
       <p>시험 범위와 수행평가 준비물을 내 학교 일정에서 확인하세요.</p>
-      <p class="school-demo-note">가상 학교와 ${dateLabel(demoDate)} 기준의 화면입니다. 체험 데이터는 이 화면에서만 바뀝니다.</p>
+      <p class="school-demo-note">가상 학교와 ${dateLabel(demoDate)} 기준의 일정이에요.</p>
     </div>${role === "student" ? button("일정 제보 체험", "school-demo-report", { variant: "primary" }) : ""}</section>`;
-    if (role === "parent") return title + guardianSummary(school, entries);
+    const neisSchedule = demoSite ? schedulePanel(school) : "";
+    if (role === "parent") return title + guardianSummary(school, entries) + neisSchedule;
     const schedule = entries.length ? `<ul class="school-events">${entries.map(eventCard).join("")}</ul>` : '<p class="empty">아직 일정이 없습니다.</p>';
     const academic = panel("학교 과목·평가계획", courseList(school) +
       '<p class="note">학원 교직원이 확인해 직접 입력하는 가상 평가계획입니다.</p>',
       isStaff() ? button("평가계획 입력", "school-demo-plan", { variant: "text-button" }) : "", "stack");
-    return title + (role === "owner" ? schoolPicker() : "") +
+    return title + (role === "owner" ? schoolPicker() : "") + (isStaff() && demoSite
+      ? `<div class="actions school-neis-actions">${button("학생 학교 찾기", "school-demo-link")}
+         ${button("학교 일정 직접 입력", "school-demo-manual-new")}</div>` : "") + neisSchedule +
       `<div class="columns"><div>${panel(isStaff() ? "내신 일정 관리" : "내 학교 일정",
         `<p class="school-context">${escapeHtml(school.name)} · ${escapeHtml(school.grade)}</p>` + schedule, badge("가상 일정", "purple"))}</div>
         <div>${isStaff() ? panel("제보 검토 기준", '<p>같은 학원·학교의 다른 학생 2명이 확인하거나 선생님·원장이 승인하면 확정됩니다.</p><p class="note">개인정보·금지 자료 신고가 접수된 일정은 확인 전까지 숨깁니다.</p>') : portalAlerts(entries)}
@@ -195,8 +240,61 @@ const DemoSchoolAssessments = (() => {
     return Object.entries(values).map(([value, label]) => `<option value="${escapeHtml(value)}">${escapeHtml(label)}</option>`).join("");
   }
 
+  function linkStudentSchool() {
+    let selected;
+    const roster = roleStudents();
+    openDemoSheet("학생 학교 찾기", `<label>학생<select name="learner">${options(Object.fromEntries(roster.map(({ id, name }) => [id, name])))}</select></label>`
+      + DemoNeis.searchFields("school") + demoField("저장할 학교 이름", "schoolName", "", 80)
+      + '<p class="note">검색 결과가 없으면 학교 이름을 직접 입력할 수 있어요.</p>', (form) => {
+      const learner = formText(form, "learner");
+      const name = formText(form, "schoolName");
+      if (!roster.some(({ id }) => id === learner) || !name || name.length > 80) return "학생과 학교 이름을 확인해 주세요.";
+      const school = selected?.name === name ? selected.id : `local-school-${learner}`;
+      const error = updateLocalSchools((saved) => {
+        saved.links[learner] = { school, name };
+        saved.preview = { ...saved.preview, [role]: learner };
+      });
+      if (error) return error;
+      demo.school = undefined;
+      render();
+    }, undefined, { confirmLabel: "학교 저장" });
+    DemoNeis.bindLookup(dialog, "school", (match) => {
+      selected = match;
+      dialog.querySelector('[name="schoolName"]').value = match.name;
+    });
+  }
+
+  function manualEvent(entry) {
+    const school = schoolId();
+    const info = schoolInfo(school);
+    const courses = Object.fromEntries(Object.entries(info.courses).map(([key, row]) => [key, row.name]));
+    const choices = (values, selected) => Object.entries(values).map(([key, label]) => demoOption(key, label, selected)).join("");
+    openDemoSheet(entry ? "직접 입력 일정 수정" : "학교 일정 직접 입력", `<p class="note">${escapeHtml(info.name)} · 학원 직접 입력</p>
+      <label>과목<select name="course">${choices(courses, entry?.course)}</select></label>
+      <label>유형<select name="type">${choices(types, entry?.type)}</select></label>
+      <label>날짜<input type="date" name="date" value="${entry?.date ?? demoDate}" min="2000-01-01" max="2099-12-31"></label>`
+      + demoField("범위", "scope", entry?.scope, 120), (form) => {
+      const date = formText(form, "date");
+      const course = formText(form, "course");
+      const type = formText(form, "type");
+      const scope = formText(form, "scope") || "범위 미정";
+      const day = Date.parse(date);
+      if (!Object.hasOwn(courses, course) || !Object.hasOwn(types, type) || scope.length > 120
+        || date < "2000-01-01" || date > "2099-12-31" || !Number.isFinite(day) || new Date(day).toISOString().slice(0, 10) !== date) return "과목과 날짜를 확인해 주세요.";
+      const error = updateLocalSchools(({ events }) => {
+        const next = { id: entry?.id ?? `manual-event-${crypto.randomUUID()}`, school, course, type, date, scope,
+          supplies: "none", approved: true, confirmations: [], manual: true };
+        const index = events.findIndex(({ id }) => id === next.id);
+        if (index < 0) events.push(next);
+        else events[index] = next;
+      });
+      if (error) return error;
+      render();
+    }, undefined, { confirmLabel: "일정 저장" });
+  }
+
   function report() {
-    const school = schools[schoolId()];
+    const school = schoolInfo(schoolId());
     const courseOptions = Object.fromEntries(Object.entries(school.courses).map(([id, course]) => [id, course.name]));
     const supplyOptions = Object.fromEntries(Object.entries(supplies).map(([id, values]) => [id, values.join(" · ") || "준비물 없음"]));
     openDialog("학교 일정 제보 체험", `
@@ -234,7 +332,7 @@ const DemoSchoolAssessments = (() => {
 
   function manualPlan() {
     const selectedSchool = schoolId();
-    const school = schools[selectedSchool];
+    const school = schoolInfo(selectedSchool);
     const courseOptions = Object.fromEntries(Object.entries(school.courses).map(([id, course]) => [id, course.name]));
     const assessmentOptions = Object.fromEntries(Object.entries(school.courses).map(([id, course]) => [id, course.assessment]));
     openDialog("평가계획 입력 체험", `
@@ -278,7 +376,8 @@ const DemoSchoolAssessments = (() => {
   }
 
   function handle(action, id) {
-    if (action === "school-demo-switch" && role === "owner" && Object.hasOwn(schools, id)) {
+    if (action === "school-demo-switch" && role === "owner"
+      && (Object.hasOwn(schools, id) || Object.values(readLocalSchools().links).some(({ school }) => school === id))) {
       demo.school = id;
       render();
       content.querySelector('[data-action="school-demo-switch"][aria-pressed="true"]')?.focus();
@@ -290,6 +389,14 @@ const DemoSchoolAssessments = (() => {
     }
     if (action === "school-demo-plan" && isStaff()) {
       manualPlan();
+      return;
+    }
+    if (demoSite && isStaff() && action === "school-demo-link") {
+      linkStudentSchool();
+      return;
+    }
+    if (demoSite && isStaff() && action === "school-demo-manual-new") {
+      manualEvent();
       return;
     }
     if (action === "school-demo-academy-summary" && role === "owner") {
@@ -314,6 +421,10 @@ const DemoSchoolAssessments = (() => {
     }
     const entry = schoolEvents().find((record) => record.id === id);
     if (!entry) return;
+    if (entry.manual && isStaff() && action === "school-demo-manual-edit") {
+      manualEvent(entry);
+      return;
+    }
     if (action === "school-demo-flag" && role === "student" && !entry.report) {
       flag(entry);
       return;
@@ -350,12 +461,31 @@ const DemoSchoolAssessments = (() => {
   }
 
   function calendarItems() {
-    const classBySchool = { naru: "중2 심화반", moon: "중1 개념반" };
-    return demo.events.filter((entry) => !entry.hidden && isConfirmed(entry)).map((entry) => ({
-      id: entry.id, title: eventTitle(entry), date: entry.date, school: schools[entry.school].name,
-      groups: [classBySchool[entry.school]],
+    const { links, events } = readLocalSchools();
+    const audience = isStaff() ? roleStudents() : [student(role === "parent" ? child : "jiwoo")].filter(Boolean);
+    const groupsBySchool = new Map();
+    for (const learner of audience) {
+      const school = schoolForLearner(learner.id, links);
+      if (!groupsBySchool.has(school)) groupsBySchool.set(school, new Set());
+      groupsBySchool.get(school).add(learner.group);
+    }
+    const rows = [...demo.events, ...events].filter((entry) => !entry.hidden && isConfirmed(entry)).map((entry) => ({
+      id: entry.id, title: eventTitle(entry), date: entry.date, school: entry.school,
+      attribution: entry.manual ? "학원 직접 입력" : "",
+    }));
+    if (demoSite) for (const school of groupsBySchool.keys()) {
+      rows.push(...DemoNeis.schedule(school).map((entry) => ({ ...entry, school, imported: true, attribution: DemoNeis.source })));
+    }
+    return rows.filter(({ school }) => groupsBySchool.has(school)).map((entry) => ({
+      ...entry, school: schoolInfo(entry.school).name, groups: [...groupsBySchool.get(entry.school)],
     }));
   }
 
-  return { view, handle, upcoming, calendarItems, reset() { demo = fresh(); } };
+  return { view, handle, upcoming, calendarItems, reset() {
+    demo = fresh();
+    if (role === "owner") {
+      try { localStorage.removeItem(neisStorage); } catch { /* Unavailable storage needs no reset. */ }
+    }
+    DemoNeis.reset();
+  } };
 })();

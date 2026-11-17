@@ -96,6 +96,12 @@ button.demo-home-row:hover { background:var(--soft); }
 .demo-brand-home img { height:24px; width:auto; max-width:none; }
 .demo-brand-actions { display:flex; align-items:center; min-width:0; gap:2px; }
 .demo-brand-actions .school { display:block; min-width:0; overflow:hidden; }
+.role-app-ui .neis-lookup { margin:0; min-width:0; padding:12px; border:0; border-radius:12px; background:var(--soft); }
+.role-app-ui .neis-lookup label { display:grid; gap:5px; }
+.role-app-ui .neis-lookup label + label { margin-top:8px; }
+.role-app-ui .neis-lookup .neis-results { margin:8px 0 0; }
+.role-app-ui .neis-results button { display:grid; width:100%; gap:3px; margin:4px 0; text-align:left; }
+.role-app-ui .neis-results button small { color:var(--muted); }
 .demo-brand-actions .school strong { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; color:var(--muted); font-size:13px; font-weight:650; }
 .role-app-ui:has(.demo-brand-bar) #content { padding-top:14px; }
 .role-app-ui:has(.demo-brand-bar) .demo-role-tabs button[aria-current="page"] { background:var(--soft); color:var(--ink); }

@@ -438,7 +438,7 @@ function demoWebsiteProfile() {
   return {
     ...demoContact, ...profile,
     ...state.siteSections?.contact, ...homepage,
-    name: state.settings.academyName || profile.name,
+    name: homepage?.academyName || state.settings.academyName || profile.name,
     hours: homepage?.hours ?? state.siteSections?.hours ?? profile.hours ?? demoContact.hours,
     intro: intro || "수업 시간표와 학원 소식을 한곳에서 확인하세요.",
     ready: Boolean(intro),
@@ -735,7 +735,8 @@ function ownerSettings() {
     const group = (title, rows) => `<section class="demo-setting-group"><h2>${title}</h2>${rows}</section>`;
     return header("학원 설정", "변경할 항목을 선택하세요.")
       + window.DemoStaffOperations.settings()
-      + group("학원 정보", settingRow("academyName", "학원 이름", demoWebsiteProfile().name))
+      + group("학원 정보", settingRow("academyName", "학원 이름", demoWebsiteProfile().name)
+        + button("나이스에서 학원 찾기", "neis-academy"))
       + group("출결", settingRow("lateMinutes", "지각 기준", lateSettingLabel(state.settings.lateMinutes)))
       + group("알림", settingRow("channel", "출결 알림 채널", channelSettingLabel(state.settings.channel)))
       + group("성적", `<button class="demo-setting-row" type="button" role="switch" aria-label="등수 공개" aria-checked="${state.settings.rank}" data-action="setting-switch" data-id="rank">
@@ -1137,6 +1138,7 @@ function editDemoSetting(key, opener) {
     openDemoSheet("학원 이름", demoField("학원 이름", key, demoWebsiteProfile().name, 50), (form) => {
       const name = formText(form, key);
       if (!name || [...name].length > 50) return "학원 이름을 1자에서 50자까지 입력해 주세요.";
+      if (demoSite?.homepage().academyName) return demoSite.saveRegistration({ academyName: name });
       return patchDemoField("settings", key, name);
     }, opener);
   } else if (key === "lateMinutes") {
@@ -1163,6 +1165,26 @@ function editDemoSetting(key, opener) {
     select.addEventListener("change", refreshHint);
     refreshHint();
   }
+}
+
+function lookupDemoAcademy(opener) {
+  const academy = demoWebsiteProfile();
+  const fields = [["학원 이름", "academyName", academy.name, 50], ["주소", "address", academy.address, 150],
+    ["우편번호", "postalCode", academy.postalCode, 5], ["전화", "phone", academy.phone, 25],
+    ["교습과정", "course", academy.course, 80], ["분야", "field", academy.field, 100]];
+  openDemoSheet("학원 정보 입력", DemoNeis.searchFields("academy")
+    + '<fieldset class="neis-lookup"><legend>저장할 학원 정보</legend>'
+    + fields.map((params) => demoField(...params)).join("") + "</fieldset>", (form) => {
+    const registration = Object.fromEntries(fields.map(([, key]) => [key, formText(form, key)]));
+    if (!registration.academyName || fields.some(([, key, , limit]) => registration[key].length > limit)) return "학원 이름과 입력 길이를 확인해 주세요.";
+    if (registration.postalCode && !/^\d{5}$/.test(registration.postalCode)) return "우편번호를 숫자 다섯 자리로 입력해 주세요.";
+    if (registration.phone && !/^[0-9() +\-]{6,25}$/.test(registration.phone)) return "전화번호를 확인해 주세요.";
+    return demoSite.saveRegistration(registration);
+  }, opener);
+  DemoNeis.bindLookup(dialog, "academy", ({ name, ...details }) => {
+    const selected = { academyName: name, ...details };
+    fields.forEach(([, key]) => { dialog.querySelector(`[name="${key}"]`).value = selected[key]; });
+  });
 }
 
 function writeDemoNotice() {
@@ -1995,6 +2017,7 @@ document.addEventListener("click", (event) => {
     render();
     content.querySelector('.day-button[aria-pressed="true"]')?.focus();
   } else if (activeScreen === "school-schedule" && action.startsWith("school-demo-")) DemoSchoolAssessments.handle(action, id);
+  else if (action === "neis-academy" && demoSite && role === "owner") lookupDemoAcademy(control);
   else if (action === "record-attendance" && ["owner", "teacher"].includes(role)) recordAttendance();
   else if (action === "submit-homework" && role === "student") {
     if (!blockDetails?.open("assignment", id || assignment.id)) submitHomework(id);
