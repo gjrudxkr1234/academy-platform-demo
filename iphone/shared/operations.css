@@ -60,7 +60,7 @@ html[data-demo-appearance] .role-app-ui #content:has(.ops-page) { background:var
 .ops-segments { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); background:var(--ops-tile); padding:3px; gap:3px; border-radius:12px; }
 .role-app-ui .ops-segments button { min-height:44px; padding:5px 4px; border:0; border-radius:9px; color:var(--muted); background:transparent; font-size:12px; font-weight:760; }
 .role-app-ui .ops-segments button[aria-pressed="true"] { background:var(--ops-panel); color:var(--ink); box-shadow:0 1px 3px rgb(0 0 0 / .11); }
-.ops-card { display:grid; gap:10px; padding:13px; background:var(--ops-panel); border:1px solid var(--ops-line); border-radius:16px; }
+.ops-card { display:grid; gap:10px; padding:13px; background:var(--ops-tile); border-radius:16px; }
 .ops-card h2 { margin:0; font-size:15px; letter-spacing:-.023em; }
 .ops-card p { margin:0; font-size:12px; line-height:1.45; }
 .ops-person { display:grid; grid-template-columns:36px minmax(0,1fr); gap:8px; align-items:center; }
@@ -71,7 +71,7 @@ html[data-demo-appearance] .role-app-ui #content:has(.ops-page) { background:var
 .ops-request-info dt { flex:none; color:var(--muted); font-size:12px; font-weight:730; }
 .ops-request-info dd { margin:0; font-size:12px; font-weight:755; text-align:right; }
 .ops-request-info select { width:auto; max-width:100%; min-height:44px; border:0; margin:0; padding:4px 8px; border-radius:9px; background:var(--ops-tile); color:var(--ink); font-size:12px; }
-.ops-available { color:var(--ops-success); font-weight:740; }
+.ops-available { color:var(--ink); font-weight:740; }
 .ops-actions { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,3fr); gap:7px; }
 .ops-actions > :only-child { grid-column:1 / -1; }
 .ops-balances h2 { margin:0 0 4px; color:var(--muted); font-size:12px; }

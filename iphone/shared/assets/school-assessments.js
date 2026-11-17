@@ -149,8 +149,8 @@ const DemoSchoolAssessments = (() => {
     if (role === "student" && !entry.report && !entry.manual) actions += button("신고", "school-demo-flag", { id: entry.id, variant: "text-button" });
     if (isStaff() && !entry.hidden && !confirmed) actions += button("일정 승인", "school-demo-approve", { id: entry.id, variant: "primary" });
     if (isStaff() && entry.report) actions += button("신고 검토 완료", "school-demo-dismiss", { id: entry.id });
-    if (isStaff() && !entry.hidden && !entry.manual) actions += button("일정 숨기기", "school-demo-hide", { id: entry.id, variant: "text-button" });
-    if (role === "owner" && !entry.manual) actions += button("일정 삭제", "school-demo-delete", { id: entry.id, variant: "text-button danger" });
+    if (isStaff() && !entry.hidden && !entry.manual) actions += button("일정 숨기기", "school-demo-hide", { id: entry.id, variant: "school-hide" });
+    if (role === "owner" && !entry.manual) actions += button("일정 삭제", "school-demo-delete", { id: entry.id, variant: "school-delete" });
     const state = entry.hidden ? badge("숨김", "neutral") : confirmed ? badge("확정", "green") : badge("확인 중", "orange");
     const reportState = !entry.report ? "" : isStaff()
       ? badge(`신고 1건 · ${reasons[entry.report]}`, "red") : badge("신고 접수", "neutral");

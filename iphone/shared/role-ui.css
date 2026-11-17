@@ -258,7 +258,7 @@ html[data-theme="dark"] #dialog { --sheet-field-focus:var(--accent); }
 }
 .neis-status-closed { background:var(--accent-tint); color:var(--accent-text); }
 
-.demo-site-editor-list { margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
+.demo-site-editor-list { margin: 0; padding: 0; list-style: none; border-radius: 16px; background: var(--ops-tile); }
 .demo-site-editor-list > li { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; padding: 13px 16px; }
 .demo-site-editor-list > li + li { border-top: 1px solid var(--line); }
 .demo-site-editor-list > li > div:first-of-type, .demo-site-editor-list > li > span:first-of-type { flex: 1 1 130px; min-width: 0; overflow-wrap: anywhere; }
@@ -365,3 +365,20 @@ html[data-theme="dark"] #dialog { --sheet-field-focus:var(--accent); }
 .demo-own-portrait small,.demo-own-portrait > span:last-child { color:var(--muted); font-size:12px; }
 @media(max-width:374px) { .role-app-ui .demo-summary-strip > * { padding-inline:9px; } }
 @media(max-width:343px) { .demo-polished-days { grid-template-columns:repeat(3,minmax(48px,1fr)); } }
+
+.role-app-ui .school-event button.school-hide,
+.role-app-ui .demo-setting-group button[data-action="neis-academy"] {
+  border: 0;
+  background: var(--ops-tile);
+  color: var(--ink);
+}
+
+.role-app-ui .school-event button.school-delete {
+  border: 0;
+  background: var(--ops-danger-bg);
+  color: var(--ops-danger);
+}
+
+.role-app-ui progress.progress::-webkit-progress-bar { background: var(--ops-tile); }
+.role-app-ui progress.progress::-webkit-progress-value { background: #df751f; }
+.role-app-ui progress.progress::-moz-progress-bar { background: #df751f; }
