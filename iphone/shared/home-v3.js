@@ -31,8 +31,10 @@
     `<section class="demo-v3-section" aria-labelledby="demo-v3-${id}"><header class="demo-v3-section-heading"><h2 id="demo-v3-${id}">${title}</h2>${action}</header>${markup}</section>`;
 
   function rowList(rows = []) {
-    const items = rows.map(({ label, value, detail, screen, assignment, attention, countdown }) => {
-      const attrs = assignment ? `data-action="submit-homework" data-id="${text(assignment)}"` : navigate(screen);
+    const items = rows.map(({ label, value, detail, screen, assignment, watchVideo, reviewStudent, attention, countdown }) => {
+      const attrs = assignment ? `data-action="submit-homework" data-id="${text(assignment)}"`
+        : watchVideo ? `data-action="watch-video" data-id="${text(watchVideo)}"`
+        : reviewStudent ? `data-action="review" data-id="${text(reviewStudent)}"` : navigate(screen);
       return `<li>${button(`<span><strong>${text(value)}</strong><small>${text([label, detail].filter(Boolean).join(" · "))}</small></span>
         <span class="${attention ? "demo-v3-highlight" : ""}">${countdown ? text(countdown) : icon("arrow")}</span>`, attrs, "demo-v3-row")}</li>`;
     });

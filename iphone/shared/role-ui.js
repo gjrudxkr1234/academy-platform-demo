@@ -43,9 +43,11 @@
   const enabled = (role) => Object.hasOwn(roles, window.ACADEMY_APP_ROLE ?? "") && role === window.ACADEMY_APP_ROLE;
 
   function rowList(rows) {
-    return `<ul class="demo-home-list" aria-label="오늘 확인할 내용">${rows.map(({ label, value, detail, symbol, screen, assignment, attention }) => {
+    return `<ul class="demo-home-list" aria-label="오늘 확인할 내용">${rows.map(({ label, value, detail, symbol, screen, assignment, watchVideo, reviewStudent, attention }) => {
       const inner = `<span class="demo-home-icon">${icon(symbol)}</span><span class="demo-home-copy"><small>${escape(label)}</small><strong>${escape(value)}</strong><span>${escape(detail)}</span></span>`;
       const action = assignment ? `data-action="submit-homework" data-id="${escape(assignment)}"`
+        : watchVideo ? `data-action="watch-video" data-id="${escape(watchVideo)}"`
+        : reviewStudent ? `data-action="review" data-id="${escape(reviewStudent)}"`
         : screen ? `data-action="navigate" data-id="${escape(screen)}"` : "";
       return `<li class="demo-home-item${attention ? " demo-home-attention" : ""}">${action
         ? `<button type="button" class="demo-home-row" data-action-level="tertiary" ${action}>${inner}<span class="demo-home-chevron" aria-hidden="true">›</span></button>`
@@ -300,13 +302,15 @@
     document.body.classList.add("role-app-ui");
     document.body.dataset.appRole = role;
     const selector = primarySelector(role, screen);
-    const candidate = selector ? (screen === "roster" ? container.querySelector('[data-action="apply-roster"]:not(:disabled)') : null) ?? container.querySelector(selector) : null;
+    const scoped = document.body.hasAttribute("data-c-block-scope");
+    const candidate = selector ? (screen === "roster" ? container.querySelector('[data-action="apply-roster"]:not(:disabled)') : null) ?? container.querySelector(selector)
+      : scoped && !container.querySelector("[data-action-level='primary']") ? container.querySelector(".primary") : null;
     for (const control of container.querySelectorAll(".primary")) {
       if (control === candidate) continue;
       control.classList.replace("primary", "secondary");
       control.dataset.actionLevel = "secondary";
     }
-    if (candidate) {
+    if (candidate && !scoped) {
       candidate.classList.remove("secondary", "text-button");
       candidate.classList.add("primary");
       candidate.dataset.actionLevel = "primary";
@@ -314,6 +318,8 @@
       dock.className = "demo-action-dock";
       dock.append(candidate);
       container.append(dock);
+    } else if (candidate?.classList.contains("primary")) {
+      candidate.dataset.actionLevel = "primary";
     }
     container.insertAdjacentHTML("beforeend", tabs(role, screen));
   }

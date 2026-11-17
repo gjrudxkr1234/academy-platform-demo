@@ -106,6 +106,7 @@ let installPrompt = null;
 let rosterPreview = null;
 let rosterUploadId = 0;
 let state = readState();
+let blockDetails;
 const demoSite = window.AcademyRoleUi?.enabled(demoAppRole) ? window.AcademyDemoSite?.create({
   profile: { ...demoContact, ...academyProfiles[demoVariant] },
   staff: teachers,
@@ -202,13 +203,13 @@ function readState() {
   return freshState();
 }
 
-function saveState() {
+function saveState(rerender = true) {
   try {
     localStorage.setItem(storageKey, JSON.stringify(state));
   } catch {
     // The demo still works in memory when browser storage is disabled.
   }
-  render();
+  if (rerender) render();
 }
 
 function announce(text) {
@@ -603,7 +604,7 @@ function paintScoreCharts() {
   const themeColor = (token, fallback) => colors.getPropertyValue(token).trim() || fallback;
   const gridColor = themeColor("--line", "#e6e7f0");
   const labelColor = themeColor("--muted", "#62687c");
-  const scoreColor = themeColor("--purple", "#583ad0");
+  const scoreColor = document.body.hasAttribute("data-c-block-scope") ? themeColor("--ink", "#111113") : themeColor("--purple", "#583ad0");
   const averageColor = themeColor("--chart-average", "#0f625a");
   for (const canvas of content.querySelectorAll("[data-score-chart]")) {
     const points = scorePeriod(canvas.dataset.scoreChart, canvas.dataset.period).filter(({ percent }) => percent !== null);
@@ -916,7 +917,7 @@ function roleHomeRows() {
       { label: "오늘 마감 과제", value: assignment.title, detail: record?.status === "submitted" ? "사진 제출 완료" : record?.status === "reviewed" ? "검사 및 피드백 완료" : `마감 ${assignment.due}`,
         assignment: assignment.id, symbol: "book", attention: !record || record.status === "returned" },
       dueSchoolRow("시험 D-day"),
-      { label: "남은 보강 영상", value: progress >= 90 ? "모두 시청 완료" : "1개 남음", detail: `${video.title} · ${progress}%`, screen: "video", symbol: "book" },
+      { label: "남은 보강 영상", value: progress >= 90 ? "모두 시청 완료" : "1개 남음", detail: `${video.title} · ${progress}%`, screen: "video", watchVideo: "linear-video", symbol: "book" },
       { label: "최근 확인된 피드백", value: record?.status === "reviewed" && record.note ? record.note : "그래프 축과 교점을 정리했어요.",
         detail: record?.status === "reviewed" ? assignment.title : "지난 과제 · 일차함수 기초 평가", screen: "learning", symbol: "chart" },
     ];
@@ -948,7 +949,7 @@ function roleHomeRows() {
     const mustReview = pending.filter(({ id }) => needsSampleReview(id)).length;
     return [
       { label: "오늘 수업 출석 현황", value: `${present} / ${roster.length}명 출석`, detail: "16:00 · 중2 심화반", screen: "attendance", symbol: "qr" },
-      { label: "검사 대기", value: `${pending.length}건`, detail: `AI 1차 완료 ${pending.length}건 · 꼭 확인 ${mustReview}건 (가상)`, screen: "learning", symbol: "book", attention: mustReview > 0 },
+      { label: "검사 대기", value: `${pending.length}건`, detail: `AI 1차 완료 ${pending.length}건 · 꼭 확인 ${mustReview}건 (가상)`, screen: "learning", reviewStudent: pending[0]?.id, symbol: "book", attention: mustReview > 0 },
       { label: "주의 학생", value: `${needsAttention.length}명`, detail: riskDetails || "오늘 확인할 학생 없음", screen: "students", symbol: "people", attention: needsAttention.length > 0 },
       dueSchoolRow("다가오는 내신"),
     ];
@@ -1245,9 +1246,27 @@ function parentView(screen) {
     </div>`;
 }
 
+function blockTabsContext() {
+  const learner = student(role === "parent" ? child : "jiwoo");
+  const roster = roleStudents();
+  const exams = assessments.filter(({ group }) => group === "중2 심화반");
+  const selected = exams.find(({ id }) => id === selectedExam) ?? exams.at(-1);
+  return {
+    learner, roster, state, video, notice, tasks: [assignment, reviewAssignment], publishedScores, chartAverage,
+    scoreChange: lastScoreChange, lessons: scheduledClasses(), selectedLearner, exam: DemoSchoolAssessments.upcoming(),
+    childPicker: role === "parent" ? childPicker() : "", tuition: role === "parent" ? window.DemoTuition.preview(child) : null,
+    teacherGroup: roster[0]?.group ?? "", assessmentLabel: selected?.title ?? "평가 없음",
+  };
+}
+
 function render() {
+  if (blockDetails?.render()) return;
   const brandName = document.querySelector(".demo-brand-actions .school strong");
   if (brandName) brandName.textContent = demoWebsiteProfile().name;
+  const blockTabs = window.AcademyRoleUi?.enabled(role) ? window.DemoBlockTabs : null;
+  blockTabs?.scope(role, activeScreen);
+  const blockView = blockTabs && document.body.hasAttribute("data-c-block-scope")
+    ? blockTabs.render(role, activeScreen, blockTabsContext()) : null;
   navigation.innerHTML = menus[role].map(([screen, label]) => `<button class="nav-button" type="button" data-action="navigate" data-id="${screen}"${screen === activeScreen ? ' aria-current="page"' : ""}><span aria-hidden="true">${symbols[screen]}</span>${label}</button>`).join("");
   if (activeScreen === "website") content.innerHTML = academyWebsite();
   else if (activeScreen === "operations") content.innerHTML = window.DemoStaffOperations.operations(roleHomeOptions());
@@ -1264,6 +1283,7 @@ function render() {
   } else if (activeScreen === "home-overview" && window.AcademyRoleUi?.enabled(role)) {
     content.innerHTML = window.AcademyRoleUi.overview(role, roleHomeRows(), role === "parent" ? childPicker() : "");
   }
+  else if (blockView !== null) content.innerHTML = blockView;
   else if (role === "parent") content.innerHTML = parentView(activeScreen);
   else if (role === "student") {
     const screens = { home: studentHome,
@@ -1330,9 +1350,9 @@ async function installDemo() {
   }
 }
 
-function recordAttendance() {
+function recordAttendance(selectedId) {
   const roster = roleStudents();
-  openDialog("수동 출결 기록", `<label>학생<select name="student">${roster.map(({ id, name }) => `<option value="${id}">${name}</option>`).join("")}</select></label>
+  openDialog("수동 출결 기록", `<label>학생<select name="student">${roster.map(({ id, name }) => `<option value="${id}"${id === selectedId ? " selected" : ""}>${name}</option>`).join("")}</select></label>
     <label>기록 종류<select name="kind"><option value="in">등원</option><option value="late">지각 등원</option><option value="out">하원</option></select></label>
     <label>알림 채널<select name="channel">${(nativeShell ? ["앱 안 알림", "알림톡", "문자"] : ["알림톡", "문자"]).map((channel) =>
       `<option${channel === state.settings.channel ? " selected" : ""}>${channel}</option>`).join("")}</select></label>`, "기록 저장", (form) => {
@@ -1739,6 +1759,14 @@ function homeV3Context() {
   const route = (screen) => navigation.querySelector(`[data-action="navigate"][data-id="${CSS.escape(screen)}"]`)?.click();
   return { role, options:roleHomeOptions(), screen:activeScreen, rerender:render, navigate:route,
     openSheet:openDemoSheet, openDialog, announce,
+    openLearningDetail: (source, id) => {
+      if (source === "authored" && id === "demo-v31-video") return blockDetails?.open("video", "linear-video");
+      if (source !== "assignment") return false;
+      if (role === "student") return blockDetails?.open("assignment", id);
+      const submissions = id === assignment.id ? state.submissions : state.reviewSubmissions;
+      const available = roleStudents().find(learner => submissions[learner.id]?.status === "submitted");
+      return role === "teacher" && Boolean(available && blockDetails?.open("review", available.id, activeScreen, id));
+    },
     closeDialog:() => { if (dialog.open) dialog.close(); },
     cropFields:photo => demoSite.bannerCropFields(photo),
     setupCrop:() => demoSite.bannerCropPicker(),
@@ -1789,7 +1817,9 @@ document.addEventListener("click", (event) => {
   const control = event.target.closest("[data-action]");
   if (!control) return;
   const { action, id } = control.dataset;
-  if (action === "navigate" && menus[role].some(([screen]) => screen === id)) {
+  if (action.startsWith("block-") && document.body.hasAttribute("data-c-block-scope")) {
+    handleBlockTabAction(action, id, control);
+  } else if (action === "navigate" && menus[role].some(([screen]) => screen === id)) {
     if (id === "home" && activeScreen === "home" && window.AcademyRoleUi?.enabled(role)) {
       window.scrollTo(0, 0);
       return;
@@ -1818,7 +1848,9 @@ document.addEventListener("click", (event) => {
     content.querySelector('.day-button[aria-pressed="true"]')?.focus();
   } else if (activeScreen === "school-schedule" && action.startsWith("school-demo-")) DemoSchoolAssessments.handle(action, id);
   else if (action === "record-attendance" && ["owner", "teacher"].includes(role)) recordAttendance();
-  else if (action === "submit-homework" && role === "student") submitHomework(id);
+  else if (action === "submit-homework" && role === "student") {
+    if (!blockDetails?.open("assignment", id || assignment.id)) submitHomework(id);
+  }
   else if (action === "parent-notice" && role === "parent" && activeScreen === "news") readParentNotice();
   else if (activeScreen === "students" && ["student-detail", "student-list", "consultation-note"].includes(action) && ["owner", "teacher"].includes(role)) {
     if (action === "student-detail" && roleStudents().some((learner) => learner.id === id)) {
@@ -1863,9 +1895,13 @@ document.addEventListener("click", (event) => {
   } else if (action === "apply-roster" && role === "owner" && activeScreen === "roster") applyRosterPreview();
   else if (action === "send-roster-invites" && role === "owner" && activeScreen === "roster") sendRosterInvites();
   else if (action === "print-roster-invites" && role === "owner" && activeScreen === "roster") printRosterInvites();
-  else if (action === "review") reviewSubmission(id);
+  else if (action === "review") {
+    if (!blockDetails?.open("review", id, activeScreen, control.dataset.taskId)) reviewSubmission(id);
+  }
   else if (action === "open-notice") readNotice();
-  else if (action === "watch-video") watchVideo();
+  else if (action === "watch-video") {
+    if (!blockDetails?.open("video", id)) watchVideo();
+  }
   else if (action === "teacher-qr" && (role === "teacher" || role === "owner")) openTeacherQr();
   else if (action === "camera-qr" && role === "student") void openCameraQr();
   else if (action === "mock-qr" && role === "student") openMockQr();
@@ -1877,11 +1913,38 @@ document.addEventListener("click", (event) => {
   } else if (action === "remind") {
     const [learner, topic] = id.split(":");
     if (!student(learner) || !["과제 제출", "공지 확인", "영상 시청"].includes(topic)) return;
-    state.reminders.unshift({ student: learner, topic: `${topic} 리마인드`, time: sessionTime() });
+    const task = [assignment, reviewAssignment].find(item => item.id === control.dataset.taskId);
+    state.reminders.unshift({ student: learner, topic: `${topic} 리마인드`, time: sessionTime(), ...(task ? { task: task.id } : {}) });
     saveState();
     announce(`${studentName(learner)} 학생 홈에 학습 알림을 남겼습니다.`);
   }
 });
+
+function handleBlockTabAction(action, id, control) {
+  if (action === "block-jump") {
+    const target = document.getElementById(`c-row-${id}`);
+    if (!target) return;
+    if (target.tagName !== "BUTTON") target.tabIndex = -1;
+    target.focus({ preventScroll:true });
+    target.scrollIntoView({ block:"center" });
+  } else if (action === "block-attendance" && role === "teacher" && activeScreen === "attendance" && roleStudents().some(person => person.id === id)) {
+    recordAttendance(id);
+  } else if (action === "block-remind-all" && role === "teacher" && activeScreen === "learning") {
+    const task = [assignment, reviewAssignment].find(item => item.id === id);
+    if (!task && id !== "notice") return;
+    const records = task === assignment ? state.submissions : state.reviewSubmissions;
+    const recipients = roleStudents().filter(person => task ? !records[person.id] : !state.notices.includes(person.id));
+    if (!recipients.length) return;
+    const time = sessionTime();
+    const topic = task ? "과제 제출 리마인드" : "공지 확인 리마인드";
+    state.reminders.unshift(...recipients.map(person => ({ student:person.id, topic, time, ...(task ? { task:task.id } : {}) })));
+    saveState();
+    announce(`${recipients.length}명에게 리마인드를 남겼어요.`);
+  } else if (["student", "parent"].includes(role)) {
+    const info = window.DemoBlockTabs.info(action,id,blockTabsContext());
+    if (info) openDemoSheet(info.title,`<p>${escapeHtml(info.detail)}</p>`,null,control,{ closeOnly:true });
+  }
+}
 
 content.addEventListener("change", (event) => {
   const field = event.target;
@@ -1971,7 +2034,18 @@ if (!nativeShell && window.isSecureContext && "serviceWorker" in navigator && /^
   });
 }
 
+blockDetails = window.DemoBlockDetails?.create({
+  content, dialog, render, role: () => role, screen: () => activeScreen, state: () => state, save: saveState,
+  setScreen: (screen) => { activeScreen = screen; },
+  enabled: () => window.AcademyRoleUi?.enabled(role),
+  validScreen: (screen) => menus[role].some(([id]) => id === screen),
+  tasks: [assignment, reviewAssignment], visibleStudents: roleStudents,
+  studentGroup: () => student("jiwoo")?.group ?? "학생",
+  canSubmit: (task) => task.id !== assignment.id || state.clock < 21 * 60,
+  openSheet: openDemoSheet,
+});
 render();
+blockDetails?.initialize();
 showDemoInvite();
 window.addEventListener("hashchange", showDemoInvite);
 
