@@ -789,7 +789,7 @@ window.AcademyDemoSite = (() => {
         + field("grade", "대상 학년", record.grade, 50)
         + `<fieldset><legend>요일·시간</legend>${days}</fieldset>`
         + (role === "owner" ? `<label>담당 선생님<select name="teacher">
-          ${state.accounts.map((account) => option(account.id, account.name, record.teacherId)).join("")}</select></label>` : "")
+          ${state.accounts.map((account) => option(account.id, teacherName(account.id), record.teacherId)).join("")}</select></label>` : "")
         + field("room", "강의실", record.room, 50) + area("note", "메모", record.note, 400)
         + (role === "owner" ? `<label class="demo-site-check"><input type="checkbox" name="visible"${checked(record.visible)}>홈페이지에 보이기</label>`
           + (current ? action("반 삭제", "site-delete", record.id, 'data-group="classes"') : "") : ""),
