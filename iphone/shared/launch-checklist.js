@@ -239,10 +239,10 @@
     }, opener, { confirmLabel:"다시 검토" });
   }
 
-  function apply(context) {
+  function apply(context, reject = context.announce) {
     if (!draft || draft.status !== "review") return;
     const rows = normalize(draft).filter(row => !row.withdrawn);
-    if (!rows.length || rows.some(row => row.issue)) return context.announce("등록할 학생과 확인이 필요한 행을 먼저 확인해 주세요.");
+    if (!rows.length || rows.some(row => row.issue)) return reject("등록할 학생과 확인이 필요한 행을 먼저 확인해 주세요.");
     const data = read();
     const known = new Set(data.batches.flatMap(batch => batch.rows.map(row => `${row.name}|${row.group}`)));
     const newRows = rows.filter(row => {
@@ -251,7 +251,7 @@
       known.add(key);
       return true;
     });
-    if (!newRows.length) return context.announce("가져올 새 학생이 없어요.");
+    if (!newRows.length) return reject("가져올 새 학생이 없어요.");
     const id = crypto.randomUUID();
     data.batches.push({ id, rows:newRows.map((row, index) => ({ ...row, id:`launch-${id}-${index}` })), created:Date.now(), invited:false });
     mark(data, "workbook");
@@ -289,7 +289,12 @@
       document.getElementById("launch-review")?.focus();
       return;
     }
-    if (mode === "register") return apply(context);
+    if (mode === "register" && draft?.status === "review") {
+      const count = flagsFor(draft, normalize(draft)).length;
+      if (!count) return apply(context);
+      return context.openSheet("초안 등록 확인", `<p>확인 필요 ${count.toLocaleString("ko-KR")}건이 남아 있어요. 그래도 등록할까요?</p>`,
+        () => apply(context, message => message), control, { confirmLabel:"확인하고 등록", successMessage:false });
+    }
     if (mode === "rerun" && draft?.status === "review") {
       return context.openSheet("힌트로 다시 진행", `<p>예를 들어 B열은 아빠 번호라고 알려 주세요.</p>${input("변환 힌트","hint",draft.hints,'maxlength="100"')}`, form => {
         const hint = String(form.get("hint")).trim();

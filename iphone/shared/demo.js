@@ -795,12 +795,12 @@ function registeredRoster() {
 }
 
 function ownerRoster() {
+  const heading = appHeader("학생·보호자 명부", "엑셀로 학생을 반에 배정하고 보호자 연락처와 동의 상태를 함께 등록하세요.");
+  if (window.AcademyRoleUi?.enabled(role) && window.DemoLaunch) return heading + window.DemoLaunch.workbook();
   const { samples } = DemoRoster;
   const registered = registeredRoster();
   const pending = registered.some((row) => row.phone && !state.sentRosterInvites.includes(row.key));
-  return appHeader("학생·보호자 명부", "엑셀로 학생을 반에 배정하고 보호자 연락처와 동의 상태를 함께 등록하세요.")
-    + (window.AcademyRoleUi?.enabled(role) ? window.DemoLaunch.workbook() : "")
-    + panel("엑셀로 한 번에 등록", `<p class="note">아래 두 가상 명부 원본으로 체험할 수 있습니다. 보호자는 초대를 수락한 뒤 자녀 포털에 접근합니다.</p>
+  return heading + panel("엑셀로 한 번에 등록", `<p class="note">아래 두 가상 명부 원본으로 체험할 수 있습니다. 보호자는 초대를 수락한 뒤 자녀 포털에 접근합니다.</p>
       <div class="actions roster-files"><label class="primary file-choice" for="roster-file">엑셀 파일 선택
         <input class="sr-only" id="roster-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
         ${samples.map((sample) => `<a class="secondary roster-download" href="${escapeHtml(new URL(`${sample.path}${demoScriptUrl.search}`, demoRoot).href)}" download="${escapeHtml(sample.name)}">${escapeHtml(sample.downloadLabel)}</a>`).join("")}
