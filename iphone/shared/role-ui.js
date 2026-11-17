@@ -4,8 +4,8 @@
   const roles = {
     owner: {
       name: "원장", title: "오늘의 학원 운영", context: "학원 전체 · 11월 16일 월요일",
-      tabs: [["home", "홈", "home", ["home-overview"]], ["students", "학생·반", "people", ["roster", "grades"]],
-        ["attendance", "출결", "qr", ["schedule", "school-schedule", "academy-calendar"]], ["operations", "운영", "operations", ["settings", "website", "learning", "notifications", "tuition", "staff-pay", "staff-leave", "timetable"]]],
+      tabs: [["home", "홈", "home", ["home-overview"]], ["students", "학생·반", "people", ["roster"]],
+        ["attendance", "출결", "qr", ["schedule", "school-schedule", "academy-calendar"]], ["operations", "운영", "operations", ["settings", "website", "learning", "notifications", "tuition", "staff-pay", "staff-leave", "timetable", "grades"]]],
     },
     teacher: {
       name: "선생님", title: "오늘의 수업 관리", context: "이도현 선생님 · 중2 심화반",

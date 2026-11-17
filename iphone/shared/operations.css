@@ -117,3 +117,12 @@ html[data-demo-appearance] .role-app-ui #content:has(.ops-page) { background:var
 .role-app-ui .demo-v3-row:active { background:var(--ops-tile); }
 
 .role-app-ui .demo-v3-intro .demo-child-chip[aria-pressed="false"] > span { background:var(--ops-tile); border-color:transparent; }
+
+.demo-v3-section .ops-alerts { margin-top:8px; }
+.ops-card .ops-low-wage,#dialog .ops-low-wage { color:var(--ops-danger); background:var(--ops-danger-bg); padding:9px 10px; border-radius:8px; font-weight:760; }
+.ops-card .ops-low-wage[hidden],#dialog .ops-low-wage[hidden] { display:none; }
+.ops-statement h3 { font-size:13px; margin:3px 0 0; }
+.ops-statement .ops-request-info > div { display:grid; grid-template-columns:minmax(0,1fr) max-content; gap:8px; }
+.ops-statement .ops-request-info dt { min-width:0; overflow-wrap:anywhere; }
+.ops-statement .ops-request-info dt small { display:block; color:var(--muted); font-size:11px; font-weight:500; margin-top:3px; }
+.ops-actions:has(:nth-child(3)) { grid-template-columns:repeat(3,minmax(0,1fr)); }

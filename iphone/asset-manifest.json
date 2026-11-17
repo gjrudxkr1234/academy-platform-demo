@@ -1,7 +1,7 @@
 {
   "synthetic_only": true,
   "network_required_after_preparation": false,
-  "version": "715af3d66a3ff79d",
+  "version": "b3ed8b69de0311fd",
   "assets": [
     {
       "path": "icons/owner-180.png",
@@ -66,12 +66,12 @@
     {
       "path": "index.html",
       "bytes": 2757,
-      "sha256": "e960239fbafa0a613ceb62e9c8ce5c81207aba14543193c7a7ccb24609c92e8c"
+      "sha256": "0589e06a270fcecc408a722ff004e31836238737a0885fe962c1ac9bbae6d94a"
     },
     {
       "path": "owner/index.html",
-      "bytes": 7500,
-      "sha256": "dcacfaa485a67e19bfa04b2e69981fd5970a865b09d7dc98b7d3d7f5e357ecc3"
+      "bytes": 7563,
+      "sha256": "6897332c5cb5589bf8ba7ee9c2673bdc01f2cd980fecead4c4f9d899dd9af001"
     },
     {
       "path": "owner/manifest.webmanifest",
@@ -85,8 +85,8 @@
     },
     {
       "path": "parent/index.html",
-      "bytes": 7507,
-      "sha256": "20a30c34cc7593eba7fe3045db602fcea7d849e075bf3c886a397142a76c86f2"
+      "bytes": 7570,
+      "sha256": "c83c4aede6d808d3077dd16bee3aa0ac280dc856f4380d1f8defbbd40ca005d1"
     },
     {
       "path": "parent/manifest.webmanifest",
@@ -205,8 +205,8 @@
     },
     {
       "path": "shared/demo.js",
-      "bytes": 120715,
-      "sha256": "80a703d992d341ba671d0c174882433260c10bc95b323d6b5bf3e5f054616a31"
+      "bytes": 121084,
+      "sha256": "424a3ed7b62c3d5eab6c7c66ccc28fc72a5f215ddc3cda3443e03c9468c495c6"
     },
     {
       "path": "shared/home-v3-banners.js",
@@ -215,8 +215,8 @@
     },
     {
       "path": "shared/home-v3-calendar.css",
-      "bytes": 14059,
-      "sha256": "2d474609718fd8e3d69333b06912267eff5a537efb890f8b2c4250736054021c"
+      "bytes": 14062,
+      "sha256": "6e7048995be10e9f2f456e15de80b253280dcb4331db0ce5d6560fc8e7ce56dd"
     },
     {
       "path": "shared/home-v3-calendar.js",
@@ -230,18 +230,18 @@
     },
     {
       "path": "shared/home-v3.js",
-      "bytes": 20269,
-      "sha256": "4c97590fc4de8823816dd60debc3ba3734d5d2814d23962d999a1f1bb1643fdf"
+      "bytes": 20142,
+      "sha256": "ff08e00eeec9f95c0847ab35df9ce605d4f24249112419abbf83239bc91a30d4"
     },
     {
       "path": "shared/operations.css",
-      "bytes": 9778,
-      "sha256": "1e90820c82e41dae092370507b0ac03a324396387177f547d01fa96429b9e40d"
+      "bytes": 10529,
+      "sha256": "aa5723d5db63a60557cc1a7218a31ee5fd6b696fe6a8151b604fb7b737d3c31f"
     },
     {
       "path": "shared/operations.js",
-      "bytes": 23772,
-      "sha256": "3fe1b68a90d715f81f2e65a88fd63be17f7d36f9ef1d802577eb7990f176de49"
+      "bytes": 35050,
+      "sha256": "c90c40832a43ac975637218377f99146ae5ae1e13e5480b830996920c689bf87"
     },
     {
       "path": "shared/photo-ui.css",
@@ -256,12 +256,12 @@
     {
       "path": "shared/role-ui.js",
       "bytes": 26027,
-      "sha256": "94a6afb184077def510979c8aef5900f9e8226bfe30caafe6e5144e4025e6165"
+      "sha256": "62e461a2335a08ba094246a7233a32ce70475a561e238ee1bbf87636be8b4a9c"
     },
     {
       "path": "shared/site-editor.js",
-      "bytes": 56077,
-      "sha256": "e406338c9f23e45f5e053bb40d6365f4eafb45bfd17a7907f3487c4e90b5cdd3"
+      "bytes": 57669,
+      "sha256": "82729b79ee0c036e34fbf08731460c5cce9e19ec300bc6752deadf51925e97b8"
     },
     {
       "path": "shared/style.css",
@@ -279,9 +279,14 @@
       "sha256": "cf3a6d372452649f344eefaf12e27aaeab1c9f93d412e7766277e38ac7adbed3"
     },
     {
+      "path": "shared/workforce-payroll.js",
+      "bytes": 72258,
+      "sha256": "5780991ffcd111c53cdc5e1e07148f8d6103847a2cbcd2326a7f957bb333e879"
+    },
+    {
       "path": "student/index.html",
-      "bytes": 7502,
-      "sha256": "4564756f74abecd1ac4ab085f299ee45a5947651949e73c9864e6a8c2372d4cc"
+      "bytes": 7565,
+      "sha256": "9161bd0d96edb2de751ac9a974660f0d2da87c38cf1ef63a646921b908ac04f9"
     },
     {
       "path": "student/manifest.webmanifest",
@@ -295,8 +300,8 @@
     },
     {
       "path": "teacher/index.html",
-      "bytes": 7508,
-      "sha256": "28f233f553ee0064f1a36bec715ce34fd0e5458e034ee99bc471a327960f5528"
+      "bytes": 7571,
+      "sha256": "d044779177840aab0bd0f1f9b0a0e760e405f93ee9b2f09285995d7d02fe09d4"
     },
     {
       "path": "teacher/manifest.webmanifest",
