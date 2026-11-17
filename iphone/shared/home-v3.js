@@ -142,7 +142,7 @@
       ? `<section class="demo-v3-section" aria-labelledby="demo-website-title"><h2 id="demo-website-title">학원 홈페이지</h2>
         ${more(profile.ready ? "홈페이지 편집" : "홈페이지 만들기", 'data-action="homepage-edit"')}
         ${!profile.phone ? more("연락처 등록", 'data-action="homepage-edit" data-id="contact"') : ""}</section>` : "";
-    return `<div class="demo-role-home demo-v3-home" data-role-home="${role}">${initial}${homeCard}${today}${role === "parent" && banner ? `<section class="demo-v3-section">${banner}</section>` : ""}${calendar}
+    return `<div class="demo-role-home demo-v3-home" data-role-home="${role}">${initial}${role === "owner" ? window.DemoLaunch.checklist() : role === "parent" ? window.DemoLaunch.parent() : ""}${homeCard}${today}${role === "parent" && banner ? `<section class="demo-v3-section">${banner}</section>` : ""}${calendar}
       ${learner && (!profile.sections || profile.sections.includes("staff")) ? staffSection(staffProfiles) : ""}
       ${!learner || !profile.sections || profile.sections.includes("notices") ? noticeSection(role, notices) : ""}${tail}</div>`;
   }

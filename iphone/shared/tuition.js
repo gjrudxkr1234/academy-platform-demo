@@ -186,6 +186,7 @@
     return `<section class="tuition-view" aria-labelledby="tuition-title">
       <header class="tuition-heading"><h1 id="tuition-title">${owner ? "수납 관리" : "학원비"}</h1></header>
       ${context.childControls}
+      ${owner && !active ? window.DemoLaunch.tuitionGuide() : ""}
       ${active ? details(active, context) : `${owner ? ownerSummary(data) : ""}
         <section class="tuition-card"><header class="tuition-card-heading"><h2>${owner ? "청구·수납 장부" : "자녀의 청구서"}</h2></header>
           ${invoiceList(data, context)}${owner ? `<div class="tuition-actions" aria-label="수납 관리 도구">${action("청구서 만들기", "create", "", "primary")}
@@ -273,7 +274,7 @@
       integerField("매달 납부일", "dueDay", preferences.dueDay, 28, 1) +
       integerField("형제 할인 금액", "sibling", preferences.sibling, 1000000) +
       choice("중간 등록 일할 계산", "prorate", [["off", "끄기"], ["on", "켜기"]], preferences.prorate ? "on" : "off") +
-      '<p class="tuition-note">이 체험에서는 수동 청구를 만들 수 있어요.</p>',
+      `<p class="tuition-note">이 체험에서는 수동 청구를 만들 수 있어요.</p>${window.DemoLaunch.tuitionGuide()}${window.DemoLaunch.tuitionBasis()}`,
     (form) => {
       const tuition = integer(form.get("tuition"), 1, 10000000);
       const billingDay = integer(form.get("billingDay"), 1, 28), dueDay = integer(form.get("dueDay"), 1, 28);
@@ -281,8 +282,11 @@
       if ([tuition, billingDay, dueDay, sibling].includes(null) || dueDay < billingDay || sibling >= tuition) return "청구일·납부일·할인액을 확인해 주세요.";
       const current = read();
       current.settings = { tuition, billingDay, dueDay, sibling, prorate: form.get("prorate") === "on" };
+      window.DemoLaunch.complete("tuition");
       save(current, context);
     }, opener);
+    const form = context.dialog.querySelector("form");
+    form.addEventListener("input", () => window.DemoLaunch.tuitionWarning(form));
   }
 
   function connect(opener, context) {
