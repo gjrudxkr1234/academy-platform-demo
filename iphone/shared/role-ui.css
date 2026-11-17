@@ -83,10 +83,15 @@ button.demo-home-row:hover { background:var(--soft); }
   padding:env(safe-area-inset-top) max(10px,env(safe-area-inset-right)) 0 max(12px,env(safe-area-inset-left));
   background:var(--panel); color:var(--ink); border-color:var(--line);
 }
-.demo-brand-home,.demo-brand-bell {
+.demo-brand-home,.demo-brand-back,.demo-brand-bell {
   display:inline-grid; place-items:center; min-width:48px; min-height:48px;
   padding:0 5px; border:0; border-radius:8px; background:transparent; color:inherit;
 }
+.role-app-ui .demo-brand-bar .demo-brand-back {
+  width:44px; min-width:44px; height:44px; min-height:44px; padding:0;
+}
+.role-app-ui .demo-brand-bar :is(.demo-brand-home,.demo-brand-back)[hidden] { display:none; }
+.role-app-ui .demo-brand-bar .demo-brand-back:hover { background:var(--soft); }
 .demo-brand-home img { display:block; }
 .demo-brand-home img { height:24px; width:auto; max-width:none; }
 .demo-brand-actions { display:flex; align-items:center; min-width:0; gap:2px; }

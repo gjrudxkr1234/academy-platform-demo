@@ -28,7 +28,6 @@
 .role-app-ui .demo-v3-calendar button { border: 0; color: var(--ink); background: none; }
 .role-app-ui .v3-cal-title h2 button { min-height: 40px; padding: 0; font: inherit; }
 .role-app-ui .demo-v3-calendar button:focus-visible, .role-app-ui .v3-cal-day-list button:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
-.role-app-ui .v3-cal-title button.v31-back { min-width: 34px; min-height: 44px; padding: 0; font-size: 27px; line-height: 1; }
 .v31-mode { display: flex; gap: 2px; padding: 3px; border-radius: 11px; background: var(--soft); }
 .role-app-ui .demo-v3-calendar .v31-mode button { height: 44px; min-height: 44px; min-width: 44px; padding: 0; border-radius: 8px; color: var(--muted); font-size: 12px; font-weight: 760; }
 .role-app-ui .demo-v3-calendar .v31-mode button[aria-pressed="true"] { background: var(--v3-section, var(--panel)); color: var(--ink); }

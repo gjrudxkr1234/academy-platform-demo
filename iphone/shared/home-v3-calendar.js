@@ -45,7 +45,6 @@
   let selectedDate = demoDate;
   let view = "month";
   let lastRole;
-  let returnScreen = "home";
   const selectedFilters = new Set();
   const isStaff = (role) => role === "owner" || role === "teacher";
   const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({
@@ -278,7 +277,6 @@
     return `<section class="demo-v3-calendar" aria-labelledby="v3-cal-heading" data-v3-month="${month}" data-v3-view="${view}"${full ? ' data-v31-full=""' : ""}>
       <div class="v31-toolbar">
         <div class="v3-cal-title">
-          ${full ? '<button type="button" class="v31-back" aria-label="뒤로 가기" data-v3-calendar-action="back">‹</button>' : ""}
           <h2 id="v3-cal-heading" tabindex="-1">${full ? title : `<button type="button" data-v3-calendar-action="full">${title}</button>`}</h2>
           <div class="v31-mode" role="group" aria-label="캘린더 보기">
             <button type="button" data-v3-calendar-action="view" data-v3-view-select="month" aria-pressed="${view === "month"}" aria-label="월 보기">월</button>
@@ -484,7 +482,6 @@
   }
 
   function openFull(ctx) {
-    if (ctx.screen !== "academy-calendar") returnScreen = ctx.screen || "home";
     ctx.navigate?.("academy-calendar");
   }
 
@@ -520,7 +517,6 @@
       selectedFilters.add("exam");
       openFull(ctx);
     } else if (action === "full") openFull(ctx);
-    else if (action === "back") ctx.navigate?.(returnScreen);
     else if (action === "new" && isStaff(ctx.role)) {
       const day = control.dataset.v3Date;
       afterClose(control, () => openEventSheet(control, ctx, input, undefined, validDate(day) ? day : selectedDate));

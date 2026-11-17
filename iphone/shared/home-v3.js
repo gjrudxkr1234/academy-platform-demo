@@ -171,7 +171,7 @@
       <div class="demo-v3-drawer-academy">${button(`${academyMark(academy.name)}<strong>${text(academy.name)}</strong>`, homeAction("academy"))}
       ${academy.phone ? button(`${icon("phone")}전화`, 'data-action="demo-contact" data-id="phone"') : ""}</div>
       <nav class="demo-v3-shortcuts" aria-label="역할 바로가기">${optionsFor[role].map(([label, symbol, attrs]) => shortcut(label, symbol, attrs)).join("")}</nav>
-      ${group("학원", [[homeAction("academy"), "학원 소개"], [navigate("schedule"), "수업 시간표"], ...(role === "parent" ? [[navigate("tuition"), "학원비"], [homeAction("calendar"), "일정"]] : []), [homeAction("staff"), "강사진"], [navigate("video"), "학습 영상"]])}
+      ${group("학원", [[homeAction("academy"), "학원 소개"], [navigate(role === "owner" ? "timetable" : "schedule"), "수업 시간표"], ...(role === "parent" ? [[navigate("tuition"), "학원비"], [homeAction("calendar"), "일정"]] : []), [homeAction("staff"), "강사진"], [navigate("video"), "학습 영상"]])}
       ${role === "owner" ? group("운영", [[navigate("students"), "학생·반"], [navigate("tuition"), "수납 관리"], [navigate("staff-pay"), "근무·급여"], [navigate("staff-leave"), "강사 휴가·대타"], [navigate("timetable"), "수업 시간표 관리"], [navigate("notifications"), "공지·발송"], [navigate("learning"), "과제 검사"], [navigate("grades"), "성적 리포트"]])
         : role === "teacher" ? group("선생님", [[profile, "내 강사 카드"], ['data-action="homepage-edit"', "홈페이지 편집"], [navigate("my-work"), "내 근무·휴가"],
           [navigate("school-schedule"), "내신 일정"], [navigate("notifications"), "발송 기록"],
@@ -191,11 +191,13 @@
 
   function drawer() { return document.getElementById("demo-v3-drawer"); }
 
-  function closeDrawer() {
-    if (!drawer()?.open) return;
+  function closeDrawer(useEntry = false) {
+    if (!drawer()?.open) return false;
+    const hasEntry = history.state?.demoV3Menu === drawerRoute;
     drawer().close();
-    if (history.state?.demoV3Menu === drawerRoute) history.back();
+    if (hasEntry && !useEntry) history.back();
     drawerRoute = undefined;
+    return hasEntry;
   }
 
   function openDrawer() {
@@ -227,7 +229,6 @@
     }
     if (action === "menu") { openDrawer(); return true; }
     if (action === "close") { closeDrawer(); return true; }
-    closeDrawer();
     if (action === "calendar") window.DemoHomeCalendar.openFull(context);
     else if (action === "notices" || action === "staff") {
       const target = { notices:"#demo-v3-notices", staff:"#demo-v3-staff" }[action];
@@ -238,16 +239,22 @@
       else if (action === "notices") context.navigate(context.role === "parent" ? "news" : "learning");
     } else if (action === "academy") context.navigate("website");
     else if (action === "profile") {
+      closeDrawer();
       if (context.role === "teacher" && context.options.ownStaff) context.openInstructor(context.options.ownStaff.id);
       else context.openDialog("내 정보", `<p>${text(context.options.name)} · ${text(context.options.context)}</p>`);
     } else if (action === "notifications") {
+      closeDrawer();
       context.openSheet("알림 설정", `<label><input type="checkbox" name="notices" ${getNoticeMode() ? "checked" : ""}>일정 하루 전 앱 안 알림</label>`,
         form => {
           try { localStorage.setItem("gradient.demo.v3.notices", String(form.has("notices"))); }
           catch { return "알림 설정을 저장하지 못했어요."; }
           return "";
         }, control);
-    } else if (action === "logout") context.openDialog("가상 계정", "<p>데모는 가상 역할을 사용합니다. 실제 서비스에는 로그인하지 않았어요.</p>");
+    } else if (action === "logout") {
+      closeDrawer();
+      context.openDialog("가상 계정", "<p>데모는 가상 역할을 사용합니다. 실제 서비스에는 로그인하지 않았어요.</p>");
+    }
+    closeDrawer();
     return true;
   }
 
@@ -266,7 +273,8 @@
       menu.addEventListener("click", event => {
         const inside = menu.getBoundingClientRect();
         if (event.target === menu && (event.clientX < inside.left || event.clientY < inside.top || event.clientY > inside.bottom)) closeDrawer();
-        if (event.target.closest("[data-action], [data-v3-banner-action], #reset, #iphone-install, a")) closeDrawer();
+        if (event.target.closest("[data-action], [data-v3-banner-action], #reset, #iphone-install, a")
+          && !event.target.closest('[data-action="navigate"], [data-action="homepage-edit"]')) closeDrawer();
       });
       menu.addEventListener("pointerdown", event => { dragStart = { x:event.clientX, y:event.clientY }; });
       menu.addEventListener("pointerup", event => {
@@ -286,5 +294,8 @@
     window.DemoHomeCalendar?.enhance(document.getElementById("content"), context);
   }
 
-  window.DemoHomeV3 = Object.freeze({ home, academyIntro, handle, apply, getNoticeMode });
+  window.DemoHomeV3 = Object.freeze({
+    home, academyIntro, handle, apply, getNoticeMode, takeDrawerEntry: () => closeDrawer(true),
+    backDrawer: () => { if (!drawer()?.open) return false; closeDrawer(); return true; },
+  });
 })();
