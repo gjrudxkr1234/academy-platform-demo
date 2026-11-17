@@ -48,7 +48,7 @@ window.AcademyDemoSite = (() => {
   }
 
   function initialSite(profile, staff, lessons, notices, legacy) {
-    const accounts = staff.map(({ name, role }, index) => ({ id: ["demo-owner", "demo-teacher", "demo-teacher-2"][index], name, role }));
+    const accounts = staff.map(({ name, role }, index) => ({ id: ["demo-owner", "demo-teacher", "demo-teacher-2"][index] ?? `demo-teacher-${index}`, name, role }));
     const accountFor = (name) => accounts.find((account) => account.name === name)?.id ?? "";
     const byGroup = new Map();
     for (const lesson of lessons) {
@@ -59,7 +59,9 @@ window.AcademyDemoSite = (() => {
       }
       byGroup.get(lesson.group).slots.push({ id: lesson.id, day: lesson.day, start, end });
     }
-    const savedCards = Array.isArray(legacy?.staff) ? legacy.staff : staff;
+    const savedCards = Array.isArray(legacy?.staff)
+      ? [...legacy.staff, ...staff.slice(3).filter((member) => !legacy.staff.some((card) => card.name === member.name))]
+      : staff;
     return {
       accounts,
       staff: savedCards.map((card, index) => ({ id: `staff-${index}`, account: accountFor(card.name), name: card.name,
@@ -82,11 +84,28 @@ window.AcademyDemoSite = (() => {
     let state = original;
     let database;
     const urls = new Map();
+    // A saved demo may predate the new instructor. Add only newly introduced
+    // account fixtures. Existing edits, hidden cards and class schedules keep priority.
+    function withNewFixtures(saved) {
+      const newAccounts = original.accounts.filter(({ id }) => !saved.accounts.some((account) => account.id === id));
+      if (!newAccounts.length) return saved;
+      const addedIds = new Set(newAccounts.map(({ id }) => id));
+      const newCards = original.staff.filter((card) => addedIds.has(card.account)
+        && !saved.staff.some((current) => current.id === card.id || current.account === card.account || current.name === card.name));
+      const classes = [...saved.classes];
+      for (const proposed of original.classes.filter((item) => addedIds.has(item.teacherId))) {
+        if (classes.some((current) => current.id === proposed.id || current.groupKey === proposed.groupKey
+          || (current.room === proposed.room && current.slots.some((slot) => proposed.slots.some((next) =>
+            next.day === slot.day && next.start < slot.end && slot.start < next.end))))) continue;
+        classes.push(proposed);
+      }
+      return { ...saved, accounts:[...saved.accounts, ...newAccounts], staff:[...saved.staff, ...newCards], classes };
+    }
     function useSnapshot(next) {
       if (!next || next === state) return;
       for (const url of urls.values()) URL.revokeObjectURL(url);
       urls.clear();
-      state = next;
+      state = withNewFixtures(next);
       refresh();
     }
 
@@ -135,7 +154,7 @@ window.AcademyDemoSite = (() => {
           const request = store.get("demo");
           request.onsuccess = () => {
             try {
-              const persisted = request.result ?? original;
+              const persisted = request.result ? withNewFixtures(request.result) : original;
               const change = modify(persisted, role);
               if (typeof change === "string") { result = change; return; }
               const summary = (value) => {
@@ -269,6 +288,7 @@ window.AcademyDemoSite = (() => {
         <button type="button" class="ops-back" data-action="navigate" data-id="operations" aria-label="뒤로 가기">‹</button><h1>수업 시간표</h1></header>
         <section class="demo-home-section" aria-labelledby="ops-timetable-classes"><header class="demo-home-section-heading demo-edit-heading">
           <h2 id="ops-timetable-classes">반·반복 수업</h2>${action("반 추가", "site-class-edit")}</header>
+          <p class="demo-site-paragraph">강사 ${escaped(state.accounts.map(({ id }) => teacherName(id)).join(" · "))}</p>
           <ul class="demo-site-editor-list">${classRows()}</ul></section></div>`;
     }
 
@@ -769,7 +789,7 @@ window.AcademyDemoSite = (() => {
         + field("grade", "대상 학년", record.grade, 50)
         + `<fieldset><legend>요일·시간</legend>${days}</fieldset>`
         + (role === "owner" ? `<label>담당 선생님<select name="teacher">
-          ${state.accounts.map((account) => option(account.id, account.name, record.teacherId)).join("")}</select></label>` : "")
+          ${state.accounts.map((account) => option(account.id, teacherName(account.id), record.teacherId)).join("")}</select></label>` : "")
         + field("room", "강의실", record.room, 50) + area("note", "메모", record.note, 400)
         + (role === "owner" ? `<label class="demo-site-check"><input type="checkbox" name="visible"${checked(record.visible)}>홈페이지에 보이기</label>`
           + (current ? action("반 삭제", "site-delete", record.id, 'data-group="classes"') : "") : ""),
@@ -927,7 +947,7 @@ window.AcademyDemoSite = (() => {
         longIntro: state.intro.long, tags: state.intro.tags, cover: photoUrl(state.intro.photo), sections: state.sections.filter(({ visible }) => visible).map(({ id }) => id) };
     }
 
-    return Object.freeze({ calendar, visibleStaff, ownStaff, homepage, notices: () => state.notices, editor, timetableEditor, lastChange: () => state.audit?.at(-1)?.at, startSection, handle, reset, prependNotice,
+    return Object.freeze({ calendar, teacherName, visibleStaff, ownStaff, homepage, notices: () => state.notices, editor, timetableEditor, lastChange: () => state.audit?.at(-1)?.at, startSection, handle, reset, prependNotice,
       bannerCropFields: photo => cropControls(photo, 2, "배너 사진 · 2:1 자르기"), bannerCropPicker: () => cropPicker(2) });
   }
 

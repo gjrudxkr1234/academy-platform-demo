@@ -67,9 +67,11 @@ for (const staff of ["owner", "teacher"]) {
 if (window.AcademyRoleUi?.enabled("parent")) menus.parent.push(["news", "소식"]);
 const demoAppRole = window.ACADEMY_APP_ROLE;
 if (window.AcademyRoleUi?.enabled(demoAppRole)) {
+  teachers.push({ name:"박지민", role:"담당 교사", subject:"고등 수학", detail:"개념 정리와 내신 대비" });
   classes.push(
     { id:"middle-two-mon", day:"월", dayNumber:16, group:"중2 심화반", time:"16:00–17:30", teacher:"이도현", room:"강의실 A" },
     { id:"middle-one-mon", day:"월", dayNumber:16, group:"중1 개념반", time:"18:00–19:30", teacher:"김하람", room:"강의실 B" },
+    { id:"high-two-fri", day:"금", dayNumber:13, group:"고2 개념반", time:"17:00–18:30", teacher:"박지민", room:"강의실 C" },
   );
 }
 if (window.AcademyRoleUi?.enabled(demoAppRole)) {
@@ -720,7 +722,8 @@ function ownerSettings() {
     const settingRow = (id, label, value) => `<button class="demo-setting-row" type="button" data-action="setting-field" data-id="${id}">
       <span>${label}</span><span data-setting-value>${escapeHtml(value)}</span><span aria-hidden="true">›</span></button>`;
     const group = (title, rows) => `<section class="demo-setting-group"><h2>${title}</h2>${rows}</section>`;
-    return header("운영 설정", "변경할 항목을 선택하세요.")
+    return header("학원 설정", "변경할 항목을 선택하세요.")
+      + window.DemoStaffOperations.settings()
       + group("학원 정보", settingRow("academyName", "학원 이름", demoWebsiteProfile().name))
       + group("출결", settingRow("lateMinutes", "지각 기준", lateSettingLabel(state.settings.lateMinutes)))
       + group("알림", settingRow("channel", "출결 알림 채널", channelSettingLabel(state.settings.channel)))
@@ -1250,7 +1253,7 @@ function render() {
   else if (activeScreen === "operations") content.innerHTML = window.DemoStaffOperations.operations(roleHomeOptions());
   else if (activeScreen === "staff-leave") content.innerHTML = window.DemoStaffOperations.leave(staffOperationsContext());
   else if (activeScreen === "staff-pay") content.innerHTML = window.DemoStaffOperations.pay(staffOperationsContext());
-  else if (activeScreen === "my-work") content.innerHTML = window.DemoStaffOperations.myWork();
+  else if (activeScreen === "my-work") content.innerHTML = window.DemoStaffOperations.myWork(staffOperationsContext());
   else if (activeScreen === "timetable") content.innerHTML = demoSite.timetableEditor();
   else if (activeScreen === "tuition") content.innerHTML = window.DemoTuition.render(tuitionContext());
   else if (activeScreen === "schedule") content.innerHTML = calendarView();
@@ -1751,7 +1754,7 @@ function tuitionContext() {
 
 function staffOperationsContext() {
   const context = homeV3Context();
-  return { ...context, lessons:scheduledClasses() };
+  return { ...context, lessons:scheduledClasses(), staffName:demoSite?.teacherName };
 }
 
 function showHomeNotice(id) {

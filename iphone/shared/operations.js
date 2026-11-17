@@ -4,13 +4,40 @@
 
   const storageKey = "gradient-demo-staff-operations";
   const today = "2026-11-16";
+  const calculator = window.AcademyWorkforceCalculator;
+  const estimateLabel = calculator.payrollEstimateLabel;
   const payroll = [
-    { id:"dohyeon", name:"이도현", kind:"시급 강사", hours:46, wage:30000, baseLeave:15, used:4 },
-    { id:"haram", name:"김하람", kind:"주 12시간 · 시급 강사", hours:44, wage:20000, academyLeave:3 },
-    { id:"haneul", name:"정하늘", kind:"원장", hours:0, wage:0, basePay:1860000 },
+    { id:"dohyeon", accountId:"demo-teacher", name:"이도현", kind:"시급 강사", hireDate:"2025-01-07", scenario:"hourly20" },
+    { id:"haram", accountId:"demo-teacher-2", name:"김하람", kind:"시급 알바", hireDate:"2026-08-03", scenario:"hourly12", academyDays:3 },
+    { id:"jimin", accountId:"demo-teacher-3", name:"박지민", kind:"비율제 프리랜서", hireDate:"2026-02-02", scenario:"freelancer40" },
+    { id:"owner", accountId:"demo-owner", name:"김서윤", kind:"대표자", scenario:"representative" },
   ];
-  const payFor = (staff) => staff.basePay ?? staff.hours * staff.wage;
   const currentStaff = payroll[0];
+  const representative = payroll.find(({ id }) => id === "owner");
+  const defaultSettings = { fivePlus:true, company:"individual", includeRepresentative:false };
+  const included = (staff, data) => staff !== representative || (data.settings.company === "corporation" && data.settings.includeRepresentative);
+  function payInput(staff, data) {
+    const input = { ...calculator.scenarios[staff.scenario].payrollInput, regularStaffCountAtLeastFive:data.settings.fivePlus };
+    const wage = data.hourlyRates[staff.id];
+    if (wage == null || input.employment !== "hourly") return input;
+    const updated = { ...input, hourlyRate:wage };
+    const gross = calculator.calculatePayroll(updated).gross;
+    updated.insurance = Object.fromEntries(Object.entries(input.insurance ?? {})
+      .map(([name, value]) => [name, value == null ? value : gross]));
+    if (input.withholding) updated.withholding = { ...input.withholding, taxableMonthlyPay:gross };
+    return updated;
+  }
+  const payFor = (staff, data) => calculator.calculatePayroll(payInput(staff, data));
+  // The demo clock is November 16. Two fixture weeks have finished, whereas
+  // the payroll scenario projects four full weeks for the November estimate.
+  const recordedWeekEnds = ["2026-11-08","2026-11-15"];
+  const monthlyMinutes = (staff,data) => payInput(staff,data).workMinutes ?? 0;
+  function recordedMinutes(staff,data) {
+    const weeks = payInput(staff,data).weeks ?? [];
+    return recordedWeekEnds.reduce((total,end,index) =>
+      total + (end <= today && weeks[index]?.allScheduledDaysWorked ? weeks[index].scheduledMinutes : 0),0);
+  }
+  const weeklyHours = (staff, data) => payInput(staff,data).scheduledWeeklyMinutes / 60;
   const weekday = (date) => "일월화수목금토"[new Date(date + "T00:00:00Z").getUTCDay()];
   const dateText = (value) => {
     const [, month, day] = value.split("-").map(Number);
@@ -20,11 +47,15 @@
   const amount = (value) => whole.format(value);
   const won = (value) => `${amount(value)}원`;
   const conciseWon = (value) => value % 10000 === 0 ? `${amount(value / 10000)}만원` : won(value);
+  const duration = (minutes) => `${amount(Math.floor(minutes / 60))}시간${minutes % 60 ? ` ${amount(minutes % 60)}분` : ""}`;
+  const estimated = (value) => value == null ? "확인 필요" : won(value);
   const initial = () => ({
     requests: [
       { id:"leave-demo-1", staffId:currentStaff.id, date:"2026-11-20", unit:"day", kind:"annual", reason:"개인 일정", status:"pending" },
       { id:"leave-demo-cover", staffId:"haram", date:today, unit:"day", kind:"academy", reason:"개인 일정", status:"approved", substitute:currentStaff.id },
     ],
+    settings:{ ...defaultSettings },
+    hourlyRates:{},
     attendance:"idle",
     approvedTime:false,
     finalized:false,
@@ -37,7 +68,7 @@
   function read() {
     try {
       const stored = JSON.parse(localStorage.getItem(storageKey) ?? "null");
-      if (Array.isArray(stored?.requests)) return stored;
+      if (Array.isArray(stored?.requests)) return { ...initial(), ...stored, settings:{ ...defaultSettings, ...stored.settings } };
     } catch { /* Restricted browsers can still run the fixture in memory. */ }
     return memory ??= initial();
   }
@@ -80,9 +111,11 @@
     `<button type="button" class="${css}" ${nav(id)}>${graphic ? icon(graphic) : ""}${label}</button>`;
   const pill = (id, label = "전체") => link(id, `${label}${icon("arrow")}`, "ops-pill");
   const avatar = (name) => `<span class="ops-avatar" aria-hidden="true">${text(name[0])}</span>`;
-  const money = () => payroll.reduce((total, person) => total + payFor(person), 0);
+  const money = (data) => payroll.filter((staff) => included(staff,data)).reduce((total, staff) => total + payFor(staff,data).gross, 0);
   const pending = (data) => data.requests.filter((entry) => entry.status === "pending");
   const person = (id) => payroll.find((member) => member.id === id);
+  const nameFor = (staff,ctx) => ctx?.staffName?.(staff.accountId) || staff.name;
+  const ownsLesson = (staff,lesson) => lesson.teacherId ? lesson.teacherId === staff.accountId : lesson.teacher === staff.name;
   const validDate = (date) => {
     if (!/^2026-\d{2}-\d{2}$/.test(date)) return false;
     const value = new Date(date + "T00:00:00Z");
@@ -92,11 +125,48 @@
   const kinds = { annual:"연차", academy:"학원 휴가" };
   const statuses = { pending:"승인 대기", approved:"승인 완료", rejected:"거절" };
 
-  function remaining(staff, data) {
-    if (staff.baseLeave == null && staff.academyLeave == null) return null;
-    const paidDays = data.requests.filter((entry) => entry.staffId === staff.id && entry.status === "approved")
-      .reduce((total, entry) => total + (entry.unit === "day" ? 1 : entry.unit === "half" ? 0.5 : entry.hours / 8), 0);
-    return Math.max(0, (staff.baseLeave ?? staff.academyLeave) - (staff.used ?? 0) - paidDays);
+  function leaveCharge(staff, entry, data) {
+    const workDay = Math.round(weeklyHours(staff,data) * 60 / 5);
+    return entry.unit === "day" ? workDay : entry.unit === "half" ? Math.round(workDay / 2) : entry.hours * 60;
+  }
+
+  function leaveFor(staff, data) {
+    const sample = staff === currentStaff ? calculator.scenarios.leave20.leaveInput : {};
+    const selfGranted = (staff.academyDays ?? 0) * leaveCharge(staff, {unit:"day"}, data);
+    const newLeaveMinutes = data.requests.filter((entry) => entry.staffId === staff.id && entry.status === "approved")
+      .reduce((total, entry) => total + leaveCharge(staff,entry,data), 0);
+    return calculator.calculateLeave({
+      completedMonthlyAttendance:0, priorYearAttendanceBasisPoints:0, ...sample,
+      employment:payInput(staff,data).employment, regularStaffCountAtLeastFive:data.settings.fivePlus,
+      scheduledWeeklyMinutes:weeklyHours(staff,data) * 60, hireDate:staff.hireDate ?? today,
+      asOfDate:"2026-11-17", selfGrantedMinutes:selfGranted, usedMinutes:(sample.usedMinutes ?? 0) + newLeaveMinutes,
+    });
+  }
+
+  function alerts(opts, data, tuition) {
+    const openLeave = pending(data).length;
+    const problems = [
+      ["staff-leave", openLeave, `휴가 승인 ${openLeave}건`],
+      ["tuition", tuition.unpaid, `미납 ${tuition.unpaid}명`],
+      ["learning", opts.reviewCount, `검사 대기 ${opts.reviewCount}건`],
+    ].filter(([, count]) => count);
+    return problems.length ? `<nav class="ops-alerts" aria-label="처리할 일">${problems
+      .map(([id,, label]) => `<button type="button" ${nav(id)}><i aria-hidden="true"></i>${label}</button>`).join("")}</nav>` : "";
+  }
+
+  function homeAlerts(opts) { return alerts(opts,read(),window.DemoTuition.metrics()); }
+
+  function settings() {
+    const { company, fivePlus, includeRepresentative } = read().settings;
+    return `<section class="demo-setting-group ops-pay-settings"><h2>근무·급여</h2>
+      <button type="button" class="demo-setting-row" data-staff-operation="headcount" role="switch" aria-checked="${fivePlus}" aria-label="상시 근로자 5인 이상">
+        <span>상시 근로자 5인 이상</span><span data-setting-value>${fivePlus ? "켜짐" : "꺼짐"}</span><span class="demo-switch" aria-hidden="true"></span></button>
+      <button type="button" class="demo-setting-row" data-staff-operation="company"><span>사업 형태</span><span data-setting-value>
+        ${company === "corporation" ? "법인" : "개인사업자"}</span><span aria-hidden="true">›</span></button>
+      ${company === "corporation" ? `<button type="button" class="demo-setting-row" data-staff-operation="representative" role="switch"
+        aria-checked="${includeRepresentative}" aria-label="법인 대표 급여 계산에 포함">
+        <span>법인 대표 급여 계산에 포함</span><span data-setting-value>${includeRepresentative ? "켜짐" : "꺼짐"}</span><span class="demo-switch" aria-hidden="true"></span></button>` : ""}
+    </section>`;
   }
 
   function header(title, back) {
@@ -104,18 +174,14 @@
   }
 
   function operations(opts) {
+    selectedStaff = undefined;
     const data = read();
     const tuition = window.DemoTuition.metrics();
     const openLeave = pending(data).length;
-    const problems = [
-      ["staff-leave", openLeave, `휴가 승인 ${openLeave}건`],
-      ["tuition", tuition.unpaid, `미납 ${tuition.unpaid}명`],
-      ["learning", opts.reviewCount, `검사 대기 ${opts.reviewCount}건`],
-    ];
     const groups = [
       ["돈", [
         ["tuition","wallet","수납 관리",tuition.outstanding ? `미수납 ${conciseWon(tuition.outstanding)}` : "미수납 없음", tuition.outstanding > 0],
-        ["staff-pay","wages","근무·급여",`11월 예상 ${conciseWon(money())}`],
+        ["staff-pay","wages","근무·급여",`11월 예상 ${conciseWon(money(data))}`],
       ]],
       ["강사·수업", [
         ["staff-leave","plane","강사 휴가·대타",openLeave ? `승인 대기 ${openLeave}건` : "승인 대기 없음", openLeave > 0],
@@ -133,8 +199,7 @@
     ];
     return `<div class="ops-page" data-staff-screen="operations">
       <header class="ops-heading"><h1>운영</h1><span>${text(opts.profile.name)}</span></header>
-      ${problems.some(([, count]) => count) ? `<nav class="ops-alerts" aria-label="처리할 일">${problems.filter(([, count]) => count)
-        .map(([id,, label]) => `<button type="button" ${nav(id)}><i aria-hidden="true"></i>${label}</button>`).join("")}</nav>` : ""}
+      ${alerts(opts,data,tuition)}
       ${groups.map(([title, tiles]) => `<section class="ops-category"><h2>${title}</h2><div class="ops-tiles${tiles.length === 3 ? " ops-tiles-three" : ""}">
         ${tiles.map(([id, graphic, label, summary, urgent]) => `<button type="button" class="ops-tile" ${id === "banners" ? 'data-v3-banner-action="manage"' : nav(id)}>
           ${icon(graphic)}<strong>${label}</strong><small${urgent ? ' class="ops-urgent"' : ""}>${text(summary)}</small></button>`).join("")}</div></section>`).join("")}
@@ -149,25 +214,25 @@
 
   function teacherHome() {
     const data = read();
-    const days = remaining(currentStaff, data);
+    const leave = leaveFor(currentStaff,data);
     return `<section class="demo-v3-section ops-home-work" aria-labelledby="ops-teacher-home">
       <header class="demo-v3-section-heading"><h2 id="ops-teacher-home">내 근무·휴가</h2>${pill("my-work")}</header>
-      <dl class="ops-metrics"><div><dt>이번 달 근무</dt><dd>${currentStaff.hours}<small>시간</small></dd></div>
-      <div><dt>예상 급여</dt><dd>${amount(payFor(currentStaff) / 10000)}<small>만원</small></dd></div>
-      <div><dt>남은 휴가</dt><dd>${amount(days)}<small>일</small></dd></div></dl>
+      <dl class="ops-metrics"><div><dt>11월 16일까지 근무</dt><dd>${amount(recordedMinutes(currentStaff,data) / 60)}<small>시간</small></dd></div>
+      <div><dt>예상 급여</dt><dd>${amount(payFor(currentStaff,data).gross / 10000)}<small>만원</small></dd></div>
+      <div><dt>남은 휴가</dt><dd>${amount(leave.remainingMinutes / 60)}<small>시간</small></dd></div></dl>
       <div class="ops-actions">${action("my-statement","내 명세서",{icon:"file"})}${action("request","휴가 신청",{variant:"primary",icon:"plane"})}</div>
     </section>`;
   }
 
   function lessonsFor(staff, entry, lessons) {
-    return lessons.filter((lesson) => lesson.teacher === staff.name && lesson.day === weekday(entry.date));
+    return lessons.filter((lesson) => ownsLesson(staff,lesson) && lesson.day === weekday(entry.date));
   }
 
   function substituteOptions(data, entry, lessons) {
     const member = person(entry.staffId);
     const coverage = lessonsFor(member, entry, lessons);
     if (!coverage.length) return [];
-    return payroll.filter((staff) => staff.id !== member.id && staff.id !== "haneul"
+    return payroll.filter((staff) => staff.id !== member.id && staff !== representative
       && !data.requests.some((leave) => leave.status === "approved" && leave.date === entry.date && leave.staffId === staff.id)
       && coverage.every((lesson) => {
         const [start, end] = lesson.time.split("–");
@@ -181,38 +246,40 @@
       }));
   }
 
-  function balances(data) {
+  function balances(data,ctx) {
     return `<section class="ops-balances"><h2>강사별 남은 휴가</h2><ul>${payroll.map((staff) => {
-      const days = remaining(staff, data);
-      const detail = staff.baseLeave != null ? `법정 연차 ${staff.baseLeave}일 중 ${amount(staff.baseLeave - days)}일 사용` :
-        staff.academyLeave != null ? "주 12시간 · 법정 연차 대상 아님 · 학원 휴가" : "—";
-      return `<li>${avatar(staff.name)}<span><strong>${staff.name}${staff.id === "haneul" ? " (원장)" : ""}</strong><small>${detail}</small></span>
-        <b>${days == null ? "—" : `${amount(days)}일`}</b></li>`;
+      const leave = leaveFor(staff,data);
+      const detail = staff === representative ? "대표자" : leave.eligible ? `법정 연차 ${duration(leave.statutoryMinutes)}`
+        : [weeklyHours(staff,data) && `주 ${weeklyHours(staff,data)}시간`, "법정 연차 대상 아님", staff.academyDays && "학원 휴가"].filter(Boolean).join(" · ");
+      const name = nameFor(staff,ctx);
+      return `<li>${avatar(name)}<span><strong>${text(name)}${staff === representative ? " (대표자)" : ""}</strong><small>${detail}</small></span>
+        <b>${staff === representative ? "—" : duration(leave.remainingMinutes)}</b></li>`;
     }).join("")}</ul></section>`;
   }
 
   function approval(entry, data, ctx) {
     const staff = person(entry.staffId);
+    const name = nameFor(staff,ctx);
     const coverage = lessonsFor(staff, entry, ctx.lessons);
     const choices = substituteOptions(data, entry, ctx.lessons);
     const coverageLabel = coverage.map((lesson) => `${lesson.group} ${lesson.time}`).join(" · ");
     return `<article class="ops-card" data-ops-request="${text(entry.id)}">
-      <header class="ops-person">${avatar(staff.name)}<div><h2>${staff.name} 선생님</h2><p>${dateText(entry.date)} · ${units[entry.unit]}${entry.unit === "hour" ? `${entry.hours}시간` : ""} · ${kinds[entry.kind]}</p></div></header>
+      <header class="ops-person">${avatar(name)}<div><h2>${text(name)} 선생님</h2><p>${dateText(entry.date)} · ${units[entry.unit]}${entry.unit === "hour" ? `${entry.hours}시간` : ""} · ${kinds[entry.kind]}</p></div></header>
       <p class="ops-secondary-text">사유: ${text(entry.reason || "미입력")}</p>
       <dl class="ops-request-info"><div><dt>그날 수업</dt><dd>${text(coverageLabel || "예정된 수업 없음")}</dd></div>
       ${coverage.length && choices.length ? `<div><dt><label for="substitute-${text(entry.id)}">대체 강사</label></dt><dd><select id="substitute-${text(entry.id)}">
-        ${choices.map((member) => `<option value="${member.id}">${member.name} 선생님</option>`).join("")}</select></dd></div>` : ""}</dl>
+        ${choices.map((member) => `<option value="${member.id}">${text(nameFor(member,ctx))} 선생님</option>`).join("")}</select></dd></div>` : ""}</dl>
       ${coverage.length ? `<p class="ops-available${choices.length ? "" : " ops-urgent"}">${choices.length === 1
-        ? `${choices[0].name} 선생님은 그 시간 비어 있어요` : choices.length ? "해당 시간에 빈 강사만 표시해요" : "해당 시간에 비어 있는 강사가 없어요"}</p>` : ""}
+        ? `${text(nameFor(choices[0],ctx))} 선생님은 그 시간 비어 있어요` : choices.length ? "해당 시간에 빈 강사만 표시해요" : "해당 시간에 비어 있는 강사가 없어요"}</p>` : ""}
       <div class="ops-actions">${action("reject","거절",{id:entry.id,variant:"danger"})}${(!coverage.length || choices.length)
         ? action("approve",coverage.length ? "승인하고 대타 배정" : "휴가 승인",{id:entry.id,variant:"primary"}) : ""}</div>
     </article>`;
   }
 
-  function requestsList(entries) {
+  function requestsList(entries,ctx) {
     if (!entries.length) return '<p class="ops-empty">등록된 휴가가 없어요.</p>';
-    return `<ul class="ops-records">${entries.map((entry) => `<li><div><strong>${person(entry.staffId).name} · ${dateText(entry.date)}</strong>
-      <small>${units[entry.unit]} · ${kinds[entry.kind]}${entry.substitute ? ` · 대타 ${person(entry.substitute).name}` : ""}</small></div>
+    return `<ul class="ops-records">${entries.map((entry) => `<li><div><strong>${text(nameFor(person(entry.staffId),ctx))} · ${dateText(entry.date)}</strong>
+      <small>${units[entry.unit]} · ${kinds[entry.kind]}${entry.substitute ? ` · 대타 ${text(nameFor(person(entry.substitute),ctx))}` : ""}</small></div>
       <b>${statuses[entry.status]}</b></li>`).join("")}</ul>`;
   }
 
@@ -222,50 +289,120 @@
     const tabs = [["pending",`승인 대기 ${waiting.length}`],["month","이번 달"],["staff","강사별 휴가"]];
     return `<div class="ops-page" data-staff-screen="leave">${header("강사 휴가·대타","operations")}
       <nav class="ops-segments" aria-label="휴가 보기">${tabs.map(([id,label]) => `<button type="button" aria-pressed="${tab === id}" data-staff-operation="leave-tab" data-staff-id="${id}">${label}</button>`).join("")}</nav>
-      ${tab === "pending" ? `${waiting.map((entry) => approval(entry, data, ctx)).join("") || '<p class="ops-empty">승인 대기 중인 휴가가 없어요.</p>'}${balances(data)}`
-        : tab === "month" ? requestsList(data.requests.filter((entry) => entry.date.startsWith("2026-11"))) : balances(data)}
+      ${tab === "pending" ? `${waiting.map((entry) => approval(entry, data, ctx)).join("") || '<p class="ops-empty">승인 대기 중인 휴가가 없어요.</p>'}${balances(data,ctx)}`
+        : tab === "month" ? requestsList(data.requests.filter((entry) => entry.date.startsWith("2026-11")),ctx) : balances(data,ctx)}
     </div>`;
   }
 
-  function staffCard(staff, data, lessons) {
-    const classes = [...new Set(lessons.filter((lesson) => lesson.teacher === staff.name).map((lesson) => lesson.group))];
-    const days = remaining(staff, data);
+  function staffCard(staff, data, ctx) {
+    const name = nameFor(staff,ctx);
+    const classes = [...new Set(ctx.lessons.filter((lesson) => ownsLesson(staff,lesson)).map((lesson) => lesson.group))];
+    if (!included(staff,data)) return `<div class="ops-pay-row ops-representative">
+      ${avatar(name)}<div><strong>${text(name)}</strong><span>대표자 · 급여 계산 제외</span></div></div>`;
+    const leave = leaveFor(staff,data);
+    const forecast = monthlyMinutes(staff,data);
     return `<button type="button" class="ops-pay-row" data-staff-operation="open-staff" data-staff-id="${staff.id}">
-      ${avatar(staff.name)}<div><strong>${staff.name}</strong><small>${text([staff.kind, ...classes].join(" · "))}</small>
-      <span>${staff.hours}시간 · ${won(payFor(staff))} · 휴가 ${days == null ? "—" : `${amount(days)}일`}</span></div>${icon("arrow")}</button>`;
+      ${avatar(name)}<div><strong>${text(name)}</strong><small>${text([staff.kind, ...classes].join(" · "))}</small>
+      ${forecast ? `<span>11월 16일까지 ${duration(recordedMinutes(staff,data))} · 월 예상 ${duration(forecast)}</span>` : ""}
+      <span>${won(payFor(staff,data).gross)} · 휴가 ${duration(leave.remainingMinutes)}</span></div>${icon("arrow")}</button>`;
+  }
+
+  function staffProfile(staff, data) {
+    const input = payInput(staff,data);
+    return `<dl class="ops-request-info ops-staff-profile">
+      <div><dt>고용형태</dt><dd>${staff.kind}</dd></div>
+      <div><dt>주 소정근로시간</dt><dd>${amount(weeklyHours(staff,data))}시간</dd></div>
+      <div><dt>입사일</dt><dd>${staff.hireDate ?? "—"}</dd></div>
+      ${input.hourlyRate != null ? `<div><dt>시급</dt><dd>${won(input.hourlyRate)}</dd></div>` : ""}</dl>`;
+  }
+
+  function workRecord(staff, data) {
+    const input = payInput(staff,data);
+    const leave = leaveFor(staff,data);
+    return `<section class="ops-card"><h2>11월 근무 기록</h2><dl class="ops-request-info">
+      <div><dt>주 소정근로시간</dt><dd>${duration(input.scheduledWeeklyMinutes)}</dd></div>
+      <div><dt>11월 16일까지 실근무</dt><dd>${duration(recordedMinutes(staff,data))}</dd></div>
+      <div><dt>이번 달 예상 근무</dt><dd>${duration(input.workMinutes ?? 0)}</dd></div>
+      <div><dt>주휴</dt><dd>${(input.weeks?.length ?? 0) ? `${duration(Math.round(payFor(staff,data).weeklyHolidayMinutes / input.weeks.length))} / 주` : "해당 없음"}</dd></div>
+      <div><dt>법정 연차</dt><dd>${leave.eligible ? duration(leave.statutoryMinutes) : "대상 아님"}</dd></div>
+      <div><dt>근무 확인</dt><dd>${staff === currentStaff && data.approvedTime ? "승인 완료" : "승인 대기"}</dd></div></dl></section>`;
   }
 
   function pay(ctx) {
     const data = read();
-    const staff = person(selectedStaff);
+    const selected = person(selectedStaff);
+    const staff = selected && included(selected,data) ? selected : null;
     return `<div class="ops-page" data-staff-screen="pay">${header("근무·급여","operations")}
-      <div class="ops-pay-summary"><span>11월 예상 인건비</span><strong>${won(money())}</strong><small>최종 신고는 세무사 확인</small></div>
-      ${staff ? `<section class="ops-card"><div class="ops-person">${avatar(staff.name)}<div><h2>${staff.name}</h2><p>${staff.kind}</p></div></div>
-        <dl class="ops-request-info"><div><dt>이번 달 근무</dt><dd>${staff.hours}시간</dd></div><div><dt>예상 급여</dt><dd>${won(payFor(staff))}</dd></div>
-        <div><dt>근무 확인</dt><dd>${data.approvedTime ? "승인 완료" : "승인 대기"}</dd></div></dl>
-        <div class="ops-actions">${action("close-staff","강사 목록")}${staff.id === currentStaff.id && !data.approvedTime ? action("approve-time","근무 승인",{variant:"primary"}) : action("staff-statement","명세서",{id:staff.id})}</div></section>`
-        : `<div class="ops-pay-list">${payroll.map((member) => staffCard(member, data, ctx.lessons)).join("")}</div>
+      <div class="ops-pay-summary"><span>11월 예상 인건비</span><strong>${won(money(data))}</strong><small>${text(estimateLabel)}</small></div>
+      ${staff ? `<section class="ops-card"><div class="ops-person">${avatar(nameFor(staff,ctx))}<div><h2>${text(nameFor(staff,ctx))}</h2><p>${staff.kind}</p></div></div>
+        ${staffProfile(staff,data)}
+        <div class="ops-actions">${action("close-staff","강사 목록")}
+          ${payInput(staff,data).hourlyRate == null ? "" : action("edit-wage","시급 편집",{id:staff.id})}
+          ${action("staff-statement","명세서",{id:staff.id,variant:"primary"})}</div></section>
+        ${workRecord(staff,data)}
+        ${staff === currentStaff && !data.approvedTime ? action("approve-time","근무 승인") : ""}${statementMarkup(staff,data,ctx)}`
+        : `<div class="ops-pay-list">${payroll.map((member) => staffCard(member,data,ctx)).join("")}</div>
           ${data.finalized ? '<p class="ops-empty">가상 11월 급여를 마감했어요.</p>' : action("finalize","11월 가상 급여 마감",{variant:"primary"})}`}
     </div>`;
   }
 
-  function myWork() {
+  function myWork(ctx) {
     const data = read();
     const label = data.attendance === "idle" ? "출근 체험" : data.attendance === "in" ? "퇴근 체험" : "오늘 퇴근 완료";
     return `<div class="ops-page" data-staff-screen="my-work">${header("내 근무·휴가","home")}
       <nav class="ops-segments" aria-label="내 근무·휴가 보기">${[["work","내 근무"],["leave","내 휴가"],["statement","내 명세서"]].map(([id,name]) =>
       `<button type="button" aria-pressed="${workTab === id}" data-staff-operation="work-tab" data-staff-id="${id}">${name}</button>`).join("")}</nav>
-      ${workTab === "work" ? `<div class="ops-card"><h2>11월 근무</h2><p>${currentStaff.hours}시간 · ${data.approvedTime ? "승인 완료" : "승인 대기"}</p>
-        ${data.attendance === "out" ? `<p>${label}</p>` : action("attend",label,{variant:"primary"})}</div>`
-        : workTab === "leave" ? `<div class="ops-card"><h2>남은 휴가 ${amount(remaining(currentStaff, data))}일</h2>${requestsList(data.requests.filter((entry) => entry.staffId === currentStaff.id))}
-          ${action("request","휴가 신청",{variant:"primary",icon:"plane"})}</div>` : statementMarkup(currentStaff)}
+      ${workTab === "work" ? `${workRecord(currentStaff,data)}
+        ${data.attendance === "out" ? `<p>${label}</p>` : action("attend",label,{variant:"primary"})}`
+        : workTab === "leave" ? `<div class="ops-card"><h2>남은 휴가 ${duration(leaveFor(currentStaff,data).remainingMinutes)}</h2>${requestsList(data.requests.filter((entry) => entry.staffId === currentStaff.id),ctx)}
+          ${action("request","휴가 신청",{variant:"primary",icon:"plane"})}</div>` : statementMarkup(currentStaff,data,ctx)}
     </div>`;
   }
 
-  function statementMarkup(staff) {
-    return `<section class="ops-card"><h2>11월 예상 급여 · 가상 명세서</h2><dl class="ops-request-info">
-      ${staff.basePay == null ? `<div><dt>시급 × 근무시간</dt><dd>${won(staff.wage)} × ${staff.hours}시간</dd></div>` : ""}
-      <div><dt>예상 급여</dt><dd>${won(payFor(staff))}</dd></div></dl><p>최종 신고는 세무사 확인</p></section>`;
+  function statementMarkup(staff, data, ctx) {
+    const input = payInput(staff,data);
+    const pay = payFor(staff,data);
+    const freelance = input.employment === "freelancer";
+    const payments = input.tuitionTransactions ?? [];
+    const refunds = payments.filter(({ amount }) => amount < 0);
+    const rows = (items) => items.map(({key,label,amount:lineAmount,formula}) => {
+      const basic = { hourly:"기본급 (시급)", fixed:"기본급 (월급)" }[key];
+      return `<div><dt>${text(basic ?? label)}${formula ? `<small>${text(formula)}</small>` : ""}</dt><dd>${estimated(lineAmount)}</dd></div>`;
+    }).join("");
+    return `<section class="ops-card ops-statement" aria-label="${text(nameFor(staff,ctx))} 급여 명세서"><h2>11월 예상 급여 · 가상 명세서</h2>
+      <p>${text(estimateLabel)}</p>
+      ${payments.length ? `<p>수납 ${won(payments.filter(({ amount }) => amount > 0).reduce((sum, entry) => sum + entry.amount,0))}
+        · 환불 ${refunds.length}건 (${won(refunds.reduce((sum, entry) => sum + entry.amount,0))})</p>` : ""}
+      <h3>지급 항목</h3><dl class="ops-request-info">${rows(pay.earnings)}<div><dt>지급 합계</dt><dd>${won(pay.gross)}</dd></div></dl>
+      <h3>공제 항목</h3><dl class="ops-request-info">${rows(pay.deductions)}<div><dt>공제 합계${freelance ? " (3.3%)" : ""}</dt><dd>${estimated(pay.deductionTotal)}</dd></div></dl>
+      <dl class="ops-request-info"><div><dt>실수령 예정액</dt><dd>${estimated(pay.net)}</dd></div>
+      ${pay.minimumHourlyRate == null ? "" : `<div><dt>최저임금</dt><dd>${won(pay.minimumHourlyRate)} / 시간</dd></div>
+        <div><dt>비교 시급</dt><dd>${estimated(pay.effectiveHourlyRate)} / 시간</dd></div>`}</dl>
+      ${pay.minimumWageWarning ? '<p class="ops-low-wage" role="status">최저임금보다 낮아요.</p>' : ""}
+    </section>`;
+  }
+
+  function editWage(staff, opener, ctx) {
+    const data = read();
+    const input = payInput(staff,data);
+    if (input.hourlyRate == null) return;
+    const { minimumHourlyRate } = payFor(staff,data);
+    ctx.openSheet("시급 편집", `<label>시급 (원)<input type="number" inputmode="numeric" name="hourly-rate"
+      value="${input.hourlyRate}" required min="1" max="1000000" step="1"></label>
+      <p>2026년 최저임금 ${won(minimumHourlyRate)} / 시간</p><p data-ops-wage-warning class="ops-low-wage" role="status" hidden>최저임금보다 낮아요.</p>`,
+    (fields) => {
+      const value = Number(fields.get("hourly-rate"));
+      if (!Number.isSafeInteger(value) || value < 1 || value > 1000000) return "시급을 1원 이상 입력해 주세요.";
+      const current = read();
+      current.hourlyRates[staff.id] = value;
+      write(current,ctx);
+    }, opener, { confirmLabel:"시급 저장" });
+    const sheet = document.getElementById("dialog");
+    const wage = sheet.querySelector('[name="hourly-rate"]');
+    const warning = sheet.querySelector("[data-ops-wage-warning]");
+    const refresh = () => { warning.hidden = !wage.value || Number(wage.value) >= minimumHourlyRate; };
+    wage.addEventListener("input",refresh);
+    refresh();
   }
 
   function request(opener, ctx) {
@@ -281,8 +418,9 @@
         || (unit === "hour" && !(Number.isInteger(hours) && hours >= 1 && hours <= 7))) return "날짜와 휴가 시간을 확인해 주세요.";
       if (kind === "academy") return "이 가상 강사는 별도 학원 휴가가 없어요.";
       if (data.requests.some((entry) => entry.staffId === currentStaff.id && entry.date === date && entry.status !== "rejected")) return "같은 날짜에 휴가 기록이 있어요.";
-      const days = unit === "day" ? 1 : unit === "half" ? 0.5 : hours / 8;
-      if (days > remaining(currentStaff, data)) return "남은 휴가를 확인해 주세요.";
+      const leave = leaveFor(currentStaff,data);
+      if (!leave.eligible) return "학원 설정과 법정 연차 대상 여부를 확인해 주세요.";
+      if (leaveCharge(currentStaff,{unit,hours},data) > leave.remainingMinutes) return "남은 휴가를 확인해 주세요.";
       data.requests.push({ id:crypto.randomUUID(), staffId:currentStaff.id, date, unit, kind, hours, reason:String(form.get("reason")).trim().slice(0,100), status:"pending" });
       write(data,ctx);
     },opener,{confirmLabel:"휴가 신청 보내기",successMessage:"가상 휴가 신청을 이 기기에 저장했어요."});
@@ -306,19 +444,46 @@
       return;
     }
     if (ctx.role !== "owner") return;
-    if (command === "leave-tab" && ["pending","month","staff"].includes(id)) {
+    if (command === "headcount") {
+      data.settings.fivePlus = !data.settings.fivePlus;
+      write(data,ctx,"학원 설정을 저장했어요.");
+    } else if (command === "company") {
+      ctx.openSheet("사업 형태", `<label>사업 형태<select name="company">
+        <option value="individual"${data.settings.company === "individual" ? " selected" : ""}>개인사업자</option>
+        <option value="corporation"${data.settings.company === "corporation" ? " selected" : ""}>법인</option></select></label>`,
+      (form) => {
+        const company = form.get("company");
+        if (!["individual","corporation"].includes(company)) return "사업 형태를 선택해 주세요.";
+        const current = read();
+        current.settings.company = company;
+        if (company === "individual") current.settings.includeRepresentative = false;
+        write(current,ctx);
+      }, control);
+    } else if (command === "representative" && data.settings.company === "corporation") {
+      data.settings.includeRepresentative = !data.settings.includeRepresentative;
+      write(data,ctx,"학원 설정을 저장했어요.");
+    } else if (command === "leave-tab" && ["pending","month","staff"].includes(id)) {
       tab = id;
       ctx.rerender();
-    } else if ((command === "open-staff" && person(id)) || command === "close-staff") {
+    } else if ((command === "open-staff" && person(id) && included(person(id),data)) || command === "close-staff") {
       selectedStaff = command === "open-staff" ? id : undefined;
       ctx.rerender();
-    } else if (command === "staff-statement" && person(id)) {
-      ctx.openSheet("가상 명세서", statementMarkup(person(id)), undefined, control, {closeOnly:true});
+    } else if (command === "staff-statement" && person(id) && included(person(id),data)) {
+      ctx.openSheet("가상 명세서", statementMarkup(person(id),data,ctx), undefined, control, {closeOnly:true});
+      const sheet = document.querySelector("#dialog[open]");
+      const heading = sheet?.querySelector("#dialog-title");
+      if (heading) {
+        heading.tabIndex = -1;
+        heading.focus({preventScroll:true});
+        sheet.scrollTop = 0;
+      }
+    } else if (command === "edit-wage" && person(id) && included(person(id),data)) {
+      editWage(person(id),control,ctx);
     } else if (command === "approve-time" && selectedStaff === currentStaff.id) {
       data.approvedTime = true;
       write(data,ctx,"가상 근무 기록을 승인했어요.");
     } else if (command === "finalize") {
-      ctx.openSheet("11월 가상 급여 마감", `<p>예상 급여 합계 ${won(money())}</p><p>최종 신고는 세무사 확인</p>`, () => {
+      ctx.openSheet("11월 가상 급여 마감", `<p>예상 급여 합계 ${won(money(data))}</p><p>최종 신고는 세무사 확인</p>`, () => {
         const current = read();
         current.finalized = true;
         write(current,ctx);
@@ -327,8 +492,8 @@
       const entry = data.requests.find((item) => item.id === id && item.status === "pending");
       if (!entry) return;
       const member = person(entry.staffId);
-      const days = entry.unit === "day" ? 1 : entry.unit === "half" ? 0.5 : entry.hours / 8;
-      if (command === "approve" && days > remaining(member, data)) {
+      const leave = leaveFor(member,data);
+      if (command === "approve" && ((entry.kind === "annual" && !leave.eligible) || leaveCharge(member,entry,data) > leave.remainingMinutes)) {
         ctx.announce("남은 휴가를 확인해 주세요.");
         return;
       }
@@ -347,12 +512,12 @@
   function teachingToday(lessons) {
     const leaves = read().requests.filter((entry) => entry.date === today && entry.status === "approved");
     return lessons.filter((lesson) => lesson.day === weekday(today)).flatMap((lesson) => {
-      const leave = leaves.find((entry) => person(entry.staffId)?.name === lesson.teacher);
+      const leave = leaves.find((entry) => person(entry.staffId) && ownsLesson(person(entry.staffId),lesson));
       if (leave) return leave.substitute === currentStaff.id ? [{...lesson, substitute:true}] : [];
-      return lesson.teacher === currentStaff.name ? [{...lesson, substitute:false}] : [];
+      return ownsLesson(currentStaff,lesson) ? [{...lesson, substitute:false}] : [];
     }).sort((a,b) => a.time.localeCompare(b.time));
   }
 
-  window.DemoStaffOperations = Object.freeze({ operations, schoolTile, teacherHome, leave, pay, myWork, handle, teachingToday, reset,
+  window.DemoStaffOperations = Object.freeze({ operations, homeAlerts, settings, schoolTile, teacherHome, leave, pay, myWork, handle, teachingToday, reset,
     ownsStorage:(key) => key === storageKey });
 })();
