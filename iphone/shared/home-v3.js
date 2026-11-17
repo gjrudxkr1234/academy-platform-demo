@@ -30,6 +30,7 @@
 
   const button = (label, attrs = "", style = "") => `<button class="${style}" type="button" ${attrs}>${label}</button>`;
   const navigate = id => `data-action="navigate" data-id="${text(id)}"`;
+  const tabLink = id => `${navigate(id)} data-demo-tab`;
   const homeAction = action => `data-v3-home-action="${text(action)}"`;
   const more = (label, attrs) => button(`${label}${icon("arrow")}`, attrs, "demo-v3-more");
   const academyMark = name => `<span class="demo-v3-academy-mark" aria-hidden="true">${text(String(name).trim().slice(0, 1))}</span>`;
@@ -150,9 +151,9 @@
   const showInfo = ['data-v3-home-action="profile"', "내 정보"];
   const optionsFor = {
     owner: [["홈페이지 편집", "edit", 'data-action="homepage-edit"'], ["배너", "image", 'data-v3-banner-action="manage"'], ["일정", "calendar", homeAction("calendar")], ["학원 설정", "settings", navigate("settings")]],
-    teacher: [["출석", "qr", navigate("attendance")], ["과제 검사", "book", navigate("learning")], ["일정", "calendar", homeAction("calendar")], ["공지", "bell", homeAction("notices")]],
-    student: [["과제", "book", navigate("learning")], ["성적", "chart", navigate("grades")], ["일정", "calendar", homeAction("calendar")], ["공지", "bell", homeAction("notices")]],
-    parent: [["출결", "qr", navigate("attendance")], ["성적", "chart", navigate("grades")], ["상담", "calendar", 'data-action="demo-consultation"'], ["공지", "bell", navigate("news")]],
+    teacher: [["출석", "qr", tabLink("attendance")], ["과제 검사", "book", tabLink("learning")], ["일정", "calendar", homeAction("calendar")], ["공지", "bell", homeAction("notices")]],
+    student: [["과제", "book", tabLink("learning")], ["성적", "chart", tabLink("grades")], ["일정", "calendar", homeAction("calendar")], ["공지", "bell", homeAction("notices")]],
+    parent: [["출결", "qr", tabLink("attendance")], ["성적", "chart", tabLink("learning")], ["상담", "calendar", 'data-action="demo-consultation"'], ["공지", "bell", tabLink("news")]],
   };
   function group(title, items) {
     return `<section class="demo-v3-drawer-group"><h3>${title}</h3><ul>${items.map(([attrs, label]) =>
@@ -165,14 +166,18 @@
     const academy = opts.profile;
     const contextLabel = role === "teacher" ? opts.context.replace(/\s*·\s*선생님$/,"") : opts.context;
     const profileLabel = contextLabel === roleLabel[role] ? contextLabel : [role === "teacher" ? "" : roleLabel[role],contextLabel].filter(Boolean).join(" · ");
+    const academyLinks = [[homeAction("academy"), "학원 소개"], [navigate(role === "owner" ? "timetable" : "schedule"), "수업 시간표"],
+      ...(role === "parent" ? [[navigate("tuition"), "학원비"], [homeAction("calendar"), "일정"]] : []),
+      ...(role === "teacher" ? [] : [[navigate("school-schedule"), "내신 일정"]]), [homeAction("staff"), "강사진"],
+      [role === "student" ? tabLink("learning") : navigate("video"), role === "owner" || role === "teacher" ? "영상 시청 현황" : "학습 영상"]];
     return `<header class="demo-v3-drawer-title"><h2 id="demo-v3-menu-title">메뉴</h2>${button("×", `${homeAction("close")} aria-label="메뉴 닫기"`)}</header>
       ${button(`<span class="demo-v3-avatar" aria-hidden="true">${text(opts.name?.[0])}</span><span><strong>${text(opts.name)}</strong>
       <small>${text(profileLabel)}</small></span>${icon("arrow")}`, profile, "demo-v3-profile")}
       <div class="demo-v3-drawer-academy">${button(`${academyMark(academy.name)}<strong>${text(academy.name)}</strong>`, homeAction("academy"))}
       ${academy.phone ? button(`${icon("phone")}전화`, 'data-action="demo-contact" data-id="phone"') : ""}</div>
       <nav class="demo-v3-shortcuts" aria-label="역할 바로가기">${optionsFor[role].map(([label, symbol, attrs]) => shortcut(label, symbol, attrs)).join("")}</nav>
-      ${group("학원", [[homeAction("academy"), "학원 소개"], [navigate(role === "owner" ? "timetable" : "schedule"), "수업 시간표"], ...(role === "parent" ? [[navigate("tuition"), "학원비"], [homeAction("calendar"), "일정"]] : []), [homeAction("staff"), "강사진"], [navigate("video"), "학습 영상"]])}
-      ${role === "owner" ? group("운영", [[navigate("students"), "학생·반"], [navigate("tuition"), "수납 관리"], [navigate("staff-pay"), "근무·급여"], [navigate("staff-leave"), "강사 휴가·대타"], [navigate("timetable"), "수업 시간표 관리"], [navigate("notifications"), "공지·발송"], [navigate("learning"), "과제 검사"], [navigate("grades"), "성적 리포트"]])
+      ${group("학원", academyLinks)}
+      ${role === "owner" ? group("운영", [[tabLink("students"), "학생·반"], [navigate("roster"), "학생·보호자 명부"], [navigate("tuition"), "수납 관리"], [navigate("staff-pay"), "근무·급여"], [navigate("staff-leave"), "강사 휴가·대타"], [navigate("timetable"), "수업 시간표 관리"], [navigate("notifications"), "공지·발송"], [navigate("learning"), "과제 검사"], [navigate("grades"), "성적 리포트"]])
         : role === "teacher" ? group("선생님", [[profile, "내 강사 카드"], ['data-action="homepage-edit"', "홈페이지 편집"], [navigate("my-work"), "내 근무·휴가"],
           [navigate("school-schedule"), "내신 일정"], [navigate("notifications"), "발송 기록"],
           ...(window.DemoHomeBanners.canManage(role) ? [['data-v3-banner-action="manage"', "배너 편집"]] : [])]) : ""}

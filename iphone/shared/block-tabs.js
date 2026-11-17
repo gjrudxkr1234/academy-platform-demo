@@ -247,7 +247,7 @@
       return section(`${task.title} · ${task === context.tasks[0] ? "오늘 마감" : task.due}`,block(bar + people + remind));
     }).join("");
     const unread = context.roster.filter(person => !context.state.notices.includes(person.id));
-    return page("teacher-learning","과제 검사",context.teacherGroup,alertList(alerts) + assignments
+    return page("teacher-learning","과제 검사","",alertList(alerts) + assignments
       + section("공지 확인",block(row({ title:context.notice.title, detail:unread.length ? `안 읽은 학생 ${unread.length}명` : "모두 확인했어요",
         symbol:"megaphone", end:unread.length ? control("리마인드",action("block-remind-all","notice"),{ pill:true }) : chip("완료","done") }))));
   }
@@ -319,15 +319,32 @@
   }
 
   function teacherVideo(context) {
-    return page("teacher-video","영상 시청 현황",context.teacherGroup,section(context.video.title,rows(context.roster.map(person => {
+    return page("teacher-video","영상 시청 현황","",section(context.video.title,rows(context.roster.map(person => {
       const progress = Number(context.state.progress[person.id]) || 0;
       return row({ title:person.name, initial:nameInitial(person), detail:`시청률 ${progress}%`,
         end:progress >= 90 ? chip("완료","done") : control("리마인드",action("remind",`${person.id}:영상 시청`),{ pill:true }) });
     }))));
   }
 
+  function parentVideo(context) {
+    const progress = Math.max(0, Math.min(100, Number(context.state.progress[context.learner.id]) || 0));
+    const completed = progress >= 90;
+    return page("parent-video", "학습 영상", "", rows([row({ title:context.video.title, play:progress,
+      detail:`${context.video.minutes}분 · 시청률 ${progress}%`, end:chip(completed ? "시청 완료" : "미완료", completed ? "done" : "urgent") })]), context.childPicker);
+  }
+
+  const subpages = {
+    owner: ["tuition", "learning", "roster", "grades", "notifications", "video"],
+    teacher: ["grades", "schedule"],
+    student: ["schedule"],
+    parent: ["tuition", "schedule", "video"],
+  };
+
   function scope(role, screen) {
-    const enabled = ["teacher", "student", "parent"].includes(role) && !["home","home-overview"].includes(screen);
+    const subpage = screen === "school-schedule" || subpages[role]?.includes(screen);
+    if (subpage) document.body.dataset.cSubpage = screen;
+    else delete document.body.dataset.cSubpage;
+    const enabled = subpage || ["teacher", "student", "parent"].includes(role) && !["home","home-overview"].includes(screen);
     document.body.toggleAttribute("data-c-block-scope",enabled);
   }
 
@@ -347,6 +364,7 @@
       if (screen === "attendance") return learnerAttendance(context,true);
       if (screen === "learning" || screen === "grades") return parentLearning(context,screen === "grades");
       if (screen === "news") return parentNews(context);
+      if (screen === "video") return parentVideo(context);
     }
     if (screen === "notifications" && ["teacher","student","parent"].includes(role)) return notifications(context,role);
     return null;

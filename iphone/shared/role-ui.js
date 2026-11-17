@@ -3,22 +3,22 @@
   "use strict";
   const roles = {
     owner: {
-      name: "원장", title: "오늘의 학원 운영", context: "학원 전체 · 11월 16일 월요일",
+      name: "원장", title: "오늘의 학원 운영",
       tabs: [["home", "홈", "home", ["home-overview"]], ["students", "학생·반", "people", ["roster", "school-schedule"]],
         ["attendance", "출결", "qr", ["academy-calendar"]], ["operations", "운영", "operations", ["settings", "website", "homepage-edit", "learning", "notifications", "tuition", "staff-pay", "staff-leave", "timetable", "grades", "video"]]],
     },
     teacher: {
-      name: "선생님", title: "오늘의 수업 관리", context: "이도현 선생님 · 중2 심화반",
+      name: "선생님", title: "오늘의 수업 관리",
       tabs: [["home", "홈", "home", ["home-overview", "my-work"]], ["attendance", "출결", "qr", ["schedule", "academy-calendar"]], ["learning", "과제 검사", "book", ["video"]],
         ["students", "학생", "people", ["grades", "school-schedule", "notifications", "website", "homepage-edit"]]],
     },
     student: {
-      name: "학생", title: "오늘 할 일", context: "김지우 학생 · 중2 심화반",
+      name: "학생", title: "오늘 할 일",
       tabs: [["home", "홈", "home", ["home-overview", "notifications"]], ["learning", "과제", "book", ["video"]],
         ["attendance", "출결", "qr", ["schedule", "academy-calendar"]], ["grades", "성적", "chart", ["school-schedule"]]],
     },
     parent: {
-      name: "학부모", title: "우리 아이의 하루", context: "연결된 자녀의 학습과 출결",
+      name: "학부모", title: "우리 아이의 하루",
       tabs: [["home", "홈", "home", ["home-overview"]], ["attendance", "출결", "qr", []], ["learning", "과제/성적", "chart", ["grades"]],
         ["news", "소식", "bell", ["notifications", "schedule", "school-schedule", "academy-calendar", "tuition", "video", "website"]]],
     },
@@ -58,7 +58,7 @@
   function overview(role, rows, controls) {
     const data = roles[role];
     return `<section class="demo-role-home demo-home-overview" data-role-overview="${role}">
-      <header class="demo-role-heading"><h1>${data.title}</h1><p>${data.context}</p></header>
+      <header class="demo-role-heading"><h1>${data.title}</h1></header>
       ${controls}${rowList(rows)}
     </section>`;
   }
@@ -292,7 +292,7 @@
     if (screen === "attendance") return role === "student" ? '[data-action="camera-qr"]' : role === "owner" || role === "teacher" ? '[data-action="teacher-qr"]' : null;
     if (screen === "learning") return role === "owner" || role === "teacher" ? '[data-action="review"]' : null;
     if (screen === "video" && role === "student") return '[data-action="watch-video"]';
-    if (screen === "roster" && role === "owner") return '[data-action="apply-roster"]:not(:disabled), [data-action="preview-roster"]';
+    if (screen === "roster" && role === "owner") return '.file-choice';
     if (screen === "school-schedule") return role === "student" ? '[data-action="school-demo-report"]' : role === "parent" ? null : '[data-action="school-demo-approve"]';
     if (screen === "students") return '[data-action="consultation-note"]';
     return null;

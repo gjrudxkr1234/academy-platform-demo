@@ -16,14 +16,6 @@ html[data-demo-appearance] .role-app-ui #dialog.demo-sheet:has(.demo-staff-avata
   background: var(--line);
 }
 .demo-sheet:has(.demo-staff-avatar-control) h2 { text-align: center; }
-html[data-demo-appearance] .role-app-ui #dialog.demo-sheet:has(.demo-staff-avatar-control) :is(input[type="text"], select) {
-  min-height: 48px;
-  padding: 8px 12px;
-  border: 1px solid var(--control-line, var(--line));
-  border-radius: 12px;
-  background: var(--soft, var(--bg));
-  color: var(--ink);
-}
 .demo-staff-avatar-control output { color: var(--muted); font-size: .82rem; }
 .demo-staff-avatar-control output:empty { display: none; }
 .demo-staff-avatar-trigger {

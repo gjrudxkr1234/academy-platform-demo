@@ -184,14 +184,12 @@
     const active = allowed.find((entry) => entry.id === requested);
     if (!owner && context.role !== "parent") return "";
     return `<section class="tuition-view" aria-labelledby="tuition-title">
-      <header class="tuition-heading"><span class="tuition-demo">가상 결제</span><h1 id="tuition-title">${owner ? "수납 관리" : "학원비"}</h1>
-      <p>청구·수납·환불 기록은 이 기기에 저장해요.</p></header>
+      <header class="tuition-heading"><h1 id="tuition-title">${owner ? "수납 관리" : "학원비"}</h1></header>
       ${context.childControls}
-      ${active ? details(active, context) : `${owner ? `${ownerSummary(data)}
-        <div class="tuition-actions" aria-label="수납 관리 도구">${action("청구서 만들기", "create", "", "primary")}
-          ${action("수납 설정", "settings", "", "outline")}${action("결제 켜기", "connect", "", "outline")}</div>` : ""}
+      ${active ? details(active, context) : `${owner ? ownerSummary(data) : ""}
         <section class="tuition-card"><header class="tuition-card-heading"><h2>${owner ? "청구·수납 장부" : "자녀의 청구서"}</h2></header>
-          ${invoiceList(data, context)}</section>`}
+          ${invoiceList(data, context)}${owner ? `<div class="tuition-actions" aria-label="수납 관리 도구">${action("청구서 만들기", "create", "", "primary")}
+          ${action("수납 설정", "settings", "", "outline")}${action("결제 켜기", "connect", "", "outline")}</div>` : ""}</section>`}
     </section>`;
   }
 
