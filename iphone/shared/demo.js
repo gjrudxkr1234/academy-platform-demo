@@ -2171,8 +2171,8 @@ window.academyDemoRequestReset = (afterReset) => {
     selectedLearner = null;
     consultationPeriod = "all";
     DemoSchoolAssessments.reset();
-    window.DemoTuition.reset();
-    window.DemoStaffOperations.reset();
+    window.DemoTuition?.reset();
+    window.DemoStaffOperations?.reset();
     window.DemoHomeCalendar?.reset();
     window.DemoHomeBanners?.reset();
     saveState();

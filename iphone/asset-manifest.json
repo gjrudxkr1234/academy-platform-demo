@@ -1,7 +1,7 @@
 {
   "synthetic_only": true,
   "network_required_after_preparation": false,
-  "version": "91ce802c8acf14dd",
+  "version": "62c02647824bc144",
   "assets": [
     {
       "path": "icons/owner-180.png",
@@ -66,12 +66,12 @@
     {
       "path": "index.html",
       "bytes": 2757,
-      "sha256": "99c65bc480968e99d1856463952b96ec680f32e8b1fee3fba11362b41f4296e6"
+      "sha256": "a8ac234358ace48777e47d77172f1901cc39b3c6c956a12b66f85b80e146a885"
     },
     {
       "path": "owner/index.html",
       "bytes": 8198,
-      "sha256": "3655cea091e5fdcbf2a518dfc65eb75646acf4be1ed91dbe0a0329b1eb814964"
+      "sha256": "88c89b3bb2d5fcf473d09c7a505451574903f6c9b7f9023e2b08d585a1b206cc"
     },
     {
       "path": "owner/manifest.webmanifest",
@@ -86,7 +86,7 @@
     {
       "path": "parent/index.html",
       "bytes": 8205,
-      "sha256": "89c4fb2b4c5c1ec992098e3e6ddbcccfe469160459d8a47c418e01c065859db9"
+      "sha256": "50dfa5b8b97416d767805d0ba8c8d5cc5e08de3abb54bd84645a9fb59f378fcc"
     },
     {
       "path": "parent/manifest.webmanifest",
@@ -230,8 +230,8 @@
     },
     {
       "path": "shared/demo.js",
-      "bytes": 134480,
-      "sha256": "c70a1616ced55d01d06ff08a57a194c22959c765415b9b4a1b36330f1ac1ed99"
+      "bytes": 134482,
+      "sha256": "ec9ea91c811982ebea86bde6d3646920b0f1afc846967848e0f4e15691e1f114"
     },
     {
       "path": "shared/home-v3-banners.js",
@@ -311,7 +311,7 @@
     {
       "path": "student/index.html",
       "bytes": 8200,
-      "sha256": "a3a7bd6fe2600c439ce8a2bdca7a7d82ff9d23df8685eaad11f5ea83a31c33ce"
+      "sha256": "f37d5931794f3611acdd6532d98650b3d040f4ff50ba8852221413a5c602664d"
     },
     {
       "path": "student/manifest.webmanifest",
@@ -326,7 +326,7 @@
     {
       "path": "teacher/index.html",
       "bytes": 8206,
-      "sha256": "813ba2b015335e57ecb516fea1d4457ffc4e296efd4fb810df885f12a165a8dc"
+      "sha256": "4e5301cb3c507783327e280ef4616af590a933223ad0511cff3917e91164a8c0"
     },
     {
       "path": "teacher/manifest.webmanifest",
