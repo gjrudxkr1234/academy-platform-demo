@@ -92,6 +92,7 @@
     arrow:'<path d="m9 6 6 6-6 6"/>',
     wallet:'<path d="M20 9V6H6a2 2 0 0 0 0 4h14v10H6a2 2 0 0 1-2-2V8m16 6h-4"/>',
     wages:'<path d="m4 5 4 14 4-10 4 10 4-14M3 10h18M3 14h18"/>',
+    hiring:'<rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V4h8v3M3 12h18m-11 0v2h4v-2"/>',
     plane:'<path d="m3 11 7 2 3 8 2-1-1-8 6-6a1.5 1.5 0 0 0-2-2l-6 6-8-1z"/>',
     calendar:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18"/>',
     globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18m-9 9a16 16 0 0 0 0-18m0 18a16 16 0 0 1 0-18"/>',
@@ -110,7 +111,7 @@
     `<button type="button" class="${css}" ${nav(id)}>${graphic ? icon(graphic) : ""}${label}</button>`;
   const pill = (id, label = "전체") => link(id, `${label}${icon("arrow")}`, "ops-pill");
   const avatar = (name) => `<span class="ops-avatar" aria-hidden="true">${text(name[0])}</span>`;
-  const money = (data) => payroll.filter((staff) => included(staff,data)).reduce((total, staff) => total + payFor(staff,data).gross, 0);
+  const money = (data) => payroll.filter((staff) => included(staff,data)).reduce((total, staff) => total + payFor(staff,data).gross, window.DemoHiring?.gross() ?? 0);
   const pending = (data) => data.requests.filter((entry) => entry.status === "pending");
   const person = (id) => payroll.find((member) => member.id === id);
   const nameFor = (staff,ctx) => ctx?.staffName?.(staff.accountId) || staff.name;
@@ -197,6 +198,7 @@
       ["돈", [
         ["tuition","wallet","수납 관리",tuition.outstanding ? `미수납 ${conciseWon(tuition.outstanding)}` : "미수납 없음", tuition.outstanding > 0],
         ["staff-pay","wages","근무·급여",`11월 예상 ${conciseWon(money(data))}`],
+        ["hiring","hiring","강사 채용",`게시 중 ${window.DemoHiring?.metrics() ?? 0}건`],
       ]],
       ["강사·수업", [
         ["staff-leave","plane","강사 휴가·대타",openLeave ? `승인 대기 ${openLeave}건` : "승인 대기 없음", openLeave > 0],
@@ -363,6 +365,7 @@
         ${workRecord(staff,data)}
         ${staff === currentStaff && !data.approvedTime ? action("approve-time","근무 승인") : ""}${statementMarkup(staff,data,ctx)}`
         : `<div class="ops-pay-list">${payroll.map((member) => staffCard(member,data,ctx)).join("")}</div>
+          ${window.DemoHiring?.workforce() ?? ""}
           ${data.finalized ? '<p class="ops-empty">가상 11월 급여를 마감했어요.</p>' : action("finalize","11월 가상 급여 마감",{variant:"primary"})}`}
     </div>`;
   }

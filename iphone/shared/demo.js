@@ -77,8 +77,8 @@ if (window.AcademyRoleUi?.enabled(demoAppRole)) {
 if (window.AcademyRoleUi?.enabled(demoAppRole)) {
   menus[demoAppRole].push(["home-overview", "오늘 전체 보기"], ["academy-calendar", "캘린더"]);
   if (["owner", "teacher"].includes(demoAppRole)) menus[demoAppRole].push(["homepage-edit", "홈페이지 편집"]);
-  if (demoAppRole === "owner") menus.owner.push(["operations", "운영"], ["staff-pay", "근무·급여"], ["staff-leave", "강사 휴가·대타"], ["timetable", "수업 시간표"]);
-  if (demoAppRole === "teacher") menus.teacher.push(["my-work", "내 근무·휴가"]);
+  if (demoAppRole === "owner") menus.owner.push(["operations", "운영"], ["staff-pay", "근무·급여"], ["hiring", "강사 채용"], ["staff-leave", "강사 휴가·대타"], ["timetable", "수업 시간표"]);
+  if (demoAppRole === "teacher") menus.teacher.push(["my-work", "내 근무·휴가"], ["career", "커리어"]);
   if (["owner", "parent"].includes(demoAppRole)) {
     menus[demoAppRole].push(["video", "학습 영상"], ["tuition", demoAppRole === "owner" ? "수납 관리" : "학원비"]);
   }
@@ -1452,6 +1452,8 @@ function render() {
   if (activeScreen === "website") content.innerHTML = academyWebsite();
   else if (activeScreen === "homepage-edit") content.innerHTML = demoSite.editor(window.AcademyRoleUi);
   else if (activeScreen === "operations") content.innerHTML = window.DemoStaffOperations.operations(roleHomeOptions());
+  else if (activeScreen === "hiring") content.innerHTML = window.DemoHiring.owner();
+  else if (activeScreen === "career") content.innerHTML = window.DemoHiring.teacher();
   else if (activeScreen === "staff-leave") content.innerHTML = window.DemoStaffOperations.leave(staffOperationsContext());
   else if (activeScreen === "staff-pay") content.innerHTML = window.DemoStaffOperations.pay(staffOperationsContext());
   else if (activeScreen === "my-work") content.innerHTML = window.DemoStaffOperations.myWork(staffOperationsContext());
@@ -1939,7 +1941,8 @@ window.addEventListener("resize", paintScoreCharts);
 window.addEventListener("gradient:appearance-change", paintScoreCharts);
 window.addEventListener("storage", (event) => {
   const tuitionScreen = ["home", "operations", "tuition"].includes(activeScreen) && window.DemoTuition?.ownsStorage(event.key);
-  if (!dialog.open && (tuitionScreen || window.DemoStaffOperations?.ownsStorage(event.key)) && window.AcademyRoleUi?.enabled(role)) render();
+  const hiringScreen = ["hiring", "career", "staff-pay", "operations"].includes(activeScreen) && window.DemoHiring?.ownsStorage(event.key);
+  if (!dialog.open && (tuitionScreen || hiringScreen || window.DemoStaffOperations?.ownsStorage(event.key)) && window.AcademyRoleUi?.enabled(role)) render();
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && cameraSession?.stream) dialog.close();
@@ -1986,6 +1989,11 @@ function showHomeNotice(id) {
 }
 
 document.addEventListener("click", (event) => {
+  const hiring = event.target.closest("[data-hiring-action]");
+  if (hiring && ["hiring", "career"].includes(activeScreen) && window.AcademyRoleUi?.enabled(role)) {
+    window.DemoHiring.handle(hiring, homeV3Context());
+    return;
+  }
   const staffOperation = event.target.closest("[data-staff-operation]");
   if (staffOperation && window.AcademyRoleUi?.enabled(role)) {
     window.DemoStaffOperations.handle(staffOperation, staffOperationsContext());
@@ -2123,6 +2131,10 @@ function handleBlockTabAction(action, id, control) {
 
 content.addEventListener("change", (event) => {
   const field = event.target;
+  if (field.matches("[data-hiring-filter]") && activeScreen === "career" && window.AcademyRoleUi?.enabled(role)) {
+    window.DemoHiring.filter(field, homeV3Context());
+    return;
+  }
   if (field.id === "roster-file" && role === "owner" && activeScreen === "roster") {
     const file = field.files?.[0];
     field.value = "";
@@ -2180,6 +2192,7 @@ window.academyDemoRequestReset = (afterReset) => {
     DemoSchoolAssessments.reset();
     window.DemoTuition?.reset();
     window.DemoStaffOperations?.reset();
+    window.DemoHiring?.reset();
     window.DemoHomeCalendar?.reset();
     window.DemoHomeBanners?.reset();
     saveState();

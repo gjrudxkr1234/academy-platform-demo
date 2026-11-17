@@ -5,11 +5,11 @@
     owner: {
       name: "원장", title: "오늘의 학원 운영",
       tabs: [["home", "홈", "home", ["home-overview"]], ["students", "학생·반", "people", ["roster", "school-schedule"]],
-        ["attendance", "출결", "qr", ["academy-calendar"]], ["operations", "운영", "operations", ["settings", "website", "homepage-edit", "learning", "notifications", "tuition", "staff-pay", "staff-leave", "timetable", "grades", "video"]]],
+        ["attendance", "출결", "qr", ["academy-calendar"]], ["operations", "운영", "operations", ["settings", "website", "homepage-edit", "learning", "notifications", "tuition", "staff-pay", "hiring", "staff-leave", "timetable", "grades", "video"]]],
     },
     teacher: {
       name: "선생님", title: "오늘의 수업 관리",
-      tabs: [["home", "홈", "home", ["home-overview", "my-work"]], ["attendance", "출결", "qr", ["schedule", "academy-calendar"]], ["learning", "과제 검사", "book", ["video"]],
+      tabs: [["home", "홈", "home", ["home-overview", "my-work", "career"]], ["attendance", "출결", "qr", ["schedule", "academy-calendar"]], ["learning", "과제 검사", "book", ["video"]],
         ["students", "학생", "people", ["grades", "school-schedule", "notifications", "website", "homepage-edit"]]],
     },
     student: {

@@ -177,8 +177,8 @@
       ${academy.phone ? button(`${icon("phone")}전화`, 'data-action="demo-contact" data-id="phone"') : ""}</div>
       <nav class="demo-v3-shortcuts" aria-label="역할 바로가기">${optionsFor[role].map(([label, symbol, attrs]) => shortcut(label, symbol, attrs)).join("")}</nav>
       ${group("학원", academyLinks)}
-      ${role === "owner" ? group("운영", [[tabLink("students"), "학생·반"], [navigate("roster"), "학생·보호자 명부"], [navigate("tuition"), "수납 관리"], [navigate("staff-pay"), "근무·급여"], [navigate("staff-leave"), "강사 휴가·대타"], [navigate("timetable"), "수업 시간표 관리"], [navigate("notifications"), "공지·발송"], [navigate("learning"), "과제 검사"], [navigate("grades"), "성적 리포트"]])
-        : role === "teacher" ? group("선생님", [[profile, "내 강사 카드"], ['data-action="homepage-edit"', "홈페이지 편집"], [navigate("my-work"), "내 근무·휴가"],
+      ${role === "owner" ? group("운영", [[tabLink("students"), "학생·반"], [navigate("roster"), "학생·보호자 명부"], [navigate("tuition"), "수납 관리"], [navigate("staff-pay"), "근무·급여"], [navigate("hiring"), "강사 채용"], [navigate("staff-leave"), "강사 휴가·대타"], [navigate("timetable"), "수업 시간표 관리"], [navigate("notifications"), "공지·발송"], [navigate("learning"), "과제 검사"], [navigate("grades"), "성적 리포트"]])
+        : role === "teacher" ? group("선생님", [[profile, "내 강사 카드"], ['data-action="homepage-edit"', "홈페이지 편집"], [navigate("my-work"), "내 근무·휴가"], [navigate("career"), "커리어"],
           [navigate("school-schedule"), "내신 일정"], [navigate("notifications"), "발송 기록"],
           ...(window.DemoHomeBanners.canManage(role) ? [['data-v3-banner-action="manage"', "배너 편집"]] : [])]) : ""}
       <section class="demo-v3-drawer-group"><h3>설정</h3><label class="demo-v3-theme-switch">

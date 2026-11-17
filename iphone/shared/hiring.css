@@ -1,0 +1,30 @@
+.hiring-page { display:grid; gap:12px; padding-bottom:12px; }
+.hiring-heading { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:2px; }
+.hiring-heading h1 { margin:0; font-size:26px; letter-spacing:-.06em; color:var(--ink); }
+.hiring-card { display:grid; gap:12px; min-width:0; padding:16px; background:var(--panel); border:1px solid var(--line); border-radius:16px; }
+.hiring-card :is(h2,h3,p) { margin:0; }
+.hiring-card h2 { font-size:18px; letter-spacing:-.04em; overflow-wrap:anywhere; color:var(--ink); }
+.hiring-card h3 { font-size:15px; color:var(--ink); overflow-wrap:anywhere; }
+.hiring-card header { display:grid; gap:5px; }
+.hiring-card header p,.hiring-card small,.hiring-note { color:var(--muted); font-size:13px; line-height:1.5; overflow-wrap:anywhere; }
+.hiring-empty { padding:16px 4px; color:var(--muted); }
+.hiring-settings > div,.hiring-app,.hiring-list-footer { display:flex; justify-content:space-between; gap:10px; align-items:center; min-width:0; }
+.hiring-settings > div+div,.hiring-app+.hiring-app { padding-top:12px; border-top:1px solid var(--line); }
+.hiring-settings small,.hiring-app small { display:block; }
+.hiring-settings strong,.hiring-app strong { color:var(--ink); }
+.hiring-card .hiring-button,.hiring-heading .hiring-button { min-height:44px; padding:8px 12px; border:1px solid var(--line); color:var(--ink); background:var(--soft); border-radius:9px; font-size:13px; font-weight:700; white-space:nowrap; }
+.hiring-card .hiring-primary,.hiring-heading .hiring-primary { color:var(--inverse); background:var(--action); border-color:var(--action); }
+.hiring-card [role="switch"][aria-checked="true"] { color:var(--success); background:var(--success-tint); }
+.hiring-actions { display:flex; flex-wrap:wrap; gap:6px; margin-left:auto; }
+.hiring-chip { padding:5px 8px; border-radius:999px; background:var(--soft); color:var(--ink); font-size:12px; font-weight:700; }
+.hiring-pay { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:0; }
+.hiring-pay > div { display:grid; align-content:start; gap:4px; min-width:0; padding:10px; background:var(--soft); border-radius:10px; }
+.hiring-pay :is(dt,dd) { margin:0; overflow-wrap:anywhere; }
+.hiring-pay dt { color:var(--muted); font-size:12px; }
+.hiring-pay dd { color:var(--ink); font-size:16px; font-weight:700; }
+.hiring-apps,.hiring-workforce { display:grid; gap:10px; }
+.hiring-apps { padding-top:12px; border-top:1px solid var(--line); }
+.hiring-workforce h2 { margin:0; font-size:18px; }
+.hiring-filters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
+.hiring-filters label { display:grid; gap:4px; min-width:0; padding:0; color:var(--muted); font-size:12px; }
+.hiring-filters select { min-width:0; min-height:44px; width:100%; padding:8px; border-radius:9px; }
