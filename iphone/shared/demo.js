@@ -76,6 +76,7 @@ if (window.AcademyRoleUi?.enabled(demoAppRole)) {
 }
 if (window.AcademyRoleUi?.enabled(demoAppRole)) {
   menus[demoAppRole].push(["home-overview", "오늘 전체 보기"], ["academy-calendar", "캘린더"]);
+  if (["owner", "teacher"].includes(demoAppRole)) menus[demoAppRole].push(["homepage-edit", "홈페이지 편집"]);
   if (demoAppRole === "owner") menus.owner.push(["operations", "운영"], ["staff-pay", "근무·급여"], ["staff-leave", "강사 휴가·대타"], ["timetable", "수업 시간표"]);
   if (demoAppRole === "teacher") menus.teacher.push(["my-work", "내 근무·휴가"]);
   if (["owner", "parent"].includes(demoAppRole)) {
@@ -107,6 +108,8 @@ let rosterPreview = null;
 let rosterUploadId = 0;
 let state = readState();
 let blockDetails;
+let activeNavigation;
+let pendingTab;
 const demoSite = window.AcademyRoleUi?.enabled(demoAppRole) ? window.AcademyDemoSite?.create({
   profile: { ...demoContact, ...academyProfiles[demoVariant] },
   staff: teachers,
@@ -478,7 +481,7 @@ function academyWebsite() {
 }
 
 function classRow(lesson) {
-  const replacement = state.leaves.find((entry) => entry.classId === lesson.id && entry.status === "approved");
+  const replacement = !demoSite && state.leaves.find((entry) => entry.classId === lesson.id && entry.status === "approved");
   const teacher = replacement ? replacement.substitute : lesson.teacher;
   return item(lesson.group, `${lesson.time} · ${teacher} 선생님 · ${lesson.room}`, replacement ? badge("대체 수업", "purple") : "");
 }
@@ -497,10 +500,17 @@ function calendarView() {
   const staff = role === "owner" || role === "teacher";
   const selectedStudent = student(role === "student" ? "jiwoo" : child);
   const visible = scheduledClasses().filter((lesson) => role === "owner" || (role === "teacher" ? teacherLesson(lesson) : (lesson.groupKey ?? lesson.group) === selectedStudent?.group));
-  const days = (demoSite ? [...scheduleDays, "일"] : scheduleDays).map((day, index) => `<button class="day-button" type="button" data-action="schedule-day" data-id="${day}" aria-pressed="${day === selectedDay}">
+  if (demoSite) {
+    const days = [...scheduleDays, "일"].map(day => `<button class="day-button" type="button"
+      data-action="schedule-day" data-id="${day}" aria-pressed="${day === selectedDay}"><span>${day}</span></button>`).join("");
+    return header("수업 시간표", "요일별 수업과 담당 선생님을 확인하세요.") + (role === "parent" ? childPicker() : "")
+      + panel("요일별 수업", `<div class="calendar-days" aria-label="요일 선택">${days}</div>
+        <div class="calendar-agenda"><h3>${selectedDay}요일 수업</h3>${list(visible.filter(({ day }) => day === selectedDay).map(classRow), "예정된 수업이 없습니다.")}</div>`);
+  }
+  const days = scheduleDays.map((day, index) => `<button class="day-button" type="button" data-action="schedule-day" data-id="${day}" aria-pressed="${day === selectedDay}">
     <span>${day}</span><strong>${index + 9}</strong></button>`).join("");
-  const heading = header(staff ? "일정·휴가" : "수업 일정",
-    demoSite ? "11월 9일–15일 수업과 변경된 일정을 확인하세요." : "11월 9일–14일 수업과 변경된 일정을 확인하세요.", role === "teacher" ? button("휴가 신청", "request-leave", { variant: "primary" }) : "");
+  const heading = header(staff ? "일정·휴가" : "수업 일정", "11월 9일–14일 수업과 변경된 일정을 확인하세요.",
+    role === "teacher" ? button("휴가 신청", "request-leave", { variant: "primary" }) : "");
   return heading + (role === "parent" ? childPicker() : "") + `<div class="columns">
     ${panel("11월 둘째 주", `<div class="calendar-days" aria-label="요일 선택">${days}</div>
       <div class="calendar-agenda"><h3>${selectedDay}요일 수업</h3>${list(visible.filter(({ day }) => day === selectedDay).map(classRow), "예정된 수업이 없습니다.")}</div>`)}
@@ -1039,8 +1049,7 @@ function roleHomeOptions() {
 }
 
 function editDemoHomepage(section) {
-  activeScreen = "website";
-  render();
+  navigateRole("homepage-edit");
   if (section === "contact") demoSite?.startSection(section);
   else {
     content.focus({ preventScroll: true });
@@ -1259,6 +1268,152 @@ function blockTabsContext() {
   };
 }
 
+function roleScreen(screen) {
+  if (role === "owner" && screen === "schedule") return "timetable";
+  return menus[role].some(([id]) => id === screen) ? screen : null;
+}
+
+function roleNavigationUrl(entry) {
+  const url = new URL(location.href);
+  for (const key of ["view", "tab", "learner"]) url.searchParams.delete(key);
+  if (entry.screen !== "home") url.searchParams.set("view", entry.screen);
+  if (entry.tab !== window.AcademyRoleUi.rootFor(role, entry.screen)) url.searchParams.set("tab", entry.tab);
+  if (entry.learner) url.searchParams.set("learner", entry.learner);
+  if (url.hash === "#school-schedule") url.hash = "";
+  return url;
+}
+
+function saveNavigation(entry, replace) {
+  const data = { ...history.state, gradientDemoNavigation: entry };
+  delete data.demoV3Menu;
+  delete data.gradientLearningOrigin;
+  // A covered application screen is a single history entry, independent of modal/fullscreen entries.
+  history[replace ? "replaceState" : "pushState"](data, "", roleNavigationUrl(entry));
+}
+
+function setNavigation(entry) {
+  if (activeScreen === "roster" && entry.screen !== "roster") {
+    rosterUploadId++;
+    rosterPreview = null;
+  }
+  if (selectedLearner !== entry.learner) consultationPeriod = "all";
+  selectedLearner = entry.learner ?? null;
+  activeScreen = entry.screen;
+  activeNavigation = entry;
+}
+
+function showNavigation(entry) {
+  if (dialog.open) dialog.close();
+  setNavigation(entry);
+  render();
+  content.focus({ preventScroll: true });
+  window.scrollTo(0, 0);
+}
+
+function tabEntry(tab) {
+  return { role, screen: tab, tab, depth: 0, journey: globalThis.crypto.randomUUID?.() ?? String(Date.now()) };
+}
+
+function installTab(tab, truncateForward = false) {
+  const entry = tabEntry(tab);
+  saveNavigation(entry, true);
+  if (truncateForward) saveNavigation(entry, false);
+  showNavigation(entry);
+}
+
+function initializeNavigation() {
+  if (!window.AcademyRoleUi?.enabled(role)) return;
+  const url = new URL(location.href);
+  const screen = roleScreen(url.searchParams.get("view") ?? activeScreen) ?? "home";
+  const openingTab = url.searchParams.get("tab");
+  const roots = window.AcademyRoleUi.tabRoots(role);
+  const requestedLearner = url.searchParams.get("learner");
+  const learner = screen === "students" && roleStudents().some(person => person.id === requestedLearner) ? requestedLearner : undefined;
+  const tab = roots.includes(screen) && !learner ? screen : roots.includes(openingTab) ? openingTab : window.AcademyRoleUi.rootFor(role, screen);
+  const entry = history.state?.gradientDemoNavigation;
+  if (entry?.role === role && entry.screen === screen && entry.tab === tab && entry.learner === learner) {
+    setNavigation(entry);
+    return;
+  }
+  const root = tabEntry(tab);
+  const destination = screen === tab && !learner ? root : { ...root, screen, depth: 1, learner };
+  if (!url.searchParams.has("screen")) {
+    saveNavigation(root, true);
+    if (destination !== root) saveNavigation(destination, false);
+  }
+  setNavigation(destination);
+}
+
+function navigateRole(screen, { tabLink = false, learner } = {}) {
+  if (!window.AcademyRoleUi?.enabled(role)) {
+    if (activeScreen === "roster" && screen !== "roster") {
+      rosterUploadId++;
+      rosterPreview = null;
+    }
+    if (screen === "students") selectedLearner = learner ?? null;
+    activeScreen = screen;
+    render();
+    content.focus();
+    return;
+  }
+  const destination = roleScreen(screen);
+  if (!destination || pendingTab) return;
+  if (tabLink) {
+    const extra = Number(window.DemoHomeV3.takeDrawerEntry());
+    const depth = activeNavigation.depth + extra;
+    if (depth) {
+      pendingTab = destination;
+      history.go(-depth);
+    } else installTab(destination);
+    return;
+  }
+  if (destination === activeScreen && (learner ?? null) === selectedLearner) {
+    window.DemoHomeV3.backDrawer();
+    window.scrollTo(0, 0);
+    return;
+  }
+  const roots = window.AcademyRoleUi.tabRoots(role);
+  const isLanding = roots.includes(destination) && !learner;
+  const tab = isLanding ? destination : activeNavigation.tab;
+  const entry = { ...activeNavigation, screen: destination, tab, learner, depth: activeNavigation.depth + 1 };
+  saveNavigation(entry, window.DemoHomeV3.takeDrawerEntry());
+  showNavigation(entry);
+}
+
+function restoreLearningOrigin(screen) {
+  const saved = history.state?.gradientDemoNavigation;
+  if (saved?.role === role && saved.screen === screen) {
+    setNavigation(saved);
+    return;
+  }
+  // Direct links to an existing full-screen view can carry an origin without route state.
+  const tab = window.AcademyRoleUi.rootFor(role, screen);
+  const root = tabEntry(tab);
+  if (tab === screen) {
+    saveNavigation(root, true);
+    setNavigation(root);
+  } else {
+    const entry = { ...root, screen, depth: 1 };
+    saveNavigation(root, true);
+    saveNavigation(entry, false);
+    setNavigation(entry);
+  }
+}
+
+function demoBack() {
+  if (blockDetails?.back()) return true;
+  if (window.DemoHomeV3?.backDrawer()) return true;
+  const modal = document.querySelector("dialog[open]");
+  if (modal) {
+    modal.close();
+    return true;
+  }
+  if (!activeNavigation || window.AcademyRoleUi.tabRoots(role).includes(activeScreen) && !selectedLearner) return false;
+  if (activeNavigation.depth > 0) history.back();
+  else installTab(activeNavigation.tab);
+  return true;
+}
+
 function render() {
   if (blockDetails?.render()) return;
   const brandName = document.querySelector(".demo-brand-actions .school strong");
@@ -1269,6 +1424,7 @@ function render() {
     ? blockTabs.render(role, activeScreen, blockTabsContext()) : null;
   navigation.innerHTML = menus[role].map(([screen, label]) => `<button class="nav-button" type="button" data-action="navigate" data-id="${screen}"${screen === activeScreen ? ' aria-current="page"' : ""}><span aria-hidden="true">${symbols[screen]}</span>${label}</button>`).join("");
   if (activeScreen === "website") content.innerHTML = academyWebsite();
+  else if (activeScreen === "homepage-edit") content.innerHTML = demoSite.editor(window.AcademyRoleUi, demoWebsiteProfile().name);
   else if (activeScreen === "operations") content.innerHTML = window.DemoStaffOperations.operations(roleHomeOptions());
   else if (activeScreen === "staff-leave") content.innerHTML = window.DemoStaffOperations.leave(staffOperationsContext());
   else if (activeScreen === "staff-pay") content.innerHTML = window.DemoStaffOperations.pay(staffOperationsContext());
@@ -1311,7 +1467,12 @@ function render() {
       else content.insertAdjacentHTML("afterbegin", window.DemoStaffOperations.schoolTile());
     }
   }
-  window.AcademyRoleUi?.apply(content, role, activeScreen);
+  if (window.AcademyRoleUi?.enabled(role)) {
+    const tabLanding = window.AcademyRoleUi.tabRoots(role).includes(activeScreen) && !(activeScreen === "students" && selectedLearner);
+    window.AcademyRoleUi.apply(content, role, activeScreen, activeNavigation?.tab, tabLanding);
+    document.body.dataset.demoScreen = activeScreen;
+    document.body.dataset.demoTab = activeNavigation?.tab ?? window.AcademyRoleUi.rootFor(role, activeScreen);
+  }
   if (window.AcademyRoleUi?.enabled(role)) window.DemoHomeV3.apply(homeV3Context());
   paintScoreCharts();
 }
@@ -1817,24 +1978,11 @@ document.addEventListener("click", (event) => {
   const control = event.target.closest("[data-action]");
   if (!control) return;
   const { action, id } = control.dataset;
-  if (action.startsWith("block-") && document.body.hasAttribute("data-c-block-scope")) {
+  if (action === "app-back") demoBack();
+  else if (action.startsWith("block-") && document.body.hasAttribute("data-c-block-scope")) {
     handleBlockTabAction(action, id, control);
   } else if (action === "navigate" && menus[role].some(([screen]) => screen === id)) {
-    if (id === "home" && activeScreen === "home" && window.AcademyRoleUi?.enabled(role)) {
-      window.scrollTo(0, 0);
-      return;
-    }
-    if (activeScreen === "roster" && id !== "roster") {
-      rosterUploadId++;
-      rosterPreview = null;
-    }
-    if (id === "students") selectedLearner = null;
-    activeScreen = id;
-    render();
-    if (window.AcademyRoleUi?.enabled(role)) {
-      content.focus({ preventScroll: true });
-      window.scrollTo(0, 0);
-    } else content.focus();
+    navigateRole(id, { tabLink: control.hasAttribute("data-demo-tab") });
   } else if (action === "homepage-day" && ["home", "website"].includes(activeScreen) && ["student", "parent"].includes(role) && [...scheduleDays, "일"].includes(id)) {
     const scrollTarget = control.dataset.scrollTarget;
     homepageDay = id;
@@ -1854,19 +2002,16 @@ document.addEventListener("click", (event) => {
   else if (action === "parent-notice" && role === "parent" && activeScreen === "news") readParentNotice();
   else if (activeScreen === "students" && ["student-detail", "student-list", "consultation-note"].includes(action) && ["owner", "teacher"].includes(role)) {
     if (action === "student-detail" && roleStudents().some((learner) => learner.id === id)) {
-      selectedLearner = id;
       consultationPeriod = "all";
-      render();
-      content.focus();
+      navigateRole("students", { learner: id });
     } else if (action === "student-list") {
-      selectedLearner = null;
-      render();
-      content.focus();
+      if (window.AcademyRoleUi?.enabled(role)) demoBack();
+      else navigateRole("students");
     } else if (action === "consultation-note") editConsultationNote(id);
   }
   else if (window.AcademyRoleUi?.enabled(role) && action === "home-notice") showHomeNotice(id);
   else if (demoSite && ["owner", "teacher"].includes(role) && action === "homepage-edit") editDemoHomepage(id);
-  else if (demoSite && (["website","timetable"].includes(activeScreen) && action.startsWith("site-") || ["site-own-card", "site-staff-detail", "site-staff-all"].includes(action))) void demoSite.handle(control);
+  else if (demoSite && (["website", "homepage-edit", "timetable"].includes(activeScreen) && action.startsWith("site-") || ["site-own-card", "site-staff-detail", "site-staff-all"].includes(action))) void demoSite.handle(control);
   else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && activeScreen === "settings" && action === "setting-field") editDemoSetting(id, control);
   else if (window.AcademyRoleUi?.enabled("owner") && role === "owner" && activeScreen === "settings" && action === "setting-switch" && id === "rank") {
     const error = patchDemoField("settings", id, !state.settings.rank);
@@ -1881,8 +2026,8 @@ document.addEventListener("click", (event) => {
       `<p>${escapeHtml(value)}</p><p class="note">가상 학원 정보입니다. 이 데모에서는 외부 앱을 열지 않습니다.</p>`);
   }
   else if (action === "website-notice") openDialog(notice.title, `<p>${escapeHtml(notice.detail)}</p>`);
-  else if (action === "request-leave" && role === "teacher") requestLeave();
-  else if (action === "review-leave" && role === "owner") reviewLeave(id);
+  else if (!demoSite && action === "request-leave" && role === "teacher") requestLeave();
+  else if (!demoSite && action === "review-leave" && role === "owner") reviewLeave(id);
   else if (action === "edit-score" && role === "teacher") editScore(id);
   else if (action === "publish-scores" && role === "teacher") publishScores(id);
   else if (action === "edit-settings" && role === "owner") editSettings();
@@ -1967,6 +2112,10 @@ content.addEventListener("change", (event) => {
 });
 
 roleSelect.addEventListener("change", () => {
+  if (activeNavigation) {
+    roleSelect.value = role;
+    return;
+  }
   rosterUploadId++;
   rosterPreview = null;
   role = window.ACADEMY_APP_ROLE;
@@ -2036,7 +2185,7 @@ if (!nativeShell && window.isSecureContext && "serviceWorker" in navigator && /^
 
 blockDetails = window.DemoBlockDetails?.create({
   content, dialog, render, role: () => role, screen: () => activeScreen, state: () => state, save: saveState,
-  setScreen: (screen) => { activeScreen = screen; },
+  setScreen: restoreLearningOrigin,
   enabled: () => window.AcademyRoleUi?.enabled(role),
   validScreen: (screen) => menus[role].some(([id]) => id === screen),
   tasks: [assignment, reviewAssignment], visibleStudents: roleStudents,
@@ -2044,8 +2193,24 @@ blockDetails = window.DemoBlockDetails?.create({
   canSubmit: (task) => task.id !== assignment.id || state.clock < 21 * 60,
   openSheet: openDemoSheet,
 });
+initializeNavigation();
 render();
 blockDetails?.initialize();
+window.academyDemoBack = demoBack;
+window.addEventListener("popstate", () => {
+  if (!activeNavigation || new URL(location.href).searchParams.has("screen")) return;
+  if (pendingTab) {
+    const tab = pendingTab;
+    pendingTab = undefined;
+    installTab(tab, true);
+    return;
+  }
+  // Full-screen routes restore their origin in the earlier detail listener.
+  const entry = history.state?.gradientDemoNavigation;
+  if (entry?.journey === activeNavigation.journey && entry.role === role) {
+    if (entry.screen !== activeScreen || (entry.learner ?? null) !== selectedLearner) showNavigation(entry);
+  } else installTab(activeNavigation.tab);
+});
 showDemoInvite();
 window.addEventListener("hashchange", showDemoInvite);
 

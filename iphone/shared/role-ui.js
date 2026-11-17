@@ -4,13 +4,13 @@
   const roles = {
     owner: {
       name: "원장", title: "오늘의 학원 운영", context: "학원 전체 · 11월 16일 월요일",
-      tabs: [["home", "홈", "home", ["home-overview"]], ["students", "학생·반", "people", ["roster"]],
-        ["attendance", "출결", "qr", ["schedule", "school-schedule", "academy-calendar"]], ["operations", "운영", "operations", ["settings", "website", "learning", "notifications", "tuition", "staff-pay", "staff-leave", "timetable", "grades"]]],
+      tabs: [["home", "홈", "home", ["home-overview"]], ["students", "학생·반", "people", ["roster", "school-schedule"]],
+        ["attendance", "출결", "qr", ["academy-calendar"]], ["operations", "운영", "operations", ["settings", "website", "homepage-edit", "learning", "notifications", "tuition", "staff-pay", "staff-leave", "timetable", "grades", "video"]]],
     },
     teacher: {
       name: "선생님", title: "오늘의 수업 관리", context: "이도현 선생님 · 중2 심화반",
       tabs: [["home", "홈", "home", ["home-overview", "my-work"]], ["attendance", "출결", "qr", ["schedule", "academy-calendar"]], ["learning", "과제 검사", "book", ["video"]],
-        ["students", "학생", "people", ["grades", "school-schedule", "notifications", "website"]]],
+        ["students", "학생", "people", ["grades", "school-schedule", "notifications", "website", "homepage-edit"]]],
     },
     student: {
       name: "학생", title: "오늘 할 일", context: "김지우 학생 · 중2 심화반",
@@ -20,7 +20,7 @@
     parent: {
       name: "학부모", title: "우리 아이의 하루", context: "연결된 자녀의 학습과 출결",
       tabs: [["home", "홈", "home", ["home-overview"]], ["attendance", "출결", "qr", []], ["learning", "과제/성적", "chart", ["grades"]],
-        ["news", "소식", "bell", ["notifications", "schedule", "school-schedule", "academy-calendar", "tuition"]]],
+        ["news", "소식", "bell", ["notifications", "schedule", "school-schedule", "academy-calendar", "tuition", "video", "website"]]],
     },
   };
   const paths = {
@@ -278,12 +278,13 @@
     </section>`;
   }
 
-  function tabs(role, screen) {
+  const tabRoots = role => roles[role].tabs.map(([path]) => path);
+  const rootFor = (role, screen) => roles[role].tabs.find(([path, , , children]) => path === screen || children.includes(screen))?.[0] ?? "home";
+
+  function tabs(role, activeTab) {
     const data = roles[role];
-    return `<nav class="demo-role-tabs" aria-label="${data.name} 하단 탭"><div>${data.tabs.map(([path, label, symbol, children]) => {
-      const current = path === screen || children.includes(screen);
-      return `<button type="button" data-action="navigate" data-id="${path}" data-action-level="tertiary"${current ? ' aria-current="page"' : ""}>${icon(symbol)}<span>${label}</span></button>`;
-    }).join("")}</div></nav>`;
+    return `<nav class="demo-role-tabs" aria-label="${data.name} 하단 탭"><div>${data.tabs.map(([path, label, symbol]) =>
+      `<button type="button" data-action="navigate" data-demo-tab data-id="${path}" data-action-level="tertiary"${path === activeTab ? ' aria-current="page"' : ""}>${icon(symbol)}<span>${label}</span></button>`).join("")}</div></nav>`;
   }
 
   function primarySelector(role, screen) {
@@ -297,10 +298,12 @@
     return null;
   }
 
-  function apply(container, role, screen) {
+  function apply(container, role, screen, activeTab = rootFor(role, screen), tabLanding = tabRoots(role).includes(screen)) {
     if (!enabled(role)) return;
     document.body.classList.add("role-app-ui");
     document.body.dataset.appRole = role;
+    document.querySelector(".demo-brand-home")?.toggleAttribute("hidden", !tabLanding);
+    document.querySelector(".demo-brand-back")?.toggleAttribute("hidden", tabLanding);
     const selector = primarySelector(role, screen);
     const scoped = document.body.hasAttribute("data-c-block-scope");
     const candidate = selector ? (screen === "roster" ? container.querySelector('[data-action="apply-roster"]:not(:disabled)') : null) ?? container.querySelector(selector)
@@ -321,7 +324,7 @@
     } else if (candidate?.classList.contains("primary")) {
       candidate.dataset.actionLevel = "primary";
     }
-    container.insertAdjacentHTML("beforeend", tabs(role, screen));
+    container.insertAdjacentHTML("beforeend", tabs(role, activeTab));
   }
-  window.AcademyRoleUi = Object.freeze({ enabled, home, overview, tabs, apply, primarySelector, scheduleList, staffList, contactList });
+  window.AcademyRoleUi = Object.freeze({ enabled, home, overview, tabs, tabRoots, rootFor, apply, primarySelector, scheduleList, staffList, contactList });
 })();

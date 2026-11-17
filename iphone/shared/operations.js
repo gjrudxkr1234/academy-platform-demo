@@ -90,7 +90,6 @@
 
   const draw = {
     arrow:'<path d="m9 6 6 6-6 6"/>',
-    back:'<path d="m15 6-6 6 6 6"/>',
     wallet:'<path d="M20 9V6H6a2 2 0 0 0 0 4h14v10H6a2 2 0 0 1-2-2V8m16 6h-4"/>',
     wages:'<path d="m4 5 4 14 4-10 4 10 4-14M3 10h18M3 14h18"/>',
     plane:'<path d="m3 11 7 2 3 8 2-1-1-8 6-6a1.5 1.5 0 0 0-2-2l-6 6-8-1z"/>',
@@ -185,8 +184,8 @@
     </section>`;
   }
 
-  function header(title, back) {
-    return `<header class="ops-heading">${back ? `<button type="button" class="ops-back" aria-label="뒤로 가기" ${nav(back)}>${icon("back")}</button>` : ""}<h1>${title}</h1></header>`;
+  function header(title) {
+    return `<header class="ops-heading"><h1>${title}</h1></header>`;
   }
 
   function operations(opts) {
@@ -303,7 +302,7 @@
     const data = read();
     const waiting = pending(data);
     const tabs = [["pending",`승인 대기 ${waiting.length}`],["month","이번 달"],["staff","강사별 휴가"]];
-    return `<div class="ops-page" data-staff-screen="leave">${header("강사 휴가·대타","operations")}
+    return `<div class="ops-page" data-staff-screen="leave">${header("강사 휴가·대타")}
       <nav class="ops-segments" aria-label="휴가 보기">${tabs.map(([id,label]) => `<button type="button" aria-pressed="${tab === id}" data-staff-operation="leave-tab" data-staff-id="${id}">${label}</button>`).join("")}</nav>
       ${tab === "pending" ? `${waiting.map((entry) => approval(entry, data, ctx)).join("") || '<p class="ops-empty">승인 대기 중인 휴가가 없어요.</p>'}${balances(data,ctx)}`
         : tab === "month" ? requestsList(data.requests.filter((entry) => entry.date.startsWith("2026-11")),ctx) : balances(data,ctx)}
@@ -353,7 +352,7 @@
     const selected = person(selectedStaff);
     const staff = selected && included(selected,data) ? selected : null;
     const { fivePlus, company } = data.settings;
-    return `<div class="ops-page" data-staff-screen="pay">${header("근무·급여","operations")}
+    return `<div class="ops-page" data-staff-screen="pay">${header("근무·급여")}
       <div class="ops-pay-criteria"><span>상시 ${fivePlus ? "5인 이상" : "5인 미만"} · ${company === "corporation" ? "법인" : "개인사업자"}</span>${pill("settings","학원 설정")}</div>
       <div class="ops-pay-summary"><span>11월 예상 인건비</span><strong>${won(money(data))}</strong><small>${text(estimateLabel)}</small></div>
       ${staff ? `<section class="ops-card"><div class="ops-person">${avatar(nameFor(staff,ctx))}<div><h2>${text(nameFor(staff,ctx))}</h2>${wageBadge(payFor(staff,data))}<p>${staff.kind}</p></div></div>
@@ -371,7 +370,7 @@
   function myWork(ctx) {
     const data = read();
     const label = data.attendance === "idle" ? "출근 체험" : data.attendance === "in" ? "퇴근 체험" : "오늘 퇴근 완료";
-    return `<div class="ops-page" data-staff-screen="my-work">${header("내 근무·휴가","home")}
+    return `<div class="ops-page" data-staff-screen="my-work">${header("내 근무·휴가")}
       <nav class="ops-segments" aria-label="내 근무·휴가 보기">${[["work","내 근무"],["leave","내 휴가"],["statement","내 명세서"]].map(([id,name]) =>
       `<button type="button" aria-pressed="${workTab === id}" data-staff-operation="work-tab" data-staff-id="${id}">${name}</button>`).join("")}</nav>
       ${workTab === "work" ? `${workRecord(currentStaff,data)}

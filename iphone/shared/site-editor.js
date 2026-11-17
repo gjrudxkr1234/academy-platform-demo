@@ -284,8 +284,7 @@ window.AcademyDemoSite = (() => {
     }
 
     function timetableEditor() {
-      return `<div class="ops-page" data-staff-screen="timetable"><header class="ops-heading">
-        <button type="button" class="ops-back" data-action="navigate" data-id="operations" aria-label="뒤로 가기">‹</button><h1>수업 시간표</h1></header>
+      return `<div class="ops-page" data-staff-screen="timetable"><header class="ops-heading"><h1>수업 시간표</h1></header>
         <section class="demo-home-section" aria-labelledby="ops-timetable-classes"><header class="demo-home-section-heading demo-edit-heading">
           <h2 id="ops-timetable-classes">반·반복 수업</h2>${action("반 추가", "site-class-edit")}</header>
           <p class="demo-site-paragraph">강사 ${escaped(state.accounts.map(({ id }) => teacherName(id)).join(" · "))}</p>
