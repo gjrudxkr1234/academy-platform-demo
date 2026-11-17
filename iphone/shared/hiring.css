@@ -14,6 +14,7 @@
 .hiring-settings strong,.hiring-app strong { color:var(--ink); }
 .hiring-card .hiring-button,.hiring-heading .hiring-button { min-height:44px; padding:8px 12px; border:1px solid var(--line); color:var(--ink); background:var(--soft); border-radius:9px; font-size:13px; font-weight:700; white-space:nowrap; }
 .hiring-card .hiring-primary,.hiring-heading .hiring-primary { color:var(--inverse); background:var(--action); border-color:var(--action); }
+.hiring-card .hiring-button:disabled { opacity:.55; cursor:not-allowed; }
 .hiring-card [role="switch"][aria-checked="true"] { color:var(--success); background:var(--success-tint); }
 .hiring-actions { display:flex; flex-wrap:wrap; gap:6px; margin-left:auto; }
 .hiring-chip { padding:5px 8px; border-radius:999px; background:var(--soft); color:var(--ink); font-size:12px; font-weight:700; }
@@ -22,9 +23,15 @@
 .hiring-pay :is(dt,dd) { margin:0; overflow-wrap:anywhere; }
 .hiring-pay dt { color:var(--muted); font-size:12px; }
 .hiring-pay dd { color:var(--ink); font-size:16px; font-weight:700; }
-.hiring-apps,.hiring-workforce { display:grid; gap:10px; }
+.hiring-apps { display:grid; gap:10px; }
 .hiring-apps { padding-top:12px; border-top:1px solid var(--line); }
-.hiring-workforce h2 { margin:0; font-size:18px; }
+.hiring-wage-warning,.hiring-classification { padding:10px; border-radius:8px; font-size:13px; line-height:1.5; }
+.hiring-wage-warning { color:var(--danger); background:var(--danger-tint); font-weight:700; }
+.hiring-classification { color:var(--muted); background:var(--soft); }
+.hiring-wage-warning[hidden],.hiring-classification[hidden] { display:none; }
+.hiring-days { display:flex; flex-wrap:wrap; gap:8px; padding:6px 0; border:0; }
+#dialog .hiring-days label { display:flex; align-items:center; gap:3px; padding:0; }
+#dialog .hiring-days input { width:1em; min-height:1em; margin:0; padding:0; }
 .hiring-filters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 .hiring-filters label { display:grid; gap:4px; min-width:0; padding:0; color:var(--muted); font-size:12px; }
 .hiring-filters select { min-width:0; min-height:44px; width:100%; padding:8px; border-radius:9px; }
