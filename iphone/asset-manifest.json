@@ -1,7 +1,7 @@
 {
   "synthetic_only": true,
   "network_required_after_preparation": false,
-  "version": "b3ed8b69de0311fd",
+  "version": "fe0ac380db2f3306",
   "assets": [
     {
       "path": "icons/owner-180.png",
@@ -66,12 +66,12 @@
     {
       "path": "index.html",
       "bytes": 2757,
-      "sha256": "0589e06a270fcecc408a722ff004e31836238737a0885fe962c1ac9bbae6d94a"
+      "sha256": "3f32defcc246ee6cab005a4bae2d4135c407418969a9c225b849429b05634a7d"
     },
     {
       "path": "owner/index.html",
       "bytes": 7563,
-      "sha256": "6897332c5cb5589bf8ba7ee9c2673bdc01f2cd980fecead4c4f9d899dd9af001"
+      "sha256": "a9545c0d5ae6999ae1b7f566798d89cb5a5448a6be7da994c357a36707da6654"
     },
     {
       "path": "owner/manifest.webmanifest",
@@ -86,7 +86,7 @@
     {
       "path": "parent/index.html",
       "bytes": 7570,
-      "sha256": "c83c4aede6d808d3077dd16bee3aa0ac280dc856f4380d1f8defbbd40ca005d1"
+      "sha256": "c7ce52165f2eb4b5a18b6f7aa1e92898359661e2387168f4df5d8ddf14be7594"
     },
     {
       "path": "parent/manifest.webmanifest",
@@ -260,8 +260,8 @@
     },
     {
       "path": "shared/site-editor.js",
-      "bytes": 57669,
-      "sha256": "82729b79ee0c036e34fbf08731460c5cce9e19ec300bc6752deadf51925e97b8"
+      "bytes": 57680,
+      "sha256": "de0ff4d474541db289c94aa554ad3c972716a127ac052a9784d637be106fc7fb"
     },
     {
       "path": "shared/style.css",
@@ -286,7 +286,7 @@
     {
       "path": "student/index.html",
       "bytes": 7565,
-      "sha256": "9161bd0d96edb2de751ac9a974660f0d2da87c38cf1ef63a646921b908ac04f9"
+      "sha256": "dc3ea49f87a117380e3200af2575151b61d1b366647b273ea8fa6426ef9af2f4"
     },
     {
       "path": "student/manifest.webmanifest",
@@ -301,7 +301,7 @@
     {
       "path": "teacher/index.html",
       "bytes": 7571,
-      "sha256": "d044779177840aab0bd0f1f9b0a0e760e405f93ee9b2f09285995d7d02fe09d4"
+      "sha256": "1bb3c14b11f5f5b041b7e877e539ea6fcb48dde732005a9a5e881f433b28859d"
     },
     {
       "path": "teacher/manifest.webmanifest",
