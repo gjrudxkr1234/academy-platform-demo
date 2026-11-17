@@ -5,7 +5,7 @@
   const storageKey = "gradient-demo-launch-v1";
   const fixtureList = window.DemoWorkbookFixtures;
   const oneDay = 24 * 60 * 60 * 1000;
-  const fields = { name:"학생 이름", guardian:"보호자 번호", group:"반", teacher:"선생님", outstanding:"미납액", status:"상태", secondary:"추가 보호자 번호" };
+  const fields = { name:"학생 이름", guardian:"보호자 번호", group:"반", teacher:"선생님", outstanding:"미납액", status:"상태", secondary:"추가 보호자 번호", school:"학교" };
   const actions = [
     ["neis", "나이스 자동 입력", "학원 정보를 찾아 채워요."],
     ["workbook", "엑셀", "기존 명부의 열과 등록 대상을 확인해요."],
@@ -13,7 +13,7 @@
     ["teacher", "선생님 초대", "선생님용 초대를 준비해요."],
     ["tuition", "수납 설정", "교습비와 청구일을 정해요."],
   ];
-  const manualColumns = ["학생 이름","보호자 번호","반","선생님","미납액","상태","추가 보호자 번호"];
+  const manualColumns = ["학생 이름","보호자 번호","반","선생님","미납액","상태","추가 보호자 번호","학교"];
   const text = value => String(value ?? "").replace(/[&<>"']/g, character => ({
     "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;",
   })[character]);
@@ -142,9 +142,16 @@
       const validPhone = phone => !phone || /^010-0000-\d{4}$/.test(phone);
       const issue = !withdrawn && (!row.name || !row.group || !validPhone(row.guardian) || !validPhone(row.secondary) ||
         (row.outstanding && !/^\d{1,7}$/.test(row.outstanding)));
-      const main = row.guardian ? { number:row.guardian, relation:row.secondary ? (source.hints.includes("B열은 아빠 번호") ? "아빠" : "엄마") : "보호자" } : null;
-      const alternate = row.secondary ? { number:row.secondary, relation:main?.relation === "아빠" ? "엄마" : "아빠" } : null;
-      return { ...row, rowNumber, withdrawn, issue, guardians:[main,alternate].filter(Boolean), outstanding:Number(row.outstanding || 0) };
+      const phoneColumns = [source.mapping[1], source.mapping[6]];
+      const guardians = [row.guardian, row.secondary].flatMap((number, position) => {
+        if (!number) return [];
+        const column = phoneColumns[position];
+        const header = source.headers[column] ?? "";
+        const relation = (column === 1 && source.hints.includes("B열은 아빠 번호")) || /^(?:아빠|부)(?:\s|$)/.test(header)
+          ? "아빠" : /^(?:엄마|모)(?:\s|$)/.test(header) ? "엄마" : null;
+        return [{ number, relation }];
+      });
+      return { ...row, rowNumber, withdrawn, issue, guardians, outstanding:Number(row.outstanding || 0) };
     });
   }
 
@@ -152,9 +159,9 @@
     const flags = source.sample?.id === "merged" ? [...source.sample.flags] : [];
     for (const row of rows) {
       if (row.withdrawn) flags.push(`${row.rowNumber}행 퇴원생 → 등록에서 제외했어요.`);
-      else if (row.guardians.length === 2) flags.push(source.hints.includes("B열은 아빠 번호")
-        ? `${row.rowNumber}행 B열을 아빠 번호로 다시 배정했어요. 추가 번호는 엄마로 표시했어요.`
-        : `${row.rowNumber}행 보호자 번호 2개 → 엄마·아빠로 나눴어요. 관계를 확인해 주세요.`);
+      else if (row.guardians.length === 2 && row.guardians.some(guardian => !guardian.relation)) {
+        flags.push(`${row.rowNumber}행 보호자 번호 2개 → 관계 확인 필요`);
+      }
     }
     for (const row of rows.filter(entry => entry.issue)) flags.push(`${row.rowNumber}행에서 이름·반·가상 번호·미납액을 확인해 주세요.`);
     return flags;
@@ -181,7 +188,8 @@
       <dl class="launch-counts">${counts.map(([label, count]) => `<div><dt>${label}</dt><dd>${count}</dd></div>`).join("")}</dl>
       <ul class="launch-students">${rows.map(row => `<li><strong>${text(row.name || `${row.rowNumber}행`)}</strong>
       <small>${text(row.group)}${row.withdrawn ? " · 퇴원 · 등록 제외" : ""}</small>
-      ${row.guardians.map(guardian => `<small>${guardian.relation} ${text(guardian.number)}</small>`).join("")}
+      ${row.school ? `<small>학교 · ${text(row.school)}</small>` : ""}
+      ${row.guardians.map(guardian => `<small>${guardian.relation ?? "관계 확인 필요"} ${text(guardian.number)}</small>`).join("")}
       ${row.outstanding ? `<small>미납 ${won(row.outstanding)}</small>` : ""}</li>`).join("")}</ul>
       <div class="launch-actions launch-actions-grid" aria-label="등록 전 검토 작업">
         ${button("이대로 등록", "register", "", true)}${button("다시 진행하기", "rerun")}
@@ -297,11 +305,12 @@
       return context.rerender();
     }
     if (mode === "manual-add" && draft?.status === "manual") return context.openSheet("학생 직접 입력",
-      `${input("가상 학생 이름","name","",'maxlength="40"')}${input("반 이름","group","",'maxlength="40"')}`, form => {
+      `${input("가상 학생 이름","name","",'maxlength="40"')}${input("반 이름","group","",'maxlength="40"')}${input("가상 학교 이름","school","",'maxlength="60"')}`, form => {
         const name = String(form.get("name")).trim();
         const group = String(form.get("group")).trim();
         if (!name || !group) return "가상 학생 이름과 반 이름을 입력해 주세요.";
-        draft = { status:"review", raw:[[name,"",group,"","0","재원",""]], headers:manualColumns,
+        const school = String(form.get("school") ?? "").trim();
+        draft = { status:"review", raw:[[name,"",group,"","0","재원","",school]], headers:manualColumns,
           mapping:Object.keys(fields).map((_, index) => index), hints:"" };
         context.rerender();
       }, control, { confirmLabel:"직접 입력 검토" });

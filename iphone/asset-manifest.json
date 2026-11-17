@@ -1,7 +1,7 @@
 {
   "synthetic_only": true,
   "network_required_after_preparation": false,
-  "version": "3de91068405cf368",
+  "version": "e62b8efb1e464b88",
   "assets": [
     {
       "path": "icons/owner-180.png",
@@ -66,12 +66,12 @@
     {
       "path": "index.html",
       "bytes": 2757,
-      "sha256": "80137a94cd3035452474be6abe9eb615332a47a9e0abcb12a3830f45f954a8a8"
+      "sha256": "8dd5853f5f0d4237c6b696bea60d02c89e1c5f8a122cf730d0087250d2e2a042"
     },
     {
       "path": "owner/index.html",
       "bytes": 8500,
-      "sha256": "34ae8eed2d24374ff700c959ea1feeafae9d872c9d7f3d5a531b6022949d3157"
+      "sha256": "1e18e41d2266bd25d1211826221d8da435f17572d21fb1ba362d6e25a5751842"
     },
     {
       "path": "owner/manifest.webmanifest",
@@ -86,7 +86,7 @@
     {
       "path": "parent/index.html",
       "bytes": 8507,
-      "sha256": "a57830db48b0837ab1fcb2b528c5a9c9beef037ab37aaee239977ffc988c8ce2"
+      "sha256": "74a04ef0f104c3e4e6b96f03f36228cd3a3bf240671899760544fef1db5c9b3c"
     },
     {
       "path": "parent/manifest.webmanifest",
@@ -210,33 +210,33 @@
     },
     {
       "path": "shared/assets/workbook-fixtures.js",
-      "bytes": 2886,
-      "sha256": "506f273ffb34c8169a336f8455943b51328873b5cbe49a86abcd2d8740c98c27"
+      "bytes": 3165,
+      "sha256": "cc62201fb6346441eaa8c1dada43c0ca711a5d3346546366edca0a21270a6ba1"
     },
     {
       "path": "shared/assets/workbooks/class-tabs.xlsx",
-      "bytes": 5787,
-      "sha256": "1e9421c7b04859c969bc82bdaa0c6dfc62d0a6c125a286fb1bdb62837a70d5fd"
+      "bytes": 5866,
+      "sha256": "94fa045fcfa65d1bc609c0d08162affa545ea719156c22d5631bd443a946b2f4"
     },
     {
       "path": "shared/assets/workbooks/merged.xlsx",
-      "bytes": 5136,
-      "sha256": "2ccae25f2a961a843b4b3133e6631e90628a2afd46edb6a5cde1497a2915d3ef"
+      "bytes": 5184,
+      "sha256": "92354e6b30d6366109c494ccceb1dd22625c87d6497010d6647365e5dc643333"
     },
     {
       "path": "shared/assets/workbooks/program.xlsx",
-      "bytes": 5096,
-      "sha256": "6ca3fd0e193a1b680285123aa35e00e01e45e13905a2b4a5d56a1345d8bbcd0c"
+      "bytes": 5169,
+      "sha256": "aeb71e53479d78309d1ba9e4448d827cdd7b44f299ba33234642a30d3b42dbbe"
     },
     {
       "path": "shared/assets/workbooks/two-guardians.xlsx",
-      "bytes": 5131,
-      "sha256": "50c53bb91307dacebe877e221cd073a0589650c97952dfbd8bddb451ebc44b16"
+      "bytes": 5191,
+      "sha256": "a7a534799db719279bc20705da61eb4ebd91c6e250cbc84a3a428b51898dc4b2"
     },
     {
       "path": "shared/assets/workbooks/withdrawn.xlsx",
-      "bytes": 5129,
-      "sha256": "0e5497fafc25d70cad826ab3d1dc80787e76a0b51f79590a530a09f55e617141"
+      "bytes": 5178,
+      "sha256": "b48fc27f7196fb4e834339790304e82bb0d4ffbf1c8f14c9597e8654b42aafdd"
     },
     {
       "path": "shared/block-details.css",
@@ -305,8 +305,8 @@
     },
     {
       "path": "shared/launch-checklist.js",
-      "bytes": 21406,
-      "sha256": "310cbbd16f2f65c89e435d2044f74837a77e475be9b7a95d179d04dd2db17cc7"
+      "bytes": 21716,
+      "sha256": "08a8a02baefa8f23640687c00b71555c6b737ba5ada19291d130cd01c41a17e1"
     },
     {
       "path": "shared/operations.css",
@@ -361,7 +361,7 @@
     {
       "path": "student/index.html",
       "bytes": 8502,
-      "sha256": "fb054e4e5985a628654000a7514b61572a66ed5dcac32fc3d668890c8a0247ee"
+      "sha256": "98791bced01039faa5c1e3239bf79d492319668c92dcc42dfd842d76a7467c61"
     },
     {
       "path": "student/manifest.webmanifest",
@@ -376,7 +376,7 @@
     {
       "path": "teacher/index.html",
       "bytes": 8508,
-      "sha256": "9cc72d6d668c19a0b6bc9f428f7d9aed94fabb3e8feb394fba14ab9ee70cfe42"
+      "sha256": "399107b7f778bf0afdf6c437c99fecdbcb02ecc9ba541b8f2b590d0f511c051c"
     },
     {
       "path": "teacher/manifest.webmanifest",
