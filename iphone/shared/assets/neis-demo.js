@@ -62,15 +62,15 @@ const DemoNeis = (() => {
   }
 
   function searchFields(kind) {
-    return `<fieldset class="neis-lookup" data-neis-lookup="${kind}">
-      <legend>${kind === "academy" ? "나이스에서 학원 찾기" : "나이스에서 학교 찾기"}</legend>
+    return `<section class="neis-lookup" data-neis-lookup="${kind}" aria-labelledby="neis-search-title">
+      <h3 id="neis-search-title">${kind === "academy" ? "나이스에서 학원 찾기" : "나이스에서 학교 찾기"}</h3>
       <label>시·도<select name="neisRegion"><option value="">시·도 선택</option>
         ${regions.map(([id, label]) => `<option value="${id}">${label}</option>`).join("")}</select></label>
       <label>검색할 ${kind === "academy" ? "학원" : "학교"} 이름<input name="neisQuery" autocomplete="off" maxlength="80" placeholder="${kind === "academy" ? "예: 온새미" : "예: 별담나루"}"></label>
       <p class="note">${kind === "academy" ? "교육청 등록 정보 기준 · " : ""}출처: ${source}</p>
       <p class="note" data-neis-status role="status">시·도를 고르고 이름을 두 글자 이상 입력해 주세요.</p>
-      <ul class="item-list neis-results" data-neis-results hidden></ul>
-    </fieldset>`;
+      <ul class="item-list neis-results" aria-label="${kind === "academy" ? "학원 후보" : "학교 후보"}" data-neis-results hidden></ul>
+    </section>`;
   }
 
   function bindLookup(container, kind, onSelect) {
@@ -106,8 +106,11 @@ const DemoNeis = (() => {
         }[match.status] || "";
         if (!matches.length) return;
         results.innerHTML = matches.map(({ id, name, address, status: state }) =>
-          `<li><button class="secondary" type="button" data-neis-choice="${id}">
-            <strong>${name}</strong><small>${address}${state ? ` · ${state}` : ""}</small>
+          `<li><button class="neis-candidate" type="button" data-neis-choice="${id}">
+            <span class="neis-candidate-details"><strong>${name}</strong><small>${address}</small>
+              ${state ? `<span class="neis-status-chip${state === "휴원" ? " neis-status-closed" : ""}">${state}</span>` : ""}</span>
+            <svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24"
+              fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </button></li>`).join("");
         results.hidden = false;
       }, 400);

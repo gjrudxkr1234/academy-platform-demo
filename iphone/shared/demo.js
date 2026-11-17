@@ -1173,8 +1173,8 @@ function lookupDemoAcademy(opener) {
     ["우편번호", "postalCode", academy.postalCode, 5], ["전화", "phone", academy.phone, 25],
     ["교습과정", "course", academy.course, 80], ["분야", "field", academy.field, 100]];
   openDemoSheet("학원 정보 입력", DemoNeis.searchFields("academy")
-    + '<fieldset class="neis-lookup"><legend>저장할 학원 정보</legend>'
-    + fields.map((params) => demoField(...params)).join("") + "</fieldset>", (form) => {
+    + '<section class="neis-details" aria-labelledby="neis-details-title"><h3 id="neis-details-title">저장할 학원 정보</h3>'
+    + fields.map((params) => demoField(...params)).join("") + "</section>", (form) => {
     const registration = Object.fromEntries(fields.map(([, key]) => [key, formText(form, key)]));
     if (!registration.academyName || fields.some(([, key, , limit]) => registration[key].length > limit)) return "학원 이름과 입력 길이를 확인해 주세요.";
     if (registration.postalCode && !/^\d{5}$/.test(registration.postalCode)) return "우편번호를 숫자 다섯 자리로 입력해 주세요.";

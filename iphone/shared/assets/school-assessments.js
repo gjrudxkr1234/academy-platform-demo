@@ -243,9 +243,9 @@ const DemoSchoolAssessments = (() => {
   function linkStudentSchool() {
     let selected;
     const roster = roleStudents();
-    openDemoSheet("학생 학교 찾기", `<label>학생<select name="learner">${options(Object.fromEntries(roster.map(({ id, name }) => [id, name])))}</select></label>`
-      + DemoNeis.searchFields("school") + demoField("저장할 학교 이름", "schoolName", "", 80)
-      + '<p class="note">검색 결과가 없으면 학교 이름을 직접 입력할 수 있어요.</p>', (form) => {
+    openDemoSheet("학생 학교 찾기", `<label class="neis-details">학생<select name="learner">${options(Object.fromEntries(roster.map(({ id, name }) => [id, name])))}</select></label>`
+      + DemoNeis.searchFields("school") + '<div class="neis-details">' + demoField("저장할 학교 이름", "schoolName", "", 80)
+      + '<p class="note">검색 결과가 없으면 학교 이름을 직접 입력할 수 있어요.</p></div>', (form) => {
       const learner = formText(form, "learner");
       const name = formText(form, "schoolName");
       if (!roster.some(({ id }) => id === learner) || !name || name.length > 80) return "학생과 학교 이름을 확인해 주세요.";
