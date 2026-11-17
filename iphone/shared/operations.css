@@ -84,6 +84,7 @@ html[data-demo-appearance] .role-app-ui #content:has(.ops-page) { background:var
 .ops-records li { display:flex; align-items:center; justify-content:space-between; gap:8px; border-bottom:1px solid var(--ops-line); padding:9px 0; }
 .ops-records b { font-size:12px; }
 .ops-empty { margin:3px 0; color:var(--muted); font-size:13px; }
+.ops-pay-criteria { display:flex; align-items:center; justify-content:space-between; gap:8px; color:var(--muted); font-size:13px; font-weight:700; }
 .ops-pay-summary { display:grid; gap:4px; padding:14px; border-radius:13px; color:var(--ink); background:var(--ops-tile); }
 .ops-pay-summary strong { font-size:26px; }
 .ops-pay-summary small { color:var(--muted); }
@@ -92,6 +93,7 @@ html[data-demo-appearance] .role-app-ui #content:has(.ops-page) { background:var
 .ops-pay-row :is(strong,small,span:not(.ops-avatar)) { display:block; }
 .ops-pay-row small { color:var(--muted); font-size:12px; }
 .ops-pay-row span:not(.ops-avatar) { font-size:12px; }
+.ops-wage-badge { display:inline-flex; width:fit-content; margin:2px 0; padding:3px 8px; border-radius:999px; background:var(--ops-danger-bg); color:var(--ops-danger); font-size:12px; font-weight:790; }
 .ops-pay-row svg { width:16px; height:16px; }
 .ops-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:8px 0 11px; }
 .ops-metrics > div { padding:0 7px; border-inline-start:1px solid var(--ops-line); }

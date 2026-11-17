@@ -16,9 +16,8 @@
   const representative = payroll.find(({ id }) => id === "owner");
   const defaultSettings = { fivePlus:true, company:"individual", includeRepresentative:false };
   const included = (staff, data) => staff !== representative || (data.settings.company === "corporation" && data.settings.includeRepresentative);
-  function payInput(staff, data) {
+  function payInput(staff, data, wage = data.hourlyRates[staff.id]) {
     const input = { ...calculator.scenarios[staff.scenario].payrollInput, regularStaffCountAtLeastFive:data.settings.fivePlus };
-    const wage = data.hourlyRates[staff.id];
     if (wage == null || input.employment !== "hourly") return input;
     const updated = { ...input, hourlyRate:wage };
     const gross = calculator.calculatePayroll(updated).gross;
@@ -44,6 +43,7 @@
     return `${month}월 ${day}일(${weekday(value)})`;
   };
   const whole = new Intl.NumberFormat("ko-KR");
+  const days = new Intl.NumberFormat("ko-KR", { maximumFractionDigits:2 });
   const amount = (value) => whole.format(value);
   const won = (value) => `${amount(value)}원`;
   const conciseWon = (value) => value % 10000 === 0 ? `${amount(value / 10000)}만원` : won(value);
@@ -132,15 +132,31 @@
 
   function leaveFor(staff, data) {
     const sample = staff === currentStaff ? calculator.scenarios.leave20.leaveInput : {};
-    const selfGranted = (staff.academyDays ?? 0) * leaveCharge(staff, {unit:"day"}, data);
-    const newLeaveMinutes = data.requests.filter((entry) => entry.staffId === staff.id && entry.status === "approved")
-      .reduce((total, entry) => total + leaveCharge(staff,entry,data), 0);
-    return calculator.calculateLeave({
+    const workDayMinutes = leaveCharge(staff, {unit:"day"}, data);
+    const used = { annual:sample.usedMinutes ?? 0, academy:0 };
+    for (const entry of data.requests) {
+      if (entry.staffId === staff.id && entry.status === "approved" && Object.hasOwn(used,entry.kind)) {
+        used[entry.kind] += leaveCharge(staff,entry,data);
+      }
+    }
+    const employment = payInput(staff,data).employment;
+    const leave = calculator.calculateLeave({
       completedMonthlyAttendance:0, priorYearAttendanceBasisPoints:0, ...sample,
-      employment:payInput(staff,data).employment, regularStaffCountAtLeastFive:data.settings.fivePlus,
+      employment, regularStaffCountAtLeastFive:data.settings.fivePlus,
       scheduledWeeklyMinutes:weeklyHours(staff,data) * 60, hireDate:staff.hireDate ?? today,
-      asOfDate:"2026-11-17", selfGrantedMinutes:selfGranted, usedMinutes:(sample.usedMinutes ?? 0) + newLeaveMinutes,
+      asOfDate:"2026-11-17", selfGrantedMinutes:0, usedMinutes:used.annual,
     });
+    const academyMinutes = Math.max(0,(staff.academyDays ?? 0) * workDayMinutes - used.academy);
+    return { ...leave, applies:staff !== representative && employment !== "freelancer", academyMinutes,
+      academyDays:staff.academyDays && workDayMinutes ? academyMinutes / workDayMinutes : null };
+  }
+
+  function remainingLeave(leave) {
+    if (!leave.applies) return "해당 없음";
+    const statutory = duration(leave.remainingMinutes);
+    if (leave.academyDays === null) return statutory;
+    const academy = `${days.format(leave.academyDays)}일`;
+    return leave.eligible ? `${statutory} · 학원 휴가 ${academy}` : academy;
   }
 
   function alerts(opts, data, tuition) {
@@ -249,11 +265,11 @@
   function balances(data,ctx) {
     return `<section class="ops-balances"><h2>강사별 남은 휴가</h2><ul>${payroll.map((staff) => {
       const leave = leaveFor(staff,data);
-      const detail = staff === representative ? "대표자" : leave.eligible ? `법정 연차 ${duration(leave.statutoryMinutes)}`
-        : [weeklyHours(staff,data) && `주 ${weeklyHours(staff,data)}시간`, "법정 연차 대상 아님", staff.academyDays && "학원 휴가"].filter(Boolean).join(" · ");
+      const detail = !leave.applies ? staff.kind : leave.eligible ? `법정 연차 ${duration(leave.statutoryMinutes)}`
+        : [weeklyHours(staff,data) && `주 ${weeklyHours(staff,data)}시간`, "법정 연차 대상 아님", leave.academyDays !== null && "학원 휴가"].filter(Boolean).join(" · ");
       const name = nameFor(staff,ctx);
       return `<li>${avatar(name)}<span><strong>${text(name)}${staff === representative ? " (대표자)" : ""}</strong><small>${detail}</small></span>
-        <b>${staff === representative ? "—" : duration(leave.remainingMinutes)}</b></li>`;
+        <b>${remainingLeave(leave)}</b></li>`;
     }).join("")}</ul></section>`;
   }
 
@@ -297,15 +313,18 @@
   function staffCard(staff, data, ctx) {
     const name = nameFor(staff,ctx);
     const classes = [...new Set(ctx.lessons.filter((lesson) => ownsLesson(staff,lesson)).map((lesson) => lesson.group))];
-    if (!included(staff,data)) return `<div class="ops-pay-row ops-representative">
-      ${avatar(name)}<div><strong>${text(name)}</strong><span>대표자 · 급여 계산 제외</span></div></div>`;
     const leave = leaveFor(staff,data);
+    if (!included(staff,data)) return `<div class="ops-pay-row ops-representative">
+      ${avatar(name)}<div><strong>${text(name)}</strong><span>대표자 · 급여 계산 제외</span><span>휴가 ${remainingLeave(leave)}</span></div></div>`;
     const forecast = monthlyMinutes(staff,data);
+    const pay = payFor(staff,data);
     return `<button type="button" class="ops-pay-row" data-staff-operation="open-staff" data-staff-id="${staff.id}">
-      ${avatar(name)}<div><strong>${text(name)}</strong><small>${text([staff.kind, ...classes].join(" · "))}</small>
+      ${avatar(name)}<div><strong>${text(name)}</strong>${wageBadge(pay)}<small>${text([staff.kind, ...classes].join(" · "))}</small>
       ${forecast ? `<span>11월 16일까지 ${duration(recordedMinutes(staff,data))} · 월 예상 ${duration(forecast)}</span>` : ""}
-      <span>${won(payFor(staff,data).gross)} · 휴가 ${duration(leave.remainingMinutes)}</span></div>${icon("arrow")}</button>`;
+      <span>${won(pay.gross)} · 휴가 ${remainingLeave(leave)}</span></div>${icon("arrow")}</button>`;
   }
+
+  const wageBadge = (pay) => pay.minimumWageWarning ? '<b class="ops-wage-badge">최저임금 미달</b>' : "";
 
   function staffProfile(staff, data) {
     const input = payInput(staff,data);
@@ -324,7 +343,8 @@
       <div><dt>11월 16일까지 실근무</dt><dd>${duration(recordedMinutes(staff,data))}</dd></div>
       <div><dt>이번 달 예상 근무</dt><dd>${duration(input.workMinutes ?? 0)}</dd></div>
       <div><dt>주휴</dt><dd>${(input.weeks?.length ?? 0) ? `${duration(Math.round(payFor(staff,data).weeklyHolidayMinutes / input.weeks.length))} / 주` : "해당 없음"}</dd></div>
-      <div><dt>법정 연차</dt><dd>${leave.eligible ? duration(leave.statutoryMinutes) : "대상 아님"}</dd></div>
+      <div><dt>법정 연차</dt><dd>${leave.eligible ? duration(leave.statutoryMinutes) : leave.applies ? "대상 아님" : "해당 없음"}</dd></div>
+      ${leave.academyDays !== null ? `<div><dt>남은 학원 휴가</dt><dd>${days.format(leave.academyDays)}일</dd></div>` : ""}
       <div><dt>근무 확인</dt><dd>${staff === currentStaff && data.approvedTime ? "승인 완료" : "승인 대기"}</dd></div></dl></section>`;
   }
 
@@ -332,9 +352,11 @@
     const data = read();
     const selected = person(selectedStaff);
     const staff = selected && included(selected,data) ? selected : null;
+    const { fivePlus, company } = data.settings;
     return `<div class="ops-page" data-staff-screen="pay">${header("근무·급여","operations")}
+      <div class="ops-pay-criteria"><span>상시 ${fivePlus ? "5인 이상" : "5인 미만"} · ${company === "corporation" ? "법인" : "개인사업자"}</span>${pill("settings","학원 설정")}</div>
       <div class="ops-pay-summary"><span>11월 예상 인건비</span><strong>${won(money(data))}</strong><small>${text(estimateLabel)}</small></div>
-      ${staff ? `<section class="ops-card"><div class="ops-person">${avatar(nameFor(staff,ctx))}<div><h2>${text(nameFor(staff,ctx))}</h2><p>${staff.kind}</p></div></div>
+      ${staff ? `<section class="ops-card"><div class="ops-person">${avatar(nameFor(staff,ctx))}<div><h2>${text(nameFor(staff,ctx))}</h2>${wageBadge(payFor(staff,data))}<p>${staff.kind}</p></div></div>
         ${staffProfile(staff,data)}
         <div class="ops-actions">${action("close-staff","강사 목록")}
           ${payInput(staff,data).hourlyRate == null ? "" : action("edit-wage","시급 편집",{id:staff.id})}
@@ -387,22 +409,39 @@
     const input = payInput(staff,data);
     if (input.hourlyRate == null) return;
     const { minimumHourlyRate } = payFor(staff,data);
+    const options = { confirmLabel:"시급 저장" };
+    let pendingRate;
+    const warns = (rate) => Number.isSafeInteger(rate) && rate >= 1 && rate <= 1000000
+      && calculator.calculatePayroll(payInput(staff,read(),rate)).minimumWageWarning;
     ctx.openSheet("시급 편집", `<label>시급 (원)<input type="number" inputmode="numeric" name="hourly-rate"
       value="${input.hourlyRate}" required min="1" max="1000000" step="1"></label>
       <p>2026년 최저임금 ${won(minimumHourlyRate)} / 시간</p><p data-ops-wage-warning class="ops-low-wage" role="status" hidden>최저임금보다 낮아요.</p>`,
     (fields) => {
       const value = Number(fields.get("hourly-rate"));
       if (!Number.isSafeInteger(value) || value < 1 || value > 1000000) return "시급을 1원 이상 입력해 주세요.";
+      if (warns(value) && pendingRate !== value) {
+        pendingRate = value;
+        warning.hidden = true;
+        options.confirmLabel = "그대로 저장";
+        return "최저임금보다 낮아요. 그래도 저장할까요?";
+      }
       const current = read();
       current.hourlyRates[staff.id] = value;
       write(current,ctx);
-    }, opener, { confirmLabel:"시급 저장" });
+    }, opener, options);
     const sheet = document.getElementById("dialog");
     const wage = sheet.querySelector('[name="hourly-rate"]');
     const warning = sheet.querySelector("[data-ops-wage-warning]");
-    const refresh = () => { warning.hidden = !wage.value || Number(wage.value) >= minimumHourlyRate; };
-    wage.addEventListener("input",refresh);
-    refresh();
+    const confirm = sheet.querySelector("[data-confirm]");
+    const alert = sheet.querySelector("[role=alert]");
+    warning.hidden = !warns(Number(wage.value));
+    wage.addEventListener("input",() => {
+      pendingRate = undefined;
+      options.confirmLabel = "시급 저장";
+      confirm.textContent = options.confirmLabel;
+      alert.hidden = true;
+      warning.hidden = !warns(Number(wage.value));
+    });
   }
 
   function request(opener, ctx) {
@@ -493,7 +532,8 @@
       if (!entry) return;
       const member = person(entry.staffId);
       const leave = leaveFor(member,data);
-      if (command === "approve" && ((entry.kind === "annual" && !leave.eligible) || leaveCharge(member,entry,data) > leave.remainingMinutes)) {
+      const remaining = entry.kind === "academy" ? leave.academyMinutes : leave.remainingMinutes;
+      if (command === "approve" && (!leave.applies || (entry.kind === "annual" && !leave.eligible) || leaveCharge(member,entry,data) > remaining)) {
         ctx.announce("남은 휴가를 확인해 주세요.");
         return;
       }
