@@ -25,7 +25,7 @@
   };
   const screenKeys = ["screen", "id", "task", "from"];
   const storageLimit = 20 * 1024 * 1024;
-  const maximumPhotos = 10;
+  const maximumPhotos = 5;
   const photoTypes = /^image\/(?:jpeg|png|webp|gif|avif|heic|heif)$/i;
   const photoExtensions = /\.(?:jpe?g|png|webp|gif|avif|heic|heif)$/i;
   const icon = name => '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths[name] + '</svg>';
@@ -296,7 +296,7 @@
             (canResubmit ? action("다시 제출하기", "edit-submission", "block-detail-secondary") : "") : "") +
           '</section>' : "") +
         (editing ? '<section class="block-detail-section"><div class="block-detail-line"><h3>풀이 사진 <span data-block-count>' + draft.photos.length +
-          '장</span></h3><small>최대 10장</small></div><div class="block-photos">' + photoGrid() + '</div>' +
+          '장</span></h3><small>최대 ' + maximumPhotos + '장</small></div><div class="block-photos">' + photoGrid() + '</div>' +
           '<div class="block-detail-actions">' + action(icon("camera") + "사진 찍기", "take-photo", "block-detail-secondary") +
           action(icon("image") + "앨범에서 선택", "choose-photo", "block-detail-secondary") + '</div>' +
           '<input type="file" id="worksheet-camera" accept="image/*" capture="environment" hidden><input type="file" id="worksheet-picker" accept="image/*" multiple hidden>' +
@@ -399,7 +399,7 @@
       const original = draft;
       for (const file of selection) {
         if (original !== draft) return;
-        if (draft.photos.length >= maximumPhotos) { draft.error = "사진은 최대 10장까지 추가할 수 있어요."; break; }
+        if (draft.photos.length >= maximumPhotos) { draft.error = `사진은 최대 ${maximumPhotos}장까지 추가할 수 있어요.`; break; }
         if (!file.size || file.size > storageLimit || !(photoTypes.test(file.type) ||
           ((!file.type || file.type === "application/octet-stream") && photoExtensions.test(file.name)))) {
           draft.error = "20MB 이하의 사진 파일을 선택해 주세요.";
