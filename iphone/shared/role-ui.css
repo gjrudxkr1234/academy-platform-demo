@@ -228,6 +228,35 @@ button.demo-home-row:hover { background:var(--soft); }
 .demo-sheet .dialog-actions button { flex:1; }
 .demo-sheet .dialog-actions .primary { min-height:48px; background:var(--ink); }
 
+#dialog.demo-sheet { --sheet-field-focus:var(--ink); }
+html[data-theme="dark"] #dialog.demo-sheet { --sheet-field-focus:var(--accent); }
+#dialog.demo-sheet :is(.neis-lookup,.neis-details) { display:grid; min-width:0; gap:10px; }
+#dialog.demo-sheet :is(.neis-lookup,.neis-details) h3 { font-size:16px; font-weight:700; }
+#dialog.demo-sheet section + section.neis-details { margin-top:8px; }
+#dialog.demo-sheet :is(.neis-lookup,.neis-details) label + label { margin-top:0; }
+#dialog.demo-sheet :is(.neis-lookup input,.neis-lookup select,.neis-details input,.neis-details select,[name="hourly-rate"]) {
+  min-width:0; min-height:48px; padding:10px 12px; border:1px solid var(--control-line);
+  border-radius:12px; background:var(--soft); color:var(--ink); font-size:16px;
+}
+#dialog.demo-sheet :is(.neis-lookup input,.neis-lookup select,.neis-details input,.neis-details select,[name="hourly-rate"]):focus {
+  outline:2px solid var(--sheet-field-focus); outline-offset:2px;
+}
+#dialog.demo-sheet .neis-results:not([hidden]) { display:grid; min-width:0; gap:8px; }
+#dialog.demo-sheet .neis-candidate {
+  display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:12px;
+  min-height:48px; width:100%; padding:10px 12px; border:1px solid transparent; border-radius:12px;
+  background:var(--soft); color:var(--ink); text-align:left;
+}
+#dialog.demo-sheet .neis-candidate:hover { border-color:var(--control-line); }
+#dialog.demo-sheet .neis-candidate:focus-visible { outline:2px solid var(--sheet-field-focus); outline-offset:-2px; }
+.neis-candidate-details { display:grid; gap:4px; overflow-wrap:anywhere; }
+.neis-candidate :is(small,svg) { color:var(--muted); }
+.neis-status-chip {
+  width:fit-content; max-width:100%; padding:2px 8px; border-radius:999px;
+  background:var(--panel); color:var(--muted); font-size:12px; font-weight:700;
+}
+.neis-status-closed { background:var(--accent-tint); color:var(--accent-text); }
+
 .demo-site-editor-list { margin: 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
 .demo-site-editor-list > li { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px; padding: 13px 16px; }
 .demo-site-editor-list > li + li { border-top: 1px solid var(--line); }
