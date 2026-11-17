@@ -2197,7 +2197,7 @@ initializeNavigation();
 render();
 blockDetails?.initialize();
 window.academyDemoBack = demoBack;
-window.addEventListener("popstate", event => {
+window.addEventListener("popstate", () => {
   if (!activeNavigation || new URL(location.href).searchParams.has("screen")) return;
   if (pendingTab) {
     const tab = pendingTab;
@@ -2205,8 +2205,8 @@ window.addEventListener("popstate", event => {
     installTab(tab, true);
     return;
   }
-  if (event.state?.gradientLearningOrigin) return; // Handled by the three full-screen flows.
-  const entry = event.state?.gradientDemoNavigation;
+  // Full-screen routes restore their origin in the earlier detail listener.
+  const entry = history.state?.gradientDemoNavigation;
   if (entry?.journey === activeNavigation.journey && entry.role === role) {
     if (entry.screen !== activeScreen || (entry.learner ?? null) !== selectedLearner) showNavigation(entry);
   } else installTab(activeNavigation.tab);
