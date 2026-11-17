@@ -3,6 +3,12 @@
   "use strict";
   const text = value => String(value ?? "").replace(/[&<>"']/g, character =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+  function koreanNameTopic(name) {
+    const base = name.trim().normalize("NFC");
+    const last = base.charCodeAt(base.length - 1);
+    if (last >= 0xac00 && last <= 0xd7a3) return base + ((last - 0xac00) % 28 ? "이는" : "는");
+    return base + " ·";
+  }
   const icons = {
     arrow: '<path d="m9 6 6 6-6 6"/>',
     calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4m10-4v4M3 10h18M7 15h2m4 0h4"/>',
@@ -31,8 +37,10 @@
     `<section class="demo-v3-section" aria-labelledby="demo-v3-${id}"><header class="demo-v3-section-heading"><h2 id="demo-v3-${id}">${title}</h2>${action}</header>${markup}</section>`;
 
   function rowList(rows = []) {
-    const items = rows.map(({ label, value, detail, screen, assignment, attention, countdown }) => {
-      const attrs = assignment ? `data-action="submit-homework" data-id="${text(assignment)}"` : navigate(screen);
+    const items = rows.map(({ label, value, detail, screen, assignment, watchVideo, reviewStudent, attention, countdown }) => {
+      const attrs = assignment ? `data-action="submit-homework" data-id="${text(assignment)}"`
+        : watchVideo ? `data-action="watch-video" data-id="${text(watchVideo)}"`
+        : reviewStudent ? `data-action="review" data-id="${text(reviewStudent)}"` : navigate(screen);
       return `<li>${button(`<span><strong>${text(value)}</strong><small>${text([label, detail].filter(Boolean).join(" · "))}</small></span>
         <span class="${attention ? "demo-v3-highlight" : ""}">${countdown ? text(countdown) : icon("arrow")}</span>`, attrs, "demo-v3-row")}</li>`;
     });
@@ -47,8 +55,8 @@
     if (role === "parent") {
       const { name, attendance } = opts;
       const learner = name.replace(/ 보호자님$/, "").replace(/^[가-힣]([가-힣]{2})$/, "$1");
-      if (attendance?.kind === "out") return `${text(learner)}는 ${mark(attendance.time)}에<br>하원했어요`;
-      if (attendance?.kind === "in") return `${text(learner)}는 ${mark(attendance.time)}에 등원했어요`;
+      if (attendance?.kind === "out") return `${text(koreanNameTopic(learner))} ${mark(attendance.time)}에<br>하원했어요`;
+      if (attendance?.kind === "in") return `${text(koreanNameTopic(learner))} ${mark(attendance.time)}에 등원했어요`;
       return `${text(learner)}의 오늘 등원 기록을 기다리고 있어요`;
     }
     if (role === "teacher") return opts.todayLessonCount || opts.reviewCount

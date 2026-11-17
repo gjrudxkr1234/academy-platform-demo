@@ -455,14 +455,17 @@
     const detail = [event.room, event.teacher, event.school].filter(Boolean).join(" · ");
     const related = { regular: "schedule", assignment: "learning", school: "school-schedule", consultation: isStaff(ctx.role) ? "students" : "home" }[source];
     const editing = source === "authored" && canEdit(event, ctx.role, input);
-    afterClose(control, () => ctx.openSheet?.(event.title, `<div class="v31-event-details" data-kind="${event.type}">
+    afterClose(control, () => {
+      if (ctx.openLearningDetail?.(source, id)) return;
+      ctx.openSheet?.(event.title, `<div class="v31-event-details" data-kind="${event.type}">
       <p><span class="v31-event-icon" aria-hidden="true">${icon(event.type)}</span> ${typeLabel(event)}</p>
       <p>${dateRange} · ${escape(event.time?.slice(0, 5) || "하루 종일")}</p>
       ${detail ? `<p>${escape(detail)}</p>` : ""}
       ${editing ? `<button type="button" class="v31-day-add" data-v3-calendar-action="edit" data-v3-event="${escape(id)}">일정 수정</button>
         <button type="button" class="v31-delete" data-v3-calendar-action="delete" data-v3-event="${escape(id)}">일정 삭제</button>` : ""}
       ${related ? `<button type="button" class="v31-day-add" data-v3-calendar-action="related" data-v3-related="${related}">관련 화면 보기</button>` : ""}
-    </div>`, null, control, { closeOnly: true }));
+      </div>`, null, control, { closeOnly: true });
+    });
   }
 
   function deleteEvent(control, ctx, input) {

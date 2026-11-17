@@ -195,17 +195,28 @@
     </section>`;
   }
 
-  function notices(child) {
-    if (!children.has(child)) return "";
-    const records = read().invoices.filter((entry) => entry.learner === child).flatMap((entry) => {
+  function childNoticeRows(invoices) {
+    return invoices.flatMap((entry) => {
       const latest = entry.notes.at(-1);
       if (entry.payment) return [{ title: "학원비 결제 완료", detail: `${monthTitle(entry.month)} · ${won(entry.payment.amount)}` }];
       if (latest || todayDue(entry.due)) return [{ title: latest ?? todayDue(entry.due),
         detail: `${monthTitle(entry.month)} · ${readableDate(entry.due)}까지` }];
       return [];
-    });
+    }).reverse();
+  }
+
+  function preview(child) {
+    if (!children.has(child)) return null;
+    const invoices = read().invoices.filter(entry => entry.learner === child);
+    const invoice = invoices.find(entry => entry.month === date.slice(0, 7));
+    return { summary: invoice ? `${Number(invoice.month.slice(5))}월 ${won(sum(invoice.lines))} · ${invoice.payment ? "납부 완료" : `${Number(invoice.due.slice(8))}일까지`}` : "",
+      unpaid: invoice ? balance(invoice) > 0 : false, notices: childNoticeRows(invoices) };
+  }
+
+  function notices(child) {
+    const records = preview(child)?.notices ?? [];
     if (!records.length) return "";
-    return `<ul class="tuition-notices">${records.slice().reverse().map(({ title, detail }) =>
+    return `<ul class="tuition-notices">${records.map(({ title, detail }) =>
       `<li><strong>${text(title)}</strong><small>${text(detail)}</small></li>`).join("")}</ul>`;
   }
 
@@ -440,5 +451,5 @@
     }
   }
 
-  window.DemoTuition = Object.freeze({ render, home, metrics, notices, handle, reset, ownsStorage: (key) => key === storageKey });
+  window.DemoTuition = Object.freeze({ render, home, metrics, notices, preview, handle, reset, ownsStorage: (key) => key === storageKey });
 })();
