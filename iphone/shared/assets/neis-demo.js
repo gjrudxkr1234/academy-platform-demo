@@ -15,7 +15,7 @@ const DemoNeis = (() => {
   const catalog = {
     academy: [
       { id: "onsaemi", region: "seoul", name: "온새미 가상수학학원", address: "서울특별시 가상구 온새미로 17",
-        status: "등록", postalCode: "00017", phone: "000-000-0017", course: "보습", field: "입시·검정 및 보습" },
+        status: "등록", postalCode: "00017", phone: "000-000-0017", course: "보습", field: "입시·검정 및 보습", publicTuition:{ amount:240000, basis:"중등 수학 · 1개월" } },
       { id: "onsaemi-closed", region: "seoul", name: "온새미 가상과학학원", address: "서울특별시 가상구 온새미로 23",
         status: "휴원", postalCode: "00023", phone: "000-000-0023", course: "보습", field: "입시·검정 및 보습" },
       { id: "moon-academy", region: "gyeonggi", name: "달그루 가상학원", address: "경기도 가상시 달그루로 28",

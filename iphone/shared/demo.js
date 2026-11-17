@@ -290,7 +290,8 @@ function attendanceTable(people = students) {
 }
 
 function roleStudents() {
-  return role === "teacher" ? students.filter(({ group }) => group === "중2 심화반") : students;
+  if (role === "teacher") return students.filter(({ group }) => group === "중2 심화반");
+  return role === "owner" && window.AcademyRoleUi?.enabled(role) ? [...students, ...window.DemoLaunch.registeredStudents()] : students;
 }
 
 function metrics(people = students) {
@@ -798,6 +799,7 @@ function ownerRoster() {
   const registered = registeredRoster();
   const pending = registered.some((row) => row.phone && !state.sentRosterInvites.includes(row.key));
   return appHeader("학생·보호자 명부", "엑셀로 학생을 반에 배정하고 보호자 연락처와 동의 상태를 함께 등록하세요.")
+    + (window.AcademyRoleUi?.enabled(role) ? window.DemoLaunch.workbook() : "")
     + panel("엑셀로 한 번에 등록", `<p class="note">아래 두 가상 명부 원본으로 체험할 수 있습니다. 보호자는 초대를 수락한 뒤 자녀 포털에 접근합니다.</p>
       <div class="actions roster-files"><label class="primary file-choice" for="roster-file">엑셀 파일 선택
         <input class="sr-only" id="roster-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"></label>
@@ -1172,21 +1174,28 @@ function editDemoSetting(key, opener) {
 }
 
 function lookupDemoAcademy(opener) {
+  let selectedAcademy;
   const academy = demoWebsiteProfile();
   const fields = [["학원 이름", "academyName", academy.name, 50], ["주소", "address", academy.address, 150],
     ["우편번호", "postalCode", academy.postalCode, 5], ["전화", "phone", academy.phone, 25],
     ["교습과정", "course", academy.course, 80], ["분야", "field", academy.field, 100]];
   openDemoSheet("학원 정보 입력", DemoNeis.searchFields("academy")
     + '<section class="neis-details" aria-labelledby="neis-details-title"><h3 id="neis-details-title">저장할 학원 정보</h3>'
-    + fields.map((params) => demoField(...params)).join("") + "</section>", (form) => {
+    + fields.map((params) => demoField(...params)).join("") + "</section>", async (form) => {
     const registration = Object.fromEntries(fields.map(([, key]) => [key, formText(form, key)]));
     if (!registration.academyName || fields.some(([, key, , limit]) => registration[key].length > limit)) return "학원 이름과 입력 길이를 확인해 주세요.";
     if (registration.postalCode && !/^\d{5}$/.test(registration.postalCode)) return "우편번호를 숫자 다섯 자리로 입력해 주세요.";
     if (registration.phone && !/^[0-9() +\-]{6,25}$/.test(registration.phone)) return "전화번호를 확인해 주세요.";
-    return demoSite.saveRegistration(registration);
+    const error = await demoSite.saveRegistration(registration);
+    if (!error) {
+      window.DemoLaunch.setNeis(selectedAcademy?.name === registration.academyName ? selectedAcademy : null);
+      render();
+    }
+    return error;
   }, opener);
-  DemoNeis.bindLookup(dialog, "academy", ({ name, ...details }) => {
-    const selected = { academyName: name, ...details };
+  DemoNeis.bindLookup(dialog, "academy", (row) => {
+    selectedAcademy = row;
+    const selected = { ...row, academyName: row.name };
     fields.forEach(([, key]) => { dialog.querySelector(`[name="${key}"]`).value = selected[key]; });
   });
 }
@@ -1321,6 +1330,7 @@ function setNavigation(entry) {
   if (activeScreen === "roster" && entry.screen !== "roster") {
     rosterUploadId++;
     rosterPreview = null;
+    window.DemoLaunch?.leaveWorkbook();
   }
   if (selectedLearner !== entry.learner) consultationPeriod = "all";
   selectedLearner = entry.learner ?? null;
@@ -1456,8 +1466,8 @@ function render() {
   else if (activeScreen === "career") content.innerHTML = window.DemoHiring.teacher();
   else if (activeScreen === "staff-leave") content.innerHTML = window.DemoStaffOperations.leave(staffOperationsContext());
   else if (activeScreen === "staff-pay") content.innerHTML = window.DemoStaffOperations.pay(staffOperationsContext());
-  else if (activeScreen === "my-work") content.innerHTML = window.DemoStaffOperations.myWork(staffOperationsContext());
-  else if (activeScreen === "timetable") content.innerHTML = demoSite.timetableEditor();
+  else if (activeScreen === "my-work") content.innerHTML = window.DemoStaffOperations.myWork(staffOperationsContext()) + window.DemoLaunch.supplement("my-work");
+  else if (activeScreen === "timetable") content.innerHTML = demoSite.timetableEditor() + window.DemoLaunch.supplement("timetable");
   else if (activeScreen === "tuition") content.innerHTML = window.DemoTuition.render(tuitionContext());
   else if (activeScreen === "schedule") content.innerHTML = calendarView();
   else if (activeScreen === "academy-calendar") content.innerHTML = window.DemoHomeCalendar.render(role, roleHomeOptions(), true);
@@ -1951,7 +1961,7 @@ document.addEventListener("visibilitychange", () => {
 function homeV3Context() {
   const route = (screen) => navigation.querySelector(`[data-action="navigate"][data-id="${CSS.escape(screen)}"]`)?.click();
   return { role, options:roleHomeOptions(), screen:activeScreen, rerender:render, navigate:route,
-    openSheet:openDemoSheet, openDialog, announce,
+    openSheet:openDemoSheet, openDialog, announce, lookupAcademy:lookupDemoAcademy,
     openLearningDetail: (source, id) => {
       if (source === "authored" && id === "demo-v31-video") return blockDetails?.open("video", "linear-video");
       if (source !== "assignment") return false;
@@ -1989,6 +1999,11 @@ function showHomeNotice(id) {
 }
 
 document.addEventListener("click", (event) => {
+  const launch = event.target.closest("[data-launch-action]");
+  if (launch && window.AcademyRoleUi?.enabled(role)) {
+    window.DemoLaunch.handle(launch, homeV3Context());
+    return;
+  }
   const hiring = event.target.closest("[data-hiring-action]");
   if (hiring && ["hiring", "career"].includes(activeScreen) && window.AcademyRoleUi?.enabled(role)) {
     window.DemoHiring.handle(hiring, homeV3Context());
@@ -2131,6 +2146,10 @@ function handleBlockTabAction(action, id, control) {
 
 content.addEventListener("change", (event) => {
   const field = event.target;
+  if (field.id === "launch-workbook-file" && activeScreen === "roster" && role === "owner" && window.AcademyRoleUi?.enabled(role)) {
+    void window.DemoLaunch.upload(field.files?.[0], homeV3Context());
+    return;
+  }
   if (field.matches("[data-hiring-filter]") && activeScreen === "career" && window.AcademyRoleUi?.enabled(role)) {
     window.DemoHiring.filter(field, homeV3Context());
     return;
@@ -2193,6 +2212,7 @@ window.academyDemoRequestReset = (afterReset) => {
     window.DemoTuition?.reset();
     window.DemoStaffOperations?.reset();
     window.DemoHiring?.reset();
+    window.DemoLaunch?.reset();
     window.DemoHomeCalendar?.reset();
     window.DemoHomeBanners?.reset();
     saveState();
